@@ -5,6 +5,7 @@
   "wallpaper_order": "shuffle",
   "wallpaper_dim": 15,
   "wallpaper_captions": true,
+  "wallpaper_credits": true,
   "cinematic_home": true,
   "cinematic_scrim": 40,
   "cinematic_art": 25,
@@ -20,5 +21,8 @@
   "weather": true,
   "hijri_date": true,
   "prayer_times": true,
+  "ramadan_countdown": true,
+  "prayer_alert": true,
+  "language_choice": true,
   "language": "ar-EG-u-nu-latn"
 }

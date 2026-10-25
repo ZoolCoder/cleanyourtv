@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Sudan TV</string>
+    <string name="title">Sudan TV · قنوات السودان</string>
+    <string name="hint">OK opens the channel\'s live stream in the YouTube app</string>
+    <string name="opening">Opening %1$s…</string>
+    <string name="not_live">%1$s is not live right now</string>
+    <string name="no_player">No YouTube app on this TV</string>
+</resources>

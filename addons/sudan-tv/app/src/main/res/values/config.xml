@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The channels, one tile each, in this order. A line is "name in Arabic | name in English | YouTube
+     channel id": the id is the UC... part of youtube.com/channel/UC..., and the tile opens
+     youtube.com/channel/<id>/live, the channel's own live stream (or its page when nothing is live).
+     Edit the list before you build; add or drop lines freely. -->
+<resources>
+    <string-array name="channels" translatable="false">
+        <item>تلفزيون السودان | Sudan TV | UCC1p77YoxrTnb7huxFoIYQw</item>
+        <item>سودانية 24 | Sudania 24 | UCrH0R6bG_X2FCB9Qt8JWxRg</item>
+        <item>النيل الأزرق | Blue Nile TV | UC3xHkSn2j4YqfZRKGskS6eA</item>
+        <item>سودان بكرة | Sudan Bukra | UCLtIKXAxY3uzOcAeiE2r0IA</item>
+        <item>الحدث السوداني | Al Hadath Sudan | UCpQBpkPcvihoVM0rlqI_nQA</item>
+        <item>الجزيرة | Al Jazeera | UCfiwzLy-8yKzIbsmZTzxDgw</item>
+        <item>الجزيرة مباشر | Al Jazeera Mubasher | UCCv1Pd24oPErw5S7zJWltnQ</item>
+        <item>العربية | Al Arabiya | UCahpxixMCwoANAftn6IxkTg</item>
+        <item>الحدث | Al Hadath | UCrj5BGAhtWxDfqbza9T9hqA</item>
+        <item>سكاي نيوز عربية | Sky News Arabia | UCIJXOvggjKtCagMfxvcCzAA</item>
+        <item>قناة القرآن الكريم | Quran TV | UCos52azQNBgW63_9uDJoPDA</item>
+    </string-array>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">قنوات السودان · Sudan TV</string>
+    <string name="hint">زر OK يفتح البث المباشر للقناة في تطبيق يوتيوب</string>
+    <string name="opening">جارٍ فتح %1$s…</string>
+    <string name="not_live">%1$s لا تبث مباشرة الآن</string>
+    <string name="no_player">لا يوجد تطبيق يوتيوب على هذا التلفزيون</string>
+</resources>

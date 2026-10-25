@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Set before the build. The tile's name is app_name in strings.xml (and values-ar/strings.xml). -->
+<resources>
+    <!-- Which input the tile opens. Empty: the first HDMI port with something connected, else HDMI 1.
+         Otherwise a port number ("2"), the port's label ("HDMI 2"), the end of its input id ("HW2"),
+         or the name the receiver reports over HDMI-CEC or that you gave the port in the TV's settings. -->
+    <string name="port" translatable="false"></string>
+    <!-- The TV's own input app, when more than one app claims the input URI and Android would show a
+         chooser (the launcher's live_tv_package). Empty lets the TV pick. -->
+    <string name="live_tv_package" translatable="false"></string>
+</resources>

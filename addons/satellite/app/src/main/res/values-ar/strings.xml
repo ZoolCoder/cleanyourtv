@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">نايل سات</string>
+    <string name="no_inputs">هذا التلفزيون لا يبلّغ عن أي مدخل HDMI. جهاز البث لا يملك مداخل: اختر الرسيفر بزر المصدر في ريموت التلفزيون.</string>
+    <string name="no_port">لا يوجد مدخل HDMI يطابق المنفذ المضبوط</string>
+    <string name="no_player">لا يوجد تطبيق على هذا التلفزيون يفتح مدخل HDMI</string>
+</resources>

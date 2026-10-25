@@ -214,11 +214,13 @@ class ThemePushTest(unittest.TestCase):
         (self.theme / "wallpapers").mkdir()
         (self.theme / "wallpapers" / "dusk.jpg").write_bytes(b"\xff\xd8dusk")
         (self.theme / "wallpapers" / "captions.txt").write_text("dusk\n", encoding="utf-8")
+        (self.theme / "wallpapers" / "credits.txt").write_text("dusk.jpg\tPhoto: A, CC0\n", encoding="utf-8")
         result = self.run_theme(str(self.theme))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual((self.device / "wallpapers" / "dusk.jpg").read_bytes(), b"\xff\xd8dusk")
         self.assertEqual((self.device / "wallpapers" / "captions.txt").read_text(), "dusk\n")
-        for name in ("wallpapers/dusk.jpg", "wallpapers/captions.txt"):
+        self.assertEqual((self.device / "wallpapers" / "credits.txt").read_text(), "dusk.jpg\tPhoto: A, CC0\n")
+        for name in ("wallpapers/dusk.jpg", "wallpapers/captions.txt", "wallpapers/credits.txt"):
             put = self.command_for(name)
             self.assertLess(put.index("content write"), put.index("cp "), put)
 
@@ -347,12 +349,14 @@ class ThemePushTest(unittest.TestCase):
         self.assertIn(clear[0], joined,
                       "the reset has to run the very same clear, or the two paths drift apart again")
         self.assertIn(f"content delete --uri content://com.gathin.tvhome.theme/wallpapers/captions.txt", joined)
+        self.assertIn(f"content delete --uri content://com.gathin.tvhome.theme/wallpapers/credits.txt", joined)
 
     def test_the_windows_script_clears_the_collection_on_reset(self):
         """theme.ps1 cannot run here, so the -Reset branch is pinned as text against theme.sh."""
         script = (TOOLS / "theme.ps1").read_text(encoding="utf-8")
         reset = next(line for line in script.splitlines() if line.strip().startswith("Invoke-Tv tv.py \"mkdir -p $dir"))
         self.assertIn("$(Drop 'wallpapers/captions.txt')", reset)
+        self.assertIn("$(Drop 'wallpapers/credits.txt')", reset)
         self.assertIn("$clearWallpapers", reset, "one shared clear, as in theme.sh")
         clear = next(line for line in script.splitlines() if line.startswith("$clearWallpapers = "))
         self.assertIn("rm -f $dir/wallpapers/*.[jJ][pP][gG]", clear)

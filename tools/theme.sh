@@ -55,7 +55,7 @@ del() { echo "rm -f $DIR/$1 2>/dev/null; content delete --uri $URI/$1 2>/dev/nul
 CLEAR_WALLPAPERS="mkdir -p $DIR/wallpapers 2>/dev/null; rm -f $DIR/wallpapers/*.[jJ][pP][gG] $DIR/wallpapers/*.[jJ][pP][eE][gG] $DIR/wallpapers/*.[pP][nN][gG] $DIR/wallpapers/*.[wW][eE][bB][pP] 2>/dev/null; content delete --uri $URI/wallpapers 2>/dev/null"
 
 if [ "${1:-}" = --reset ]; then
-  tv "mkdir -p $DIR 2>/dev/null; $(del config.json); $(del wallpaper.jpg); $(del wallpapers/captions.txt); $CLEAR_WALLPAPERS; printf '%s' '$REVISION' > $TMP-theme_revision; $(put theme_revision)" >/dev/null
+  tv "mkdir -p $DIR 2>/dev/null; $(del config.json); $(del wallpaper.jpg); $(del wallpapers/captions.txt); $(del wallpapers/credits.txt); $CLEAR_WALLPAPERS; printf '%s' '$REVISION' > $TMP-theme_revision; $(put theme_revision)" >/dev/null
   "$PY" -I theme_restart.py
   echo reset
   exit 0
@@ -121,6 +121,13 @@ if [ -f "$THEME/wallpapers/captions.txt" ]; then
   tv "$(put wallpapers/captions.txt)" >/dev/null
 else
   tv "$(del wallpapers/captions.txt)" >/dev/null
+fi
+# The pictures' authors and licences (wallpaper_credits), the same way.
+if [ -f "$THEME/wallpapers/credits.txt" ]; then
+  "$PY" -I b64push.py "$THEME/wallpapers/credits.txt" "$(stage wallpapers/credits.txt)"
+  tv "$(put wallpapers/credits.txt)" >/dev/null
+else
+  tv "$(del wallpapers/credits.txt)" >/dev/null
 fi
 tv "printf '%s' '$REVISION' > $TMP-theme_revision; $(put theme_revision)" >/dev/null
 "$PY" -I theme_restart.py

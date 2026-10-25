@@ -52,7 +52,7 @@ function Drop($name) { "rm -f $dir/$name 2>/dev/null; content delete --uri $uri/
 $clearWallpapers = "mkdir -p $dir/wallpapers 2>/dev/null; rm -f $dir/wallpapers/*.[jJ][pP][gG] $dir/wallpapers/*.[jJ][pP][eE][gG] $dir/wallpapers/*.[pP][nN][gG] $dir/wallpapers/*.[wW][eE][bB][pP] 2>/dev/null; content delete --uri $uri/wallpapers 2>/dev/null"
 
 if ($Reset) {
-    Invoke-Tv tv.py "mkdir -p $dir 2>/dev/null; $(Drop 'config.json'); $(Drop 'wallpaper.jpg'); $(Drop 'wallpapers/captions.txt'); $clearWallpapers; printf '%s' '$revision' > $tmp-theme_revision; $(Put 'theme_revision')" | Out-Null
+    Invoke-Tv tv.py "mkdir -p $dir 2>/dev/null; $(Drop 'config.json'); $(Drop 'wallpaper.jpg'); $(Drop 'wallpapers/captions.txt'); $(Drop 'wallpapers/credits.txt'); $clearWallpapers; printf '%s' '$revision' > $tmp-theme_revision; $(Put 'theme_revision')" | Out-Null
     & $py -I theme_restart.py
     if ($LASTEXITCODE) { throw 'Home restart recovery failed' }
     Write-Host 'reset'
@@ -97,6 +97,14 @@ if (Test-Path $captions -PathType Leaf) {
     Invoke-Tv tv.py (Put 'wallpapers/captions.txt') | Out-Null
 } else {
     Invoke-Tv tv.py (Drop 'wallpapers/captions.txt') | Out-Null
+}
+# The pictures' authors and licences (wallpaper_credits), the same way.
+$credits = Join-Path $Theme 'wallpapers\credits.txt'
+if (Test-Path $credits -PathType Leaf) {
+    Invoke-Tv b64push.py $credits (Stage 'wallpapers/credits.txt')
+    Invoke-Tv tv.py (Put 'wallpapers/credits.txt') | Out-Null
+} else {
+    Invoke-Tv tv.py (Drop 'wallpapers/credits.txt') | Out-Null
 }
 Invoke-Tv tv.py "printf '%s' '$revision' > $tmp-theme_revision; $(Put 'theme_revision')" | Out-Null
 & $py -I theme_restart.py

@@ -161,7 +161,7 @@ put_on() {   # put $1, after the optional command $2 in the same shell call
   fi
 }
 if [ "${1:-}" = --reset ]; then
-  tv "mkdir -p $DIR 2>/dev/null; $(del config.json); $(del wallpaper.jpg); $(del wallpapers/captions.txt); $CLEAR_WALLPAPERS" >/dev/null
+  tv "mkdir -p $DIR 2>/dev/null; $(del config.json); $(del wallpaper.jpg); $(del wallpapers/captions.txt); $(del wallpapers/credits.txt); $CLEAR_WALLPAPERS" >/dev/null
   put_on theme_revision "printf '%s' '$REVISION' > $TMP-theme_revision"
   restart_home "the theme was removed"
   echo reset
@@ -249,6 +249,13 @@ if [ -f "$THEME/wallpapers/captions.txt" ]; then
   put_on wallpapers/captions.txt
 else
   tv "$(del wallpapers/captions.txt)" >/dev/null || stopped "removing wallpapers/captions.txt"
+fi
+# The pictures' authors and licences (wallpaper_credits), the same way.
+if [ -f "$THEME/wallpapers/credits.txt" ]; then
+  "$PY" -I b64push.py "$THEME/wallpapers/credits.txt" "$(stage wallpapers/credits.txt)" || stopped wallpapers/credits.txt
+  put_on wallpapers/credits.txt
+else
+  tv "$(del wallpapers/credits.txt)" >/dev/null || stopped "removing wallpapers/credits.txt"
 fi
 put_on theme_revision "printf '%s' '$REVISION' > $TMP-theme_revision"
 restart_home "the theme was pushed"

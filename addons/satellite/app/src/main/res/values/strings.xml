@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nilesat</string>
+    <string name="no_inputs">This TV reports no HDMI inputs. A streaming stick has none: pick the receiver on the TV\'s own Input button.</string>
+    <string name="no_port">No HDMI input matches the configured port</string>
+    <string name="no_player">This TV has no app that opens an HDMI input</string>
+</resources>

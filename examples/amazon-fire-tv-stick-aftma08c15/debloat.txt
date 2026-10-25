@@ -110,6 +110,9 @@ com.amazon.wifilocker
 
 # Player-only stick (comment these out to keep Alexa voice, casting and mirroring, Matter casting, or the Amazon
 # screensaver): voice search on the remote stops answering with the Alexa packages off.
+# 2026-10-26: the three DIAL and whisperplay lines are commented out again. With them off the stick never
+# shows up in a phone's YouTube cast menu; with them on (pm enable) its DIAL server answers SSDP and lists
+# YouTube and Netflix, and nothing else came back. com.amazon.cast.sink (Alexa Cast) stays off.
 com.amazon.aria
 com.amazon.alexa.datastore.app
 com.amazon.alexadirectivebrokerservice
@@ -118,8 +121,8 @@ com.ivona.tts.oem
 com.amazon.tcomm.jackson
 com.amazon.awvflingreceiver
 com.amazon.cast.sink
-com.amazon.dialservice
+# com.amazon.dialservice
 com.amazon.tv.matter
-com.amazon.whisperplay.contracts
-com.amazon.whisperplay.service.install
+# com.amazon.whisperplay.contracts
+# com.amazon.whisperplay.service.install
 com.amazon.ftv.screensaver

@@ -27,4 +27,5 @@ Wallpaper photos from Wikimedia Commons, resized to 1920×1080 for the TV:
 
 These photos keep their own licences above (CC BY-SA 4.0, CC BY 2.0, CC BY 3.0, CC BY-SA 2.0, CC BY-SA 3.0, Public domain), not the repository's MIT licence.
 
-The captions in `wallpapers/captions.txt` are the places' Arabic names.
+The captions in `wallpapers/captions.txt` are the places' Arabic names; `wallpapers/credits.txt` carries each
+photo's author and licence, which the launcher shows under the name (`wallpaper_credits`).

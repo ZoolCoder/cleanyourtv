@@ -1,0 +1,13 @@
+# wallpaper_credits: file<TAB>credit, shown under the caption. Authors and licences from CREDITS.md.
+meroe-1.jpg	صورة: Ahmed Amir · CC BY-SA 4.0
+meroe-temple.jpg	صورة: Laurent de Walick · CC BY 2.0
+meroe-2.jpg	صورة: Dbxsoul · CC BY 3.0
+jebel-barkal.jpg	صورة: LassiHU · CC BY-SA 4.0
+barkal-pyramids.jpg	صورة: Laurent de Walick · CC BY 2.0
+nile-khartoum.jpg	صورة: Hans Birger Nilsen · CC BY-SA 2.0
+khartoum-aerial.jpg	صورة: AbhiSuryawanshi · CC BY-SA 3.0
+port-sudan.jpg	صورة: Hello worldwide · CC BY-SA 4.0
+nuri-1.jpg	صورة: Laurent de Walick · CC BY 2.0
+nuri-2.jpg	صورة: Hans Birger Nilsen · CC BY-SA 2.0
+omdurman-bridge.jpg	صورة: Hind Mekki ElMardi · CC BY-SA 4.0
+suakin-mosque.jpg	صورة: Ahmed Bushra87 · Public domain

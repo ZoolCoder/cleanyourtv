@@ -59,3 +59,8 @@ fits the rules; keys from before the rule sit on its wanted list until a screens
 | `weather` | <img src="../themes/sudan/screenshot.jpg" width="320" alt="weather on a TV"> |
 | `prayer_times` | <img src="../themes/sudan/screenshot.jpg" width="320" alt="prayer_times on a TV"> |
 | `hijri_date` | <img src="../themes/sudan/screenshot.jpg" width="320" alt="hijri_date on a TV"> |
+| `ramadan_countdown` | <img src="../themes/sudan/screenshot.jpg" width="320" alt="the prayer pill of ramadan_countdown, outside Ramadan; to retake in Ramadan"> |
+| `prayer_alert` | <img src="../themes/sudan/screenshot.jpg" width="320" alt="the prayer pill of prayer_alert, more than five minutes before a prayer"> |
+| `wallpaper_credits` | <img src="switches/wallpaper_credits.jpg" width="320" alt="wallpaper_credits on a TV"> |
+| `language_choice` | <img src="switches/language_choice.jpg" width="320" alt="language_choice on a TV"> |
+| `language_tags` | <img src="switches/language_choice.jpg" width="320" alt="the Language row's list, from language_tags"> |

@@ -59,6 +59,9 @@
     <string name="advanced_effects_state">تأثيرات متقدمة: %1$s</string>
     <string name="open_on_start_label">الفتح عند التشغيل</string>
     <string name="open_on_start_state">الفتح عند التشغيل: %1$s</string>
+    <string name="language_label">اللغة</string>
+    <string name="language_state">اللغة: %1$s</string>
+    <string name="language_follow">لغة التلفاز</string>
     <string name="advanced_effects_warning">ترفع البطاقات وتكبّر الأيقونات وتنعّم انتقالات الألوان. قد تزيد استهلاك الذاكرة حسب التلفاز.</string>
     <string name="follow_theme">اتّباع السمة (إعادة ضبط الخيارات)</string>
     <string name="follow_theme_hint">استخدم تخطيط السمة الحالية وحركتها أو القيم المضمّنة. تطبيق سمة أو إعادة ضبطها يمحو خيارات التلفاز أيضًا.</string>
@@ -143,4 +146,7 @@
     <string name="prayer_pill">🕌  %1$s %2$s  ·  %3$s</string>
     <string name="countdown_hours_minutes">بعد %1$d س %2$d د</string>
     <string name="countdown_minutes">بعد %1$d د</string>
+    <string name="ramadan_pill">🌙  %1$s %2$s  ·  %3$s</string>
+    <string name="ramadan_iftar">الإفطار</string>
+    <string name="ramadan_suhoor">الإمساك</string>
 </resources>

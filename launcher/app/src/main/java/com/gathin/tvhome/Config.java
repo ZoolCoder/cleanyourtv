@@ -43,6 +43,8 @@ final class Config {
     static final String ROWS_BELOW_DOCK_KEY = "rows_below_dock";
     static final String WALLPAPER_CHOICE_KEY = "wallpaper_choice";
     static final String DOCK_OPACITY_KEY = "dock_opacity";
+    /** Launcher settings: the language chosen on the TV (language_choice); unset means the theme's locale. */
+    static final String LANGUAGE_CHOICE_KEY = "language";
     /**
      * Counts the changes made in Launcher settings. Home remembers the count it was built with and rebuilds on
      * resume when it differs, however the settings were left (see MainActivity#onResume).
@@ -254,6 +256,14 @@ final class Config {
     final boolean hijriDate;
     /** config.json prayer_times: the next-prayer pill, at latitude/longitude. */
     final boolean prayerTimes;
+    /** config.json ramadan_countdown: in Ramadan the prayer pill counts down to iftar and the end of suhoor. */
+    final boolean ramadanCountdown;
+    /** config.json prayer_alert: the prayer pill breathes for the last five minutes before a prayer. */
+    final boolean prayerAlert;
+    /** config.json wallpaper_credits: the shown picture's author and licence from wallpapers/credits.txt. */
+    final boolean wallpaperCredits;
+    /** Show the Language row in Launcher settings (config.xml, language_choice). */
+    final boolean languageChoice;
     /** The date and the line between it and the clock in the clock's full white instead of dimmed (config.xml, header_white). */
     final boolean headerWhite;
     /** The clock screensaver over Home's wallpaper instead of the black glow (config.xml, clock_wallpaper). */
@@ -281,9 +291,14 @@ final class Config {
                    boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
                    Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly,
-                   boolean weather, String latitude, String longitude, boolean hijriDate, boolean prayerTimes) {
+                   boolean weather, String latitude, String longitude, boolean hijriDate, boolean prayerTimes,
+                   boolean ramadanCountdown, boolean prayerAlert, boolean wallpaperCredits, boolean languageChoice) {
         this.hijriDate = hijriDate;
         this.prayerTimes = prayerTimes;
+        this.ramadanCountdown = ramadanCountdown;
+        this.prayerAlert = prayerAlert;
+        this.wallpaperCredits = wallpaperCredits;
+        this.languageChoice = languageChoice;
         this.weather = weather;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -518,6 +533,10 @@ final class Config {
         String longitude = res.getString(R.string.longitude).trim();
         boolean hijri = res.getBoolean(R.bool.hijri_date);
         boolean prayer = res.getBoolean(R.bool.prayer_times);
+        boolean ramadanCountdown = res.getBoolean(R.bool.ramadan_countdown);
+        boolean prayerAlert = res.getBoolean(R.bool.prayer_alert);
+        boolean wallpaperCredits = res.getBoolean(R.bool.wallpaper_credits);
+        boolean languageChoice = res.getBoolean(R.bool.language_choice);
         boolean applied = false;
 
         File dir = dir(ctx);
@@ -627,6 +646,10 @@ final class Config {
             weather = bool(json, "weather", weather);
             hijri = bool(json, "hijri_date", hijri);
             prayer = bool(json, "prayer_times", prayer);
+            ramadanCountdown = bool(json, "ramadan_countdown", ramadanCountdown);
+            prayerAlert = bool(json, "prayer_alert", prayerAlert);
+            wallpaperCredits = bool(json, "wallpaper_credits", wallpaperCredits);
+            languageChoice = bool(json, "language_choice", languageChoice);
         }
         // A top-bar app is moved there, not copied: it leaves the grid.
         for (String pkg : topBarApps) if (!hidden.contains(pkg)) hidden.add(pkg);
@@ -641,6 +664,8 @@ final class Config {
         if (chosenRows >= 0 && chosenRows <= 3) rowsBelow = chosenRows;
         animations = choices.getBoolean("animations", animations);
         advancedEffects = choices.getBoolean("advanced_effects", advancedEffects);
+        // A language chosen in Launcher settings wins over the theme's locale; "" there means the TV's own.
+        if (languageChoice) locale = choices.getString(LANGUAGE_CHOICE_KEY, locale);
         File wallpaper = dir != null ? new File(dir, WALLPAPER_NAME) : null;
         if (wallpaper != null && !(wallpaper.isFile() && wallpaper.length() > 0)) wallpaper = null;
         // A theme can also switch the wallpaper off while the file is still there.
@@ -687,7 +712,8 @@ final class Config {
                 dockBand, cinematicDots, cinematicWhiteFocus, wifiStatusColor, cinematicScrim, cinematicArt, wallpaperMoods, gamepadPassthrough,
                 consumeVolumeKeys, powerOnHome, homeLongPressHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
-                dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, weather, latitude, longitude, hijri, prayer);
+                dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, weather, latitude, longitude, hijri, prayer, ramadanCountdown, prayerAlert,
+                wallpaperCredits, languageChoice);
     }
 
     /**
@@ -731,12 +757,12 @@ final class Config {
             SharedPreferences.Editor editor = choices.edit();
             if (!"absent".equals(token)) editor.remove("columns").remove("animations")
                     .remove("advanced_effects").remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY)
-                    .remove(DOCK_OPACITY_KEY);
+                    .remove(DOCK_OPACITY_KEY).remove(LANGUAGE_CHOICE_KEY);
             editor.putString(THEME_SIGNATURE_KEY, signature).commit();
         } else if (!seen.equals(signature)) {
             choices.edit().remove("columns").remove("animations").remove("advanced_effects")
                     .remove(ROWS_BELOW_DOCK_KEY).remove(WALLPAPER_CHOICE_KEY).remove(DOCK_OPACITY_KEY)
-                    .putString(THEME_SIGNATURE_KEY, signature).commit();
+                    .remove(LANGUAGE_CHOICE_KEY).putString(THEME_SIGNATURE_KEY, signature).commit();
         }
     }
 

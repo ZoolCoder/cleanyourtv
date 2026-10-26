@@ -55,6 +55,8 @@ final class WallpaperPlayer {
     /** wallpaper_captions: the shown picture's name from wallpapers/captions.txt; null when off or there are none. */
     private final TextView caption;
     private final Map<String, String> names;
+    /** wallpaper_credits: the shown picture's author and licence from wallpapers/credits.txt, under its name. */
+    private final Map<String, String> credits;
     /** wallpaper_moods: the collection's groups by time of day; empty rotates through all of it. */
     private final Map<String, Set<String>> moods;
     /** config.xml latitude and longitude for the sun's times, and today's {sunrise, sunset} once worked out. */
@@ -90,7 +92,10 @@ final class WallpaperPlayer {
         image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         names = config.wallpaperCaptions && config.wallpaperEnabled && !files.isEmpty()
                 ? WallpaperCaptions.read(files.get(0).getParentFile()) : Collections.emptyMap();
-        caption = names.isEmpty() ? null : makeCaption(context, root);
+        credits = config.wallpaperCredits && config.wallpaperEnabled && !files.isEmpty()
+                ? WallpaperCaptions.read(files.get(0).getParentFile(), WallpaperCaptions.CREDITS_FILE_NAME)
+                : Collections.emptyMap();
+        caption = names.isEmpty() && credits.isEmpty() ? null : makeCaption(context, root);
         if (config.wallpaperEnabled && !files.isEmpty()) {
             root.addView(image, 0, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -213,8 +218,9 @@ final class WallpaperPlayer {
         text.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
         text.setTextColor(0xD9FFFFFF);
         text.setShadowLayer(6 * dp, 0, dp, 0xCC000000);
-        text.setSingleLine(true);
+        text.setMaxLines(2);
         text.setEllipsize(TextUtils.TruncateAt.END);
+        text.setGravity(Gravity.END);
         text.setMaxWidth(Math.round(520 * dp));
         text.setFocusable(false);
         text.setAlpha(0f);
@@ -231,10 +237,10 @@ final class WallpaperPlayer {
         return text;
     }
 
-    /** The displayed picture's name, faded across a change; a picture without a name hides the caption. */
+    /** The displayed picture's name and credit, faded across a change; a picture without either hides the caption. */
     private void showCaption(boolean fade) {
         if (caption == null) return;
-        String name = names.get(displayed);
+        String name = WallpaperCaptions.caption(names.get(displayed), credits.get(displayed));
         caption.animate().cancel();
         if (name == null) {
             caption.setAlpha(0f);

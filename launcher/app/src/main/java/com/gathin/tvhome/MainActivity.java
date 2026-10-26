@@ -760,7 +760,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             weather = new Weather(findViewById(R.id.btnWeather), cfg.latitude, cfg.longitude);
         }
         if (cfg.prayerTimes && !cfg.latitude.isEmpty() && !cfg.longitude.isEmpty()) {
-            prayerPill = new PrayerPill(findViewById(R.id.btnPrayer), cfg.latitude, cfg.longitude);
+            prayerPill = new PrayerPill(findViewById(R.id.btnPrayer), cfg.latitude, cfg.longitude,
+                    cfg.ramadanCountdown, cfg.prayerAlert);
         }
         if (weather != null || prayerPill != null) {
             // The pills take the greeting's line, flush with the buttons' edge; the line grows to the pill height.

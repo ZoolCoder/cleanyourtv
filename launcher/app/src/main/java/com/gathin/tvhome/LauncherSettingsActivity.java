@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /** Remote-friendly settings owned by the launcher; system settings stay one row away. */
 public final class LauncherSettingsActivity extends Activity {
@@ -37,6 +38,7 @@ public final class LauncherSettingsActivity extends Activity {
     private TextView animationsChoice;
     private TextView advancedChoice;
     private TextView followThemeChoice;
+    private TextView languageChoice;
     private TextView openOnStartChoice;
     private int columns;
     private int rowsBelowDock;
@@ -137,13 +139,24 @@ public final class LauncherSettingsActivity extends Activity {
             openOnStartChoice.setVisibility(View.VISIBLE);
             openOnStartChoice.setOnClickListener(v -> showOpenOnStartPicker());
         }
+        languageChoice = findViewById(R.id.languageChoice);
+        if (config.languageChoice) {
+            languageChoice.setVisibility(View.VISIBLE);
+            languageChoice.setOnClickListener(v -> showLanguagePicker());
+        }
         followThemeChoice = findViewById(R.id.followThemeChoice);
         followThemeChoice.setOnClickListener(v -> {
             if (!hasOnTvChoices()) return;
+            boolean language = choices.contains(Config.LANGUAGE_CHOICE_KEY);
             choices.edit().remove("columns").remove(Config.ROWS_BELOW_DOCK_KEY).remove("animations")
                     .remove("advanced_effects").remove(Config.WALLPAPER_CHOICE_KEY)
-                    .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).commit();
+                    .remove(Config.DOCK_OPACITY_KEY).remove(OpenOnStart.KEY).remove(Config.LANGUAGE_CHOICE_KEY).commit();
             Config current = Config.load(this);
+            if (language) {
+                changed();
+                recreate();
+                return;
+            }
             columns = current.columns;
             rowsBelowDock = current.rowsBelowDock;
             dockOpacity = current.dockOpacity;
@@ -300,6 +313,9 @@ public final class LauncherSettingsActivity extends Activity {
                         : wallpaperCurrent != null ? wallpaperCurrent
                         : getString(R.string.wallpaper_theme_default)));
         openOnStartChoice.setText(getString(R.string.open_on_start_state, openOnStartLabel()));
+        if (languageChoice.getVisibility() == View.VISIBLE) {
+            languageChoice.setText(getString(R.string.language_state, languageLabel(Config.load(this).locale)));
+        }
         followThemeChoice.setSelected(!hasOnTvChoices());
     }
 
@@ -307,7 +323,43 @@ public final class LauncherSettingsActivity extends Activity {
         return choices.contains("columns") || choices.contains(Config.ROWS_BELOW_DOCK_KEY)
                 || choices.contains("animations") || choices.contains("advanced_effects")
                 || choices.contains(Config.WALLPAPER_CHOICE_KEY) || choices.contains(Config.DOCK_OPACITY_KEY)
-                || choices.contains(OpenOnStart.KEY);
+                || choices.contains(OpenOnStart.KEY) || choices.contains(Config.LANGUAGE_CHOICE_KEY);
+    }
+
+    // ---- Language (config.xml language_choice) ----------------------------------------------------------
+
+    /** The TV's own language first, then config.xml's language_tags, each in its own name. */
+    private void showLanguagePicker() {
+        String[] tags = getResources().getStringArray(R.array.language_tags);
+        String current = Config.load(this).locale;
+        String[] labels = new String[tags.length + 1];
+        labels[0] = getString(R.string.language_follow);
+        int checked = current.isEmpty() ? 0 : -1;
+        for (int i = 0; i < tags.length; i++) {
+            labels[i + 1] = languageLabel(tags[i]);
+            if (tags[i].equals(current)) checked = i + 1;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.language_label)
+                .setSingleChoiceItems(labels, checked, (dialog, which) -> {
+                    dialog.dismiss();
+                    String tag = which == 0 ? "" : tags[which - 1];
+                    if (tag.equals(current)) return;
+                    choices.edit().putString(Config.LANGUAGE_CHOICE_KEY, tag).commit();
+                    changed();
+                    // The settings come back in the new language; Home follows when it next resumes.
+                    recreate();
+                })
+                .show();
+    }
+
+    /** A language's own name for its tag ("العربية", "Deutsch"), or the TV's-language label for "". */
+    private String languageLabel(String tag) {
+        if (tag.isEmpty()) return getString(R.string.language_follow);
+        Locale locale = Locale.forLanguageTag(tag);
+        String name = locale.getDisplayName(locale);
+        if (name.isEmpty()) return tag;
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     private void open(Intent intent) {

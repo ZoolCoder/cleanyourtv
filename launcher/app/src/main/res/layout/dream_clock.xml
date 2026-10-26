@@ -61,5 +61,28 @@
             android:fontFamily="@string/font_regular"
             android:letterSpacing="0.14"
             android:textAllCaps="true" />
+
+        <TextView
+            android:id="@+id/dreamHijri"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="6dp"
+            android:textColor="#73FFFFFF"
+            android:textSize="16sp"
+            android:fontFamily="@string/font_regular"
+            android:letterSpacing="0.08"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/dreamPrayer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_marginTop="6dp"
+            android:textColor="#73FFFFFF"
+            android:textSize="16sp"
+            android:fontFamily="@string/font_regular"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

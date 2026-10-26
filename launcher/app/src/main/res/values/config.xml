@@ -237,6 +237,51 @@
          for latitude/longitude by the Egyptian General Authority of Survey's method (Fajr 19.5°, Isha 17.5°, Asr at
          shadow length 1) in the TV's time zone. Also "prayer_times": true in config.json. -->
     <bool name="prayer_times">false</bool>
+    <!-- In Ramadan (the ninth Hijri month, from java.time) the prayer pill counts down to iftar (Maghrib) by day and
+         to the end of suhoor (Fajr) by night instead of the next prayer. Also "ramadan_countdown": true in config.json. -->
+    <bool name="ramadan_countdown">false</bool>
+    <!-- The prayer pill breathes (a slow alpha pulse) for the last five minutes before a prayer or an iftar. No sound:
+         an adhan app does that. Also "prayer_alert": true in config.json. -->
+    <bool name="prayer_alert">false</bool>
+    <!-- Under the picture's caption, its author and licence from wallpapers/credits.txt ("001.jpg<TAB>Photo: Name,
+         CC BY-SA 4.0", one per line), for collections whose licence asks for attribution where the picture shows.
+         Also "wallpaper_credits": true in config.json. -->
+    <bool name="wallpaper_credits">false</bool>
+    <!-- A Language row in Launcher settings: the TV's own language or one of the launcher's, kept on the TV and
+         winning over the theme's locale until Follow theme. Off by default; a theme can set "language_choice": true. -->
+    <bool name="language_choice">false</bool>
+    <!-- The languages the Language row offers, as BCP-47 tags: the launcher's translations plus Arabic with Western digits. -->
+    <string-array name="language_tags" translatable="false">
+        <item>ar</item>
+        <item>ar-EG-u-nu-latn</item>
+        <item>bn</item>
+        <item>ca</item>
+        <item>cs</item>
+        <item>da</item>
+        <item>de</item>
+        <item>en</item>
+        <item>es</item>
+        <item>fi</item>
+        <item>fr</item>
+        <item>id</item>
+        <item>it</item>
+        <item>he</item>
+        <item>ko</item>
+        <item>nb</item>
+        <item>nl</item>
+        <item>pl</item>
+        <item>pt</item>
+        <item>pt-PT</item>
+        <item>ru</item>
+        <item>sr-Latn</item>
+        <item>th</item>
+        <item>tr</item>
+        <item>uk</item>
+        <item>uz</item>
+        <item>vi</item>
+        <item>zh-CN</item>
+        <item>zh-TW</item>
+    </string-array>
     <!-- Show the Solar Hijri (Shamsi) date used in Iran and Afghanistan, e.g. "27 Mehr 1405", above the
          Gregorian date. -->
     <bool name="shamsi_date">false</bool>

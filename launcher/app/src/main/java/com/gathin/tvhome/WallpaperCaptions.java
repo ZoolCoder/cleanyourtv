@@ -15,6 +15,8 @@ import java.util.Map;
  */
 final class WallpaperCaptions {
     static final String FILE_NAME = "captions.txt";
+    /** wallpaper_credits: the same format, with the picture's author and licence. */
+    static final String CREDITS_FILE_NAME = "credits.txt";
     static final int MAX_LENGTH = 80;
 
     private WallpaperCaptions() { }
@@ -36,7 +38,17 @@ final class WallpaperCaptions {
 
     /** The names in {@code folder}/captions.txt, or none when the file is missing or unreadable. */
     static Map<String, String> read(File folder) {
-        File file = folder == null ? null : new File(folder, FILE_NAME);
+        return read(folder, FILE_NAME);
+    }
+
+    /** The caption's text: the name, the credit in a second line, either alone, or null for none. */
+    static String caption(String name, String credit) {
+        if (name == null) return credit;
+        return credit == null ? name : name + "\n" + credit;
+    }
+
+    static Map<String, String> read(File folder, String fileName) {
+        File file = folder == null ? null : new File(folder, fileName);
         if (file == null || !file.isFile() || file.length() > 256 * 1024) return Collections.emptyMap();
         try {
             return parse(Files.readAllLines(file.toPath(), StandardCharsets.UTF_8));

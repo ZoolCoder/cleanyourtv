@@ -1,5 +1,6 @@
 package com.gathin.tvhome;
 
+import android.content.Context;
 import android.service.dreams.DreamService;
 
 /**
@@ -9,6 +10,12 @@ import android.service.dreams.DreamService;
 public class ClockDream extends DreamService {
 
     private ClockScene scene;
+
+    /** The theme's locale (config.json locale, or the Language row), as the activities do. */
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(LauncherLocale.wrap(base));
+    }
 
     @Override
     public void onAttachedToWindow() {

@@ -2,8 +2,12 @@ package com.gathin.tvhome;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -45,5 +49,29 @@ public class WallpaperCaptionsTest {
     @Test
     public void missingFolderHasNoNames() {
         assertTrue(WallpaperCaptions.read(null).isEmpty());
+        assertTrue(WallpaperCaptions.read(null, WallpaperCaptions.CREDITS_FILE_NAME).isEmpty());
+    }
+
+    @Test
+    public void creditsComeFromTheirOwnFile() throws Exception {
+        File folder = Files.createTempDirectory("credits").toFile();
+        try {
+            Files.write(new File(folder, WallpaperCaptions.CREDITS_FILE_NAME).toPath(),
+                    Arrays.asList("# authors", "007.jpg\tPhoto: Ada, CC BY 4.0"), StandardCharsets.UTF_8);
+            Map<String, String> credits = WallpaperCaptions.read(folder, WallpaperCaptions.CREDITS_FILE_NAME);
+            assertEquals("Photo: Ada, CC BY 4.0", credits.get("007.jpg"));
+            assertTrue(WallpaperCaptions.read(folder).isEmpty());
+        } finally {
+            for (File f : folder.listFiles()) f.delete();
+            folder.delete();
+        }
+    }
+
+    @Test
+    public void captionTextJoinsNameAndCredit() {
+        assertEquals("Dusk\nPhoto: Ada", WallpaperCaptions.caption("Dusk", "Photo: Ada"));
+        assertEquals("Dusk", WallpaperCaptions.caption("Dusk", null));
+        assertEquals("Photo: Ada", WallpaperCaptions.caption(null, "Photo: Ada"));
+        assertNull(WallpaperCaptions.caption(null, null));
     }
 }

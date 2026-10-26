@@ -1,0 +1,125 @@
+# Amazon Fire TV Stick AFTMA08C15 (sold as Fire TV Stick 4K Plus; codename karat), Fire OS 8.1.8.5 (RS8185.3891N),
+# Android 11 (SDK 30), Germany. Same karat board and build as amazon-fire-tv-stick-4k-2023/: the 57 packages of that
+# list first, checked here one by one with `dumpsys package`, then 13 more for a stick used only as a player.
+#
+# FIRE OS: DEBLOAT ONLY for Home. com.amazon.tv.launcher stays enabled (a disabled launcher is a stick that boots to
+# nothing). launcher/ still works on it as a Home *redirect*: install it, push a theme with
+# "stock_home_redirect": "com.amazon.tv.launcher", and its accessibility service brings Home back to it whenever
+# the Amazon launcher comes to the front. See the end of this header.
+#
+# Apply:   TV_HOST=<stick ip> tools/disable.sh examples/amazon-fire-tv-stick-aftma08c15/debloat.txt
+# Undo:    TV_HOST=<stick ip> tools/restore.sh examples/amazon-fire-tv-stick-aftma08c15/debloat.txt com.amazon.tv.launcher
+# Everything is DISABLED for user 0, never uninstalled. Comment out any line you want to keep.
+# ADB on Fire OS 8: Settings > My Fire TV > About > press select 7 times on the device name, back > Developer Options >
+# ADB Debugging. Port 5555, accept the prompt on the TV (ro.adb.secure=1).
+#
+# Applied 2026-10-25 in batches with a screenshot after each, restarted twice since: all 70 stay disabled, Home, Prime
+# Video, Netflix, YouTube and an IPTV player open, Wi-Fi validates, firmware updates kept (device.software.ota*,
+# tv.forcedotaupdater.v2). After a restart with the 70 off: CPU idle 372% (of 400) against 238% before, swap 1 MB
+# against 617 MB, MemAvailable 621 MB against about 400 MB.
+# Protected on this build (pm disable-user: "Cannot disable a protected package"), the same set as the 4K 2023 list:
+# com.amazon.device.metrics, com.amazon.device.logmanager, com.amazon.device.crashmanager, com.amazon.diode,
+# com.fireos.usagestats.proxy, com.amazon.ftvads.deeplinking, com.amazon.tv.csapp; also com.amazon.tcomm,
+# com.amazon.tcomm.client and com.amazon.whisperlink.core.android. com.amazon.vizzini (the Alexa core) is not
+# protected but Fire OS turns it back on at every start (verified twice), so it is not listed.
+#
+# Kept on purpose: com.amazon.tv.launcher, com.amazon.firehomestarter, com.amazon.tv.settings.*, com.amazon.venezia
+# and com.amazon.tigris (Appstore), com.amazon.tv.ime, remote/Bluetooth services, OTA updates, Prime Video
+# (com.amazon.firebat, com.amazon.tv.support), Amazon sign-in for apps (com.amazon.tv.ottssocompanionapp,
+# com.amazon.imp: load-bearing, see the 4K 2023 list), profiles, com.amazon.tv.oobe (factory reset), accessibility
+# (com.amazon.logan), notification center, com.amazon.tv.devicecontrolsettings (Equipment Control: the remote's
+# TV power and volume over HDMI-CEC and infrared).
+#
+# Equipment Control (TV power/volume on the remote) after the debloat: if Settings > Equipment Control says it is
+# unavailable or "No emitters", restart once with every package enabled (tools/restore.sh), let the remote's emitter
+# record rebuild, then disable the list again. Done here on 2026-10-25: with the 70 off again it stays available.
+# No single package of the list was found to be the cause.
+#
+# Remote app buttons (Prime Video, Netflix, Disney+, Hulu; keycodes 295 to 299 on this remote) are launched by Fire
+# OS's KeyMapManager in system_server before any app sees the key. To give them to the launcher's `app_keys`, set
+# `settings put global com.amazon.tv.oobe.RESTRICT_REMOTE_BUTTONS 1` (0 puts Amazon's mapping back). `input
+# keyevent` never reaches that path, so test the remap with the physical remote only.
+#
+# What the list cannot remove: the hero banner and the sponsored row come from the launcher's own feed. With
+# launcher/ as the Home redirect you never see them; otherwise point the stick's DNS at a blocker. Private DNS
+# (dns.adguard-dns.com) on this build stopped validating after every restart and was reverted.
+# Leave the animation scales at 1.0 on this build (see the 4K 2023 list: at 0.5 the side menu opens nothing).
+
+# Telemetry, metrics, ads
+com.amazon.client.metrics.api
+com.amazon.neo.minerva
+com.amazon.neo.minerva.logcat
+com.amazon.wirelessmetrics.service
+com.amazon.perfcollection
+com.amazon.perfc
+com.amazon.device.telemetry.emitter
+com.amazon.dp.logger
+com.amazon.hybridadidservice
+com.amazon.privacypassservice
+com.amazon.tv.developer.dataservice
+com.amazon.tv.acr
+com.amazon.ftvspatial
+com.amazon.aca
+com.amazon.aiondec
+com.amazon.ceviche
+com.amazon.kso.blackbird
+com.amazon.tahoe
+
+# Home feed, shopping, promotions, bundled apps
+com.amazon.media.recommendations
+com.amazon.sneakpeek
+com.amazon.shoptv.client
+com.amazon.shoptv.firetv.client
+com.amazon.systemnotices
+com.amazon.uxnotification
+com.amazon.tv.earlyaccess
+com.amazon.tv.easyupgrade
+com.amazon.tv.releasenotes
+com.amazon.storm.lightning.tutorial
+com.amazon.tmm.tutorial
+com.amazon.tv.livetv
+com.amazon.tv.ftvambient
+com.amazon.tv.website_launcher
+com.amazon.cloud9
+com.amazon.minitv.android.app
+com.amazon.gamehub
+com.amazon.bueller.music
+com.amazon.bueller.photos
+com.amazon.spotify.mediabrowserservice
+com.amazon.franktvinput
+com.amazon.providers.contentsupport
+com.amazon.ods.kindleconnect
+com.amazon.hedwig
+
+# Alexa extras: media players, alerts, smart home, calling, skills
+com.amazon.alexa.externalmediaplayer.fireos
+com.amazon.alexamediaplayer.runtime.ftv
+com.amazon.audiohome
+com.amazon.tv.alexaalerts
+com.amazon.tv.alexanotifications
+com.amazon.firetv.androidskillconnectioncapability
+com.amazon.smarthomemapviewapp
+com.amazon.livedeviceservice
+com.amazon.rtcsessioncontroller
+com.amazon.tv.mattercohost
+com.amazon.tv.ffsprovisioneeclient
+com.amazon.whad
+com.amazon.whasettings
+com.amazon.whisperjoin.middleware.v2.np
+com.amazon.wifilocker
+
+# Player-only stick (comment these out to keep Alexa voice, casting and mirroring, Matter casting, or the Amazon
+# screensaver): voice search on the remote stops answering with the Alexa packages off.
+com.amazon.aria
+com.amazon.alexa.datastore.app
+com.amazon.alexadirectivebrokerservice
+com.ivona.orchestrator
+com.ivona.tts.oem
+com.amazon.tcomm.jackson
+com.amazon.awvflingreceiver
+com.amazon.cast.sink
+com.amazon.dialservice
+com.amazon.tv.matter
+com.amazon.whisperplay.contracts
+com.amazon.whisperplay.service.install
+com.amazon.ftv.screensaver

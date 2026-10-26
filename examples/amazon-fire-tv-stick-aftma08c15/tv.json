@@ -1,0 +1,6 @@
+{
+  "tv": "Amazon Fire TV Stick AFTMA08C15 (Fire TV Stick 4K Plus, karat), Germany",
+  "os": "Fire OS 8.1.8.5 / Android 11",
+  "brand": "Amazon Fire TV",
+  "notes": "The 4K 2023 karat list (57) re-checked on this build plus 13 more for a player-only stick: Alexa voice, casting and mirroring, Matter casting, Amazon screensaver (keep any you use). Launcher as Home redirect over the stock launcher, which stays enabled; Equipment Control rebuilt by one all-enabled start; app buttons handed to the launcher with RESTRICT_REMOTE_BUTTONS; Private DNS reverted; debloat only. The physical Home key and the earlier session: [the device notes](../docs/devices/amazon-fire-tv-aftma08c15.md)"
+}

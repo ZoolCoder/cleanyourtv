@@ -23,6 +23,11 @@
   #msg { margin-top: 16px; min-height: 1.4em; font-weight: 600; }
   #msg.ok { color: #2bb673; } #msg.bad { color: #f2c94c; }
   small { color: #9db8a8; }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .quick button { width: auto; margin: 0; padding: 10px 14px; border: 2px solid #20382a; border-radius: 999px;
+                  background: #16281d; color: #fff; font-weight: 500; }
+  .quick button:active { border-color: #2bb673; }
+  #pinok { color: #2bb673; }
 </style>
 </head>
 <body>
@@ -35,8 +40,19 @@
     <label for="text">Note &middot; الملاحظة</label>
     <textarea id="text" name="text" maxlength="280" required dir="auto"></textarea>
     <small id="count">0 / 280</small>
+    <div class="quick" id="quick">
+      <button type="button">العشاء جاهز</button>
+      <button type="button">تعالوا لو سمحتم</button>
+      <button type="button">اتصلوا بي</button>
+      <button type="button">وقت النوم</button>
+      <button type="button">اخفضوا الصوت</button>
+      <button type="button">Dinner is ready</button>
+      <button type="button">Please come here</button>
+      <button type="button">Call me</button>
+    </div>
     <label for="pin">PIN shown on the TV &middot; الرمز الظاهر على التلفزيون</label>
     <input id="pin" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required>
+    <small id="pinok" hidden>Filled in from the TV's code. &middot; كُتب من رمز التلفزيون.</small>
     <button id="go" type="submit">Send &middot; إرسال</button>
   </form>
   <div id="msg" role="status"></div>
@@ -45,7 +61,8 @@
 (function () {
   var form = document.getElementById("f"), msg = document.getElementById("msg"),
       go = document.getElementById("go"), text = document.getElementById("text"),
-      count = document.getElementById("count"), name = document.getElementById("name");
+      count = document.getElementById("count"), name = document.getElementById("name"),
+      pin = document.getElementById("pin"), pinok = document.getElementById("pinok");
   var answers = {
     200: ["ok", "Sent. · تم الإرسال."],
     400: ["bad", "Check the name and note (the note: 280 characters, 4 lines). · تحقق من الاسم والملاحظة."],
@@ -59,15 +76,37 @@
     // Fixed strings only; nothing typed by the user is ever put on the page.
     msg.textContent = a[1];
   }
-  try { name.value = localStorage.getItem("fn-name") || ""; } catch (e) {}
-  text.addEventListener("input", function () { count.textContent = text.value.length + " / 280"; });
+  function counted() { count.textContent = text.value.length + " / 280"; }
+  function remember(key, value) {
+    try { if (value) localStorage.setItem(key, value); else localStorage.removeItem(key); } catch (e) {}
+  }
+  try { name.value = localStorage.getItem("fn-name") || ""; pin.value = localStorage.getItem("fn-pin") || ""; } catch (e) {}
+  // The TV's QR code carries the PIN after the #, which never leaves the phone. Take it, then drop it from the address bar.
+  var fromCode = /^#(\d{6})$/.exec(location.hash);
+  if (fromCode) {
+    pin.value = fromCode[1];
+    remember("fn-pin", pin.value);
+    history.replaceState(null, "", location.pathname);
+  }
+  pinok.hidden = !/^\d{6}$/.test(pin.value);
+  pin.addEventListener("input", function () { pinok.hidden = true; });
+  text.addEventListener("input", counted);
+  Array.prototype.forEach.call(document.querySelectorAll("#quick button"), function (b) {
+    b.addEventListener("click", function () { text.value = b.textContent; counted(); text.focus(); });
+  });
+  (name.value ? text : name).focus();
   form.addEventListener("submit", function (ev) {
     ev.preventDefault();
     go.disabled = true;
     try { localStorage.setItem("fn-name", name.value); } catch (e) {}
     var body = new URLSearchParams(new FormData(form)).toString();
     fetch("/note", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body })
-      .then(function (r) { show(r.status); if (r.status === 200) { text.value = ""; count.textContent = "0 / 280"; } })
+      .then(function (r) {
+        show(r.status);
+        if (r.status === 200) { text.value = ""; counted(); remember("fn-pin", pin.value); }
+        // A wrong PIN means the TV made a new one: forget the old one, so the next scan or typing replaces it.
+        if (r.status === 403) { remember("fn-pin", ""); pinok.hidden = true; pin.focus(); }
+      })
       .catch(function () { show(0); })
       .then(function () { go.disabled = false; });
   });

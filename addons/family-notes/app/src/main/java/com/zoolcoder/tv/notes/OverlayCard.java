@@ -1,7 +1,6 @@
 package com.zoolcoder.tv.notes;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.Typeface;
 import android.os.Handler;
@@ -29,7 +28,7 @@ final class OverlayCard {
     private final Runnable advance = this::advance;
     private final NoteQueue queue = new NoteQueue();
     private LinearLayout card;
-    private TextView from, time, body;
+    private TextView avatar, from, time, body;
     private boolean attached;
     private int seconds;
 
@@ -63,6 +62,7 @@ final class OverlayCard {
         }
         if (card == null) build();
         from.setText(note.name);
+        avatar.setText(note.name.isEmpty() ? "" : new String(Character.toChars(note.name.codePointAt(0))));
         time.setText(DateUtils.formatDateTime(context, note.time, DateUtils.FORMAT_SHOW_TIME));
         body.setText(note.text);
         try {
@@ -77,44 +77,55 @@ final class OverlayCard {
         main.postDelayed(advance, seconds * 1000L);
     }
 
-    /** Opaque card, 1 dp edge, 4 dp accent stripe on the leading side, clipped to the rounded corners. */
+    /** Dark translucent card, 4 dp accent bar on the leading side, clipped to the rounded corners. */
     private void build() {
         card = new LinearLayout(context);
-        card.setPadding(Look.dp(context, 1), Look.dp(context, 1), Look.dp(context, 1), Look.dp(context, 1));
-        Look.panel(context, card, Look.BACKGROUND, 14);
+        Look.panel(context, card, 0xE6101C16, 18);
         card.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
         card.setClipToOutline(true);
 
-        View stripe = new View(context);
-        stripe.setBackgroundColor(Look.FOCUS);
-        card.addView(stripe, new LinearLayout.LayoutParams(Look.dp(context, 4), LinearLayout.LayoutParams.MATCH_PARENT));
+        View bar = new View(context);
+        bar.setBackgroundColor(Look.ACCENT);
+        card.addView(bar, new LinearLayout.LayoutParams(Look.dp(context, 4), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout content = new LinearLayout(context);
-        content.setOrientation(LinearLayout.VERTICAL);
+        content.setGravity(Gravity.TOP);
         content.setPadding(Look.dp(context, 16), Look.dp(context, 14), Look.dp(context, 16), Look.dp(context, 16));
         card.addView(content, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
+        avatar = text(15, Look.TEXT);
+        avatar.setTypeface(Typeface.DEFAULT_BOLD);
+        avatar.setGravity(Gravity.CENTER);
+        // directed() aligns text to its start, which would override the centred gravity.
+        avatar.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        Look.panel(context, avatar, Look.PILL, 16);
+        content.addView(avatar, new LinearLayout.LayoutParams(Look.dp(context, 32), Look.dp(context, 32)));
+
+        LinearLayout column = new LinearLayout(context);
+        column.setOrientation(LinearLayout.VERTICAL);
+        column.setPaddingRelative(Look.dp(context, 12), 0, 0, 0);
+        content.addView(column, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+
         LinearLayout top = new LinearLayout(context);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        from = text(20, Color.WHITE);
-        from.setTypeface(Typeface.DEFAULT_BOLD);
+        from = Look.medium(text(19, Look.TEXT));
         from.setSingleLine(true);
         from.setEllipsize(TextUtils.TruncateAt.END);
-        time = text(16, Look.MUTED);
+        time = text(14, Look.TEXT_3);
         time.setPaddingRelative(Look.dp(context, 8), 0, 0, 0);
         top.addView(from, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         top.addView(time);
-        body = text(19, Color.WHITE);
-        body.setPadding(0, Look.dp(context, 6), 0, 0);
+        body = text(18, Look.TEXT);
+        body.setPadding(0, Look.dp(context, 4), 0, 0);
         body.setMaxLines(Sanitizer.MAX_LINES + 2);
         body.setEllipsize(TextUtils.TruncateAt.END);
-        content.addView(top);
-        content.addView(body);
+        column.addView(top);
+        column.addView(body);
     }
 
     private WindowManager.LayoutParams params() {
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                Look.dp(context, 320), WindowManager.LayoutParams.WRAP_CONTENT,
+                Look.dp(context, 360), WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 PixelFormat.TRANSLUCENT);

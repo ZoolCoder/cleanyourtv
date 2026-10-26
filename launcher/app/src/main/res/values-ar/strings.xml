@@ -102,6 +102,13 @@
     <string name="greeting_with_name">%1$s، %2$s</string>
     <string name="last_opened">آخر فتح %1$s</string>
     <string name="good_forenoon">صباح الخير</string>
+    <string name="hint_columns">عدد التطبيقات التي يعرضها كل صف في الشاشة الرئيسية</string>
+    <string name="hint_rows_below_dock">عدد صفوف التطبيقات الظاهرة تحت الشريط</string>
+    <string name="hint_dock_opacity">مدى وضوح الشريط خلف التطبيقات</string>
+    <string name="hint_wallpaper">الصورة خلف الشاشة الرئيسية</string>
+    <string name="hint_animations">الحركة عند التنقل بين التطبيقات</string>
+    <string name="hint_open_on_start">التطبيق الذي يفتح عند تشغيل التلفاز</string>
+    <string name="hint_language">لغة واجهة المشغّل</string>
     <string name="rows_below_dock_label">صفوف تحت الشريط</string>
     <string name="wallpaper_label">الخلفية</string>
     <string name="wallpaper_state">الخلفية: %1$s</string>

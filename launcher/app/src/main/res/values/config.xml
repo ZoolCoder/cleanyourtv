@@ -250,6 +250,10 @@
     <!-- A Language row in Launcher settings: the TV's own language or one of the launcher's, kept on the TV and
          winning over the theme's locale until Follow theme. Off by default; a theme can set "language_choice": true. -->
     <bool name="language_choice">false</bool>
+    <!-- In Launcher settings: a short explanation under each setting's title, a check mark inside the selected
+         option so it does not rest on colour alone, and a white outline for the focused one. Off by default; a
+         theme can set "settings_hints": true. -->
+    <bool name="settings_hints">false</bool>
     <!-- The languages the Language row offers, as BCP-47 tags: the launcher's translations plus Arabic with Western digits. -->
     <string-array name="language_tags" translatable="false">
         <item>ar</item>

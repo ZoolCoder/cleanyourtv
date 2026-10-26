@@ -52,6 +52,14 @@
     <string name="columns_label">Apps per row</string>
     <string name="rows_below_dock_label">Rows below dock</string>
     <string name="dock_opacity_label">Dock band opacity</string>
+    <!-- Hints under the settings (config.xml settings_hints). -->
+    <string name="hint_columns">How many apps each row on Home shows</string>
+    <string name="hint_rows_below_dock">How many rows of apps stay visible under the dock</string>
+    <string name="hint_dock_opacity">How solid the band behind the dock is</string>
+    <string name="hint_wallpaper">The picture behind Home</string>
+    <string name="hint_animations">Motion when you move between apps</string>
+    <string name="hint_open_on_start">The app that opens when the TV starts</string>
+    <string name="hint_language">The language the launcher uses</string>
     <string name="wallpaper_label">Wallpaper</string>
     <string name="wallpaper_state">Wallpaper: %1$s</string>
     <string name="wallpaper_none">None</string>

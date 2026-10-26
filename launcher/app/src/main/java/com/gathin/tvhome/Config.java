@@ -264,6 +264,8 @@ final class Config {
     final boolean wallpaperCredits;
     /** Show the Language row in Launcher settings (config.xml, language_choice). */
     final boolean languageChoice;
+    /** Hints, check marks and a white focus outline in Launcher settings (config.xml, settings_hints). */
+    final boolean settingsHints;
     /** The date and the line between it and the clock in the clock's full white instead of dimmed (config.xml, header_white). */
     final boolean headerWhite;
     /** The clock screensaver over Home's wallpaper instead of the black glow (config.xml, clock_wallpaper). */
@@ -292,13 +294,14 @@ final class Config {
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
                    Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly,
                    boolean weather, String latitude, String longitude, boolean hijriDate, boolean prayerTimes,
-                   boolean ramadanCountdown, boolean prayerAlert, boolean wallpaperCredits, boolean languageChoice) {
+                   boolean ramadanCountdown, boolean prayerAlert, boolean wallpaperCredits, boolean languageChoice, boolean settingsHints) {
         this.hijriDate = hijriDate;
         this.prayerTimes = prayerTimes;
         this.ramadanCountdown = ramadanCountdown;
         this.prayerAlert = prayerAlert;
         this.wallpaperCredits = wallpaperCredits;
         this.languageChoice = languageChoice;
+        this.settingsHints = settingsHints;
         this.weather = weather;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -537,6 +540,7 @@ final class Config {
         boolean prayerAlert = res.getBoolean(R.bool.prayer_alert);
         boolean wallpaperCredits = res.getBoolean(R.bool.wallpaper_credits);
         boolean languageChoice = res.getBoolean(R.bool.language_choice);
+        boolean settingsHints = res.getBoolean(R.bool.settings_hints);
         boolean applied = false;
 
         File dir = dir(ctx);
@@ -650,6 +654,7 @@ final class Config {
             prayerAlert = bool(json, "prayer_alert", prayerAlert);
             wallpaperCredits = bool(json, "wallpaper_credits", wallpaperCredits);
             languageChoice = bool(json, "language_choice", languageChoice);
+            settingsHints = bool(json, "settings_hints", settingsHints);
         }
         // A top-bar app is moved there, not copied: it leaves the grid.
         for (String pkg : topBarApps) if (!hidden.contains(pkg)) hidden.add(pkg);
@@ -713,7 +718,7 @@ final class Config {
                 consumeVolumeKeys, powerOnHome, homeLongPressHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, weather, latitude, longitude, hijri, prayer, ramadanCountdown, prayerAlert,
-                wallpaperCredits, languageChoice);
+                wallpaperCredits, languageChoice, settingsHints);
     }
 
     /**

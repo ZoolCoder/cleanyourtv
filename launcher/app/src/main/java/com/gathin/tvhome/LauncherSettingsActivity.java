@@ -45,6 +45,8 @@ public final class LauncherSettingsActivity extends Activity {
     private int dockOpacity;
     private boolean animations;
     private boolean advancedEffects;
+    private boolean settingsHints;
+    private static final String CHECK = "\u2713 ";
 
 
     @Override
@@ -59,6 +61,7 @@ public final class LauncherSettingsActivity extends Activity {
             setResult(RESULT_OK, new Intent().putExtra(EXTRA_REORDER, true));
             finish();
         });
+        settingsHints = config.settingsHints;
         columns = config.columns;
         rowsBelowDock = config.rowsBelowDock;
         dockOpacity = config.dockOpacity;
@@ -171,9 +174,48 @@ public final class LauncherSettingsActivity extends Activity {
         });
         findViewById(R.id.tvSettingsChoice).setOnClickListener(v ->
                 open(SystemSettings.intent(this, Settings.ACTION_SETTINGS)));
+        if (settingsHints) showHints(config);
         refresh();
         if (config.launcherSettingsButton) reorderChoice.requestFocus();
         else columnChoices[Math.max(0, Math.min(columns - 4, 3))].requestFocus();
+    }
+
+    /** settings_hints: a line under each setting, and a white focus outline on every row and choice. */
+    private void showHints(Config config) {
+        showHint(R.id.hintColumns, R.string.hint_columns, true);
+        showHint(R.id.hintRows, R.string.hint_rows_below_dock, true);
+        showHint(R.id.hintDock, R.string.hint_dock_opacity, true);
+        showHint(R.id.hintWallpaper, R.string.hint_wallpaper, true);
+        showHint(R.id.hintAnimations, R.string.hint_animations, true);
+        showHint(R.id.hintOpenOnStart, R.string.hint_open_on_start, config.openOnStartChoice);
+        showHint(R.id.hintLanguage, R.string.hint_language, config.languageChoice);
+        useWhiteFocus(findViewById(android.R.id.content));
+    }
+
+    private void showHint(int id, int text, boolean visible) {
+        TextView hint = findViewById(id);
+        hint.setText(text);
+        hint.setVisibility(visible ? View.VISIBLE : View.GONE);
+    }
+
+    private void useWhiteFocus(View view) {
+        if (view instanceof TextView && view.isFocusable()) view.setBackgroundResource(R.drawable.settings_choice_bg_hints);
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) useWhiteFocus(group.getChildAt(i));
+        }
+    }
+
+    /** The label of a selected option gets a check mark in front, so selection is not only a colour. */
+    static String withCheck(String label, boolean selected) {
+        boolean marked = label.startsWith(CHECK);
+        if (selected) return marked ? label : CHECK + label;
+        return marked ? label.substring(CHECK.length()) : label;
+    }
+
+    private void select(TextView choice, boolean selected) {
+        choice.setSelected(selected);
+        if (settingsHints) choice.setText(withCheck(choice.getText().toString(), selected));
     }
 
     private void reverseRow(TextView[] views) {
@@ -293,13 +335,13 @@ public final class LauncherSettingsActivity extends Activity {
 
     private void refresh() {
         for (int i = 0; i < columnChoices.length; i++) {
-            columnChoices[i].setSelected(columns == i + 4);
+            select(columnChoices[i], columns == i + 4);
         }
         for (int i = 0; i < rowChoices.length; i++) {
-            rowChoices[i].setSelected(rowsBelowDock == i);
+            select(rowChoices[i], rowsBelowDock == i);
         }
         for (int i = 0; i < dockChoices.length; i++) {
-            dockChoices[i].setSelected(dockOpacity == DOCK_OPACITIES[i]);
+            select(dockChoices[i], dockOpacity == DOCK_OPACITIES[i]);
         }
         animationsChoice.setText(getString(R.string.animations_state,
                 getString(animations ? R.string.on : R.string.off)));

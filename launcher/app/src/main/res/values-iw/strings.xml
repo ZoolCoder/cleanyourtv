@@ -118,6 +118,13 @@
         <item quantity="other">%1$d אפליקציות</item>
     </plurals>
     <string name="greeting_with_name">%1$s, %2$s</string>
+    <string name="hint_columns">כמה אפליקציות מוצג בכל שורה במסך הבית</string>
+    <string name="hint_rows_below_dock">כמה שורות אפליקציות נשארות גלויות מתחת לסרגל</string>
+    <string name="hint_dock_opacity">עד כמה הסרגל שמאחורי האפליקציות אטום</string>
+    <string name="hint_wallpaper">התמונה שמאחורי מסך הבית</string>
+    <string name="hint_animations">תנועה במעבר בין אפליקציות</string>
+    <string name="hint_open_on_start">האפליקציה שנפתחת עם הפעלת הטלוויזיה</string>
+    <string name="hint_language">השפה שבה המשגר מוצג</string>
     <string name="rows_below_dock_label">שורות מתחת לשורת המועדפים</string>
     <string name="wallpaper_label">טפט</string>
     <string name="wallpaper_state">טפט: %1$s</string>

@@ -2,7 +2,12 @@
 <resources>
     <string name="app_name" translatable="false">Kids\' Corner</string>
     <string name="title">Kids\' Corner · ركن الأطفال</string>
-    <string name="hint">OK plays in the YouTube app · Up and Down change channel</string>
+    <string name="key_ok" translatable="false">OK</string>
+    <string name="key_back">Back</string>
+    <string name="hint_play">Play in YouTube</string>
+    <string name="hint_videos">Show videos</string>
+    <string name="hint_channels">Channels</string>
+    <string name="hint_home">Home</string>
     <string name="loading">Loading the videos…</string>
     <string name="failed">Could not load the videos. Check the TV\'s internet connection.</string>
     <string name="row_failed">Could not load this channel.</string>

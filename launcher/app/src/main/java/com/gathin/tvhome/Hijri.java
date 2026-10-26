@@ -16,6 +16,11 @@ final class Hijri {
         return format(res, HijrahDate.from(LocalDate.now()));
     }
 
+    /** Whether {@code day} falls in Ramadan, the ninth month (config.json ramadan_countdown). */
+    static boolean ramadan(LocalDate day) {
+        return HijrahDate.from(day).get(ChronoField.MONTH_OF_YEAR) == 9;
+    }
+
     static String format(Resources res, HijrahDate date) {
         String[] months = res.getStringArray(R.array.hijri_months);
         int month = date.get(ChronoField.MONTH_OF_YEAR);

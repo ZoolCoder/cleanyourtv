@@ -63,6 +63,8 @@ The launcher's own page has these rows, top to bottom:
   transitions; they may use more memory) once animations are on.
 - **Open on start**, only with `open_on_start_choice`: Off, or an app that opens instead of Home the first
   time Home comes up after the TV starts. Once per boot, so Home and Back still reach the launcher.
+- **Language**, only with `language_choice`: the TV's own language or one of the launcher's translations,
+  for a TV shared by people who read different scripts. It wins over the theme's `locale` key.
 - **Follow theme (reset on-TV choices)**, which clears every choice above. Pushing or resetting a theme
   clears them too.
 - **Choose default home** opens Android's home picker, and **TV system settings** the TV's own settings

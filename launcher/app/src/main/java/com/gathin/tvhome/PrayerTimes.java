@@ -62,6 +62,19 @@ final class PrayerTimes {
         return null;
     }
 
+    /**
+     * The fasting day's next mark (config.json ramadan_countdown): iftar, at Maghrib, from Fajr until then; the end
+     * of suhoor, at Fajr, through the night.
+     */
+    static Next fasting(LocalDateTime now, double latitude, double longitude, ZoneId zone) {
+        LocalDate day = now.toLocalDate();
+        LocalTime[] times = of(day, latitude, longitude, zone);
+        if (now.isBefore(day.atTime(times[FAJR]))) return new Next(FAJR, day.atTime(times[FAJR]));
+        if (now.isBefore(day.atTime(times[MAGHRIB]))) return new Next(MAGHRIB, day.atTime(times[MAGHRIB]));
+        LocalDate tomorrow = day.plusDays(1);
+        return new Next(FAJR, tomorrow.atTime(of(tomorrow, latitude, longitude, zone)[FAJR]));
+    }
+
     static final class Next {
         final int prayer;
         final LocalDateTime at;

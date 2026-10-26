@@ -15,6 +15,7 @@ import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -45,6 +46,11 @@ final class ClockScene {
     private final View content;
     private final ClockRefresh clockRefresh;
     private final ImageView ambient;
+    /** hijri_date and prayer_times: the lines under the date, filled on each move while they are on. */
+    private final TextView hijriLine, prayerLine;
+    private Context lineContext;
+    private boolean hijri;
+    private double prayerLatitude, prayerLongitude;
     private final GradientDrawable glow;
     private int colorIndex;
     private int glowColor;
@@ -69,6 +75,7 @@ final class ClockScene {
     private final Runnable tick = new Runnable() {
         @Override
         public void run() {
+            refreshLines();
             moveClock();
             shiftGlow();
             advanceWallpaper();
@@ -81,6 +88,8 @@ final class ClockScene {
         content = root.findViewById(R.id.dreamContent);
         clockRefresh = new ClockRefresh(content);
         ambient = root.findViewById(R.id.dreamAmbient);
+        hijriLine = root.findViewById(R.id.dreamHijri);
+        prayerLine = root.findViewById(R.id.dreamPrayer);
         glow = new GradientDrawable();
         glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambient.setBackground(glow);
@@ -122,6 +131,17 @@ final class ClockScene {
             cfg = Config.load(ctx);
         } catch (RuntimeException e) {
             return;
+        }
+        if (cfg.hijriDate || (cfg.prayerTimes && !cfg.latitude.isEmpty() && !cfg.longitude.isEmpty())) {
+            lineContext = ctx;
+            hijri = cfg.hijriDate;
+            if (cfg.prayerTimes && !cfg.latitude.isEmpty()) {
+                prayerLatitude = Double.parseDouble(cfg.latitude);
+                prayerLongitude = Double.parseDouble(cfg.longitude);
+                prayerLine.setVisibility(View.VISIBLE);
+            }
+            if (hijri) hijriLine.setVisibility(View.VISIBLE);
+            refreshLines();
         }
         // clock_glow false: plain black behind the clock (OLED); the clock itself still moves every minute.
         glowOff = !cfg.clockGlow;
@@ -223,6 +243,17 @@ final class ClockScene {
         int[] sun = WallpaperMood.sun(now.toLocalDate(), latitude, longitude, ZoneId.systemDefault());
         return WallpaperMood.select(rotation, moods,
                 WallpaperMood.timeOfDay(now.getHour() * 60 + now.getMinute(), sun[0], sun[1]));
+    }
+
+    /** The Hijri date and the next prayer, as Home shows them, once a minute with the move. */
+    private void refreshLines() {
+        if (lineContext == null) return;
+        if (hijri) hijriLine.setText(Hijri.today(lineContext.getResources()));
+        if (prayerLine.getVisibility() == View.VISIBLE) {
+            LocalDateTime now = LocalDateTime.now();
+            PrayerTimes.Next next = PrayerTimes.next(now, prayerLatitude, prayerLongitude, ZoneId.systemDefault());
+            prayerLine.setText(next == null ? "" : PrayerPill.text(lineContext, next, now));
+        }
     }
 
     private void moveClock() {

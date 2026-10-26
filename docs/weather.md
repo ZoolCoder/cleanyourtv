@@ -41,12 +41,31 @@ TV, no network: the standard sun-position formulas with the Egyptian General Aut
 angles (Fajr 19.5°, Isha 17.5°, Asr at shadow length 1), in the TV's time zone, truncated to the
 minute. Sunrise is computed too, for the end of Fajr, but is never shown as a prayer. Another
 calculation method is a one-line change of two constants in `PrayerTimes.java`.
+`launcher/app/src/test/.../PrayerTimesTest.java` pins the formula to Cairo's published times for a
+winter and a summer day, to the minute.
+
+The same line shows under the date in the clock screensaver (`ClockDream`, and the idle clock on
+Home) when the key is on, refreshed once a minute with the clock.
+
+### `ramadan_countdown`
+
+In Ramadan, the ninth month of `java.time`'s Hijri calendar, the pill changes its subject: by day it
+counts down to iftar (`🌙 Iftar 18:03 · in 2h 10m`), after Maghrib to the end of suhoor (Fajr of the
+next morning). The rest of the year it is the plain prayer pill. The month comes from the calendar,
+not from a date list, so it needs no update from year to year.
+
+### `prayer_alert`
+
+For the last five minutes before a prayer (or an iftar) the pill breathes: a slow fade to a third and
+back, every two seconds, until the time passes. No sound: the launcher plays none, and an adhan app of
+your choice (an add-on, or any app from the store) is the right place for that.
 
 ## `hijri_date`
 
 The Hijri date under the Gregorian one, from `java.time`'s Umm al-Qura calendar: `14 Jumada I 1448 AH`,
 with the month names translated where the launcher has them. When `lunar_date` is also on it wins and
-the Hijri line stays off; the two share the line under the date.
+the Hijri line stays off; the two share the line under the date. The clock screensaver shows the same
+line under its date.
 
 ## `locale`
 
@@ -56,6 +75,14 @@ no per-app language setting, Fire OS first of all. The header turns letter spaci
 scripts; the weather pill keeps a left-to-right paragraph so `22°` stays next to its emoji, while the
 prayer pill is plain text and reads right to left from the prayer's name.
 
+### `language_choice`
+
+A Language row in Launcher settings, for a TV shared by people who read different scripts: "The
+TV's" (the empty tag) or any of the launcher's translations, each in its own name. The pick is kept
+on the TV in the launcher's settings, wins over the theme's `language` key, and goes with Follow
+theme (reset the choices). The settings screen comes back in the new language at once; Home follows
+when it next resumes.
+
 ## Together
 
-The [`sudan/`](../themes/sudan/) theme turns on all four for one TV in Egypt.
+The [`sudan/`](../themes/sudan/) theme turns on all of them for one TV in Egypt.

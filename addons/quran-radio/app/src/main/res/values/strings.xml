@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Quran Radio</string>
+    <string name="tab_radio" translatable="false">الإذاعة · Radio</string>
+    <string name="tab_reciters" translatable="false">القرّاء · Reciters</string>
+    <string name="title">Quran Radio · إذاعة القرآن</string>
+    <string name="hint">OK plays or pauses · Up switches the tab · Back stops</string>
+    <string name="hint_surahs">OK plays the surah, the next one follows · Back returns to the reciters</string>
+    <string name="idle">Choose a station or a reciter</string>
+    <string name="live">Live</string>
+    <string name="recitation">Recitation</string>
+    <string name="state_playing">Playing now</string>
+    <string name="state_paused">Paused</string>
+    <string name="state_offline">Offline</string>
+    <string name="connecting">Connecting…</string>
+    <string name="loading">Loading the reciters…</string>
+    <string name="failed">Could not load the reciters. Check the TV\'s internet connection.</string>
+    <string name="offline_hint">Could not play. Check the TV\'s internet connection.</string>
+    <string name="empty">No stations or reciters in the list.</string>
+    <string name="surah_format" translatable="false">%1$d. %2$s</string>
+</resources>

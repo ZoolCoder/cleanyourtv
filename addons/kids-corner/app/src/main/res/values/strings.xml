@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Kids\' Corner</string>
+    <string name="title">Kids\' Corner · ركن الأطفال</string>
+    <string name="hint">OK plays in the YouTube app · Up and Down change channel</string>
+    <string name="loading">Loading the videos…</string>
+    <string name="failed">Could not load the videos. Check the TV\'s internet connection.</string>
+    <string name="row_failed">Could not load this channel.</string>
+    <string name="no_player">No YouTube app found on this TV.</string>
+</resources>

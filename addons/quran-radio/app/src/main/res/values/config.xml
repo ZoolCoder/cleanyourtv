@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Radio tab and the Reciters tab. Edit both lists before you build; add or drop lines freely.
+
+     stations: "name | stream URL". The name is shown as written. The URL must be https (Android blocks
+     plain http). Every station of mp3quran.net's radio list is at
+     https://www.mp3quran.net/api/v3/radios?language=ar (the stream is the "url" field).
+
+     reciters: "reciter id | note". The id is the reciter's "id" at
+     https://www.mp3quran.net/api/v3/reciters?language=ar and the note after | is only for you. When the
+     reciter has several recitations (moshaf), the first one is played; write "id:moshaf" to pick one, with
+     the moshaf's own "id" from the same list. The recitation's riwayah is part of the name shown on the
+     screen. The riwayat list is at https://www.mp3quran.net/api/v3/riwayat: 1 Hafs, 13 Al-Douri (Abu Amr). -->
+<resources>
+    <string-array name="stations" translatable="false">
+        <item>إذاعة الزين محمد أحمد · Al-Zain Mohamed Ahmed | https://backup.qurango.net/radio/alzain_mohammad_ahmad</item>
+        <item>إذاعة مشاري العفاسي · Mishary Alafasy | https://backup.qurango.net/radio/mishary_alafasi</item>
+        <item>إذاعة ماهر المعيقلي · Maher Al-Muaiqly | https://backup.qurango.net/radio/maher</item>
+        <item>إذاعة سعد الغامدي · Saad Al-Ghamdi | https://backup.qurango.net/radio/saad_alghamdi</item>
+        <item>إذاعة محمود خليل الحصري · Mahmoud Khalil Al-Husary | https://backup.qurango.net/radio/mahmoud_khalil_alhussary</item>
+        <item>إذاعة متنوعة لمختلف القرّاء · Mixed reciters | https://backup.qurango.net/radio/mix</item>
+    </string-array>
+    <string-array name="reciters" translatable="false">
+        <item>138 | Noreen Mohamed Siddiq, Al-Douri (Abu Amr), Sudanese</item>
+        <item>211 | Al-Fateh Mohamed Al-Zubair, Al-Douri (Abu Amr), Sudanese</item>
+        <item>118:269 | Mahmoud Khalil Al-Husary, Al-Douri (Abu Amr)</item>
+        <item>13 | Al-Zain Mohamed Ahmed, Hafs, Sudanese</item>
+        <item>123:123 | Mishary Alafasy, Hafs</item>
+        <item>102:102 | Maher Al-Muaiqly, Hafs</item>
+        <item>54 | Abdulrahman Al-Sudais, Hafs</item>
+    </string-array>
+</resources>

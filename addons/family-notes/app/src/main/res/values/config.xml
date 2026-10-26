@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Edit before you build.
+     port: the TCP port the phone connects to (1024 to 65535; the default is used otherwise).
+     popup_seconds: how long a note stays on screen (3 or more). -->
+<resources>
+    <integer name="port">8765</integer>
+    <integer name="popup_seconds">20</integer>
+</resources>

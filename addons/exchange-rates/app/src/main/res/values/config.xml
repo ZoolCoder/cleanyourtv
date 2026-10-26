@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The currencies to show against the Sudanese pound, one tile each, in this order. A line is
+     "ISO code | Arabic name | English name". The code must be one the source lists (about 160 currencies);
+     a code it does not have shows a dash. Eight tiles fill the screen in two rows of four.
+     Edit the list before you build; add or drop lines freely. -->
+<resources>
+    <string-array name="currencies" translatable="false">
+        <item>USD | الدولار الأمريكي | US dollar</item>
+        <item>SAR | الريال السعودي | Saudi riyal</item>
+        <item>AED | الدرهم الإماراتي | UAE dirham</item>
+        <item>EGP | الجنيه المصري | Egyptian pound</item>
+        <item>EUR | اليورو | Euro</item>
+        <item>QAR | الريال القطري | Qatari riyal</item>
+        <item>KWD | الدينار الكويتي | Kuwaiti dinar</item>
+        <item>GBP | الجنيه الإسترليني | Pound sterling</item>
+    </string-array>
+</resources>

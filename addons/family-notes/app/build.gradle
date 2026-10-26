@@ -1,0 +1,38 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.zoolcoder.tv.notes'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.zoolcoder.tv.notes'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+            // Sideloaded over ADB like the launcher: signed with the debug key.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Test only (never in the APK): plain JVM tests for the request parsing, PIN and sanitising, src/test.
+    testImplementation 'junit:junit:4.13.2'
+    // The JVM has no org.json (Android's is a stub in unit tests); the real one is for the tests only.
+    testImplementation 'org.json:json:20240303'
+}

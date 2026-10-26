@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Sudan News</string>
+    <string name="tab_ar" translatable="false">العربية</string>
+    <string name="tab_en" translatable="false">English</string>
+    <string name="title">Sudan News · أخبار السودان</string>
+    <string name="hint">OK reads the story · Up switches the language</string>
+    <string name="loading">Loading the news…</string>
+    <string name="updated">Updated %1$s</string>
+    <string name="failed">Could not load the news. Check the TV\'s internet connection.</string>
+    <string name="empty">No headlines in this language right now.</string>
+    <string name="back">Back returns to the headlines</string>
+</resources>

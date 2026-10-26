@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">الجنيه السوداني · Sudanese pound</string>
+    <string name="loading">جارٍ تحميل الأسعار… · Loading the rates…</string>
+    <string name="failed">تعذّر تحميل الأسعار. تحقّق من اتصال التلفزيون بالإنترنت. · Could not load the rates. Check the TV\'s internet connection.</string>
+    <string name="offline">دون اتصال: تُعرض آخر أسعار محفوظة. · Offline: showing the last saved rates.</string>
+    <string name="old">هذه الأسعار عمرها %1$d يوماً. · These rates are %1$d days old.</string>
+    <string name="unit">1 =</string>
+</resources>

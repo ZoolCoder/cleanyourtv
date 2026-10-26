@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The channels, one row each. A line is "Arabic name | English name | YouTube channel id": the id is the
+     UC... part of youtube.com/channel/UC... and the app reads the channel's public uploads feed,
+     https://www.youtube.com/feeds/videos.xml?channel_id=<id>. Edit the list before you build; add or drop
+     lines freely. Parents: check every channel here, the app does not filter what a channel uploads. -->
+<resources>
+    <string-array name="channels" translatable="false">
+        <item>قناة طيور الجنة | Toyor Al Janah | UCozAuGJZ5MPoijz8IE_1Gtw</item>
+        <item>طيور بيبي | Toyor Baby | UCHAbNxkU837UAkZ-OPtdUUw</item>
+        <item>ماجد | Majid Kids | UCrvTAKeiHkB-ZTKxVBtk48A</item>
+        <item>آدم ومشمش | Adam wa Mishmish | UC2mcPN2YDX31oaLnfZScx_g</item>
+        <item>أهلاً سمسم | Ahlan Simsim | UC48pfslXOUx-PZTLQxZjS4g</item>
+        <item>كوكوميلون عربي | Cocomelon Arabic | UCpcZREaNdYfSzpbQmo3IiZA</item>
+        <item>سبيستون | Spacetoon | UCuQKih3Ac3NABADQKQdeV6A</item>
+    </string-array>
+</resources>

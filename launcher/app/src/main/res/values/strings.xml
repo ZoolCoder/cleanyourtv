@@ -152,4 +152,39 @@
     <!-- Cinematic top shelf (cinematic_home): the line under the focused dock app's name; %1$s is when it was
          last opened, e.g. "5 minutes ago" or "yesterday, 9:40 pm". -->
     <string name="last_opened">Last opened %1$s</string>
+    <!-- Weather pill (config.xml weather): the sky now, after the temperature. -->
+    <string name="weather_clear">Clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <!-- Hijri date line (config.xml hijri_date): day, month, year. -->
+    <string name="hijri_date">%1$d %2$s %3$d AH</string>
+    <string-array name="hijri_months">
+        <item>Muharram</item>
+        <item>Safar</item>
+        <item>Rabi I</item>
+        <item>Rabi II</item>
+        <item>Jumada I</item>
+        <item>Jumada II</item>
+        <item>Rajab</item>
+        <item>Sha\'ban</item>
+        <item>Ramadan</item>
+        <item>Shawwal</item>
+        <item>Dhu al-Qi\'dah</item>
+        <item>Dhu al-Hijjah</item>
+    </string-array>
+    <!-- Next-prayer pill (config.xml prayer_times): "Asr 15:12 · in 1h 20m". -->
+    <string name="prayer_fajr">Fajr</string>
+    <string name="prayer_sunrise">Sunrise</string>
+    <string name="prayer_dhuhr">Dhuhr</string>
+    <string name="prayer_asr">Asr</string>
+    <string name="prayer_maghrib">Maghrib</string>
+    <string name="prayer_isha">Isha</string>
+    <string name="prayer_pill">🕌  %1$s %2$s  ·  %3$s</string>
+    <string name="countdown_hours_minutes">in %1$dh %2$dm</string>
+    <string name="countdown_minutes">in %1$dm</string>
 </resources>

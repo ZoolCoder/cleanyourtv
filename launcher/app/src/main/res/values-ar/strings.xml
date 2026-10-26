@@ -97,4 +97,50 @@
         <item quantity="other">%1$d تطبيق</item>
     </plurals>
     <string name="greeting_with_name">%1$s، %2$s</string>
+    <string name="last_opened">آخر فتح %1$s</string>
+    <string name="good_forenoon">صباح الخير</string>
+    <string name="rows_below_dock_label">صفوف تحت الشريط</string>
+    <string name="wallpaper_label">الخلفية</string>
+    <string name="wallpaper_state">الخلفية: %1$s</string>
+    <string name="wallpaper_none">بدون</string>
+    <string name="wallpaper_applied">تم تغيير الخلفية</string>
+    <string name="wallpaper_theme_default">افتراضي السمة</string>
+    <string name="quick_picture">الشاشة</string>
+    <string name="quick_network">الشبكة</string>
+    <string name="quick_apps">التطبيقات</string>
+    <string name="quick_apps_hint">إعادة التفعيل</string>
+    <string name="storage_gb_whole">%1$.0f غ.ب</string>
+    <string name="storage_gb_decimal">%1$.1f غ.ب</string>
+    <string name="weather_clear">صافٍ</string>
+    <string name="weather_partly_cloudy">غائم جزئياً</string>
+    <string name="weather_cloudy">غائم</string>
+    <string name="weather_fog">ضباب</string>
+    <string name="weather_drizzle">رذاذ</string>
+    <string name="weather_rain">مطر</string>
+    <string name="weather_snow">ثلج</string>
+    <string name="weather_thunderstorm">عاصفة رعدية</string>
+    <string name="hijri_date">%1$d %2$s %3$d هـ</string>
+    <string-array name="hijri_months">
+        <item>محرم</item>
+        <item>صفر</item>
+        <item>ربيع الأول</item>
+        <item>ربيع الآخر</item>
+        <item>جمادى الأولى</item>
+        <item>جمادى الآخرة</item>
+        <item>رجب</item>
+        <item>شعبان</item>
+        <item>رمضان</item>
+        <item>شوال</item>
+        <item>ذو القعدة</item>
+        <item>ذو الحجة</item>
+    </string-array>
+    <string name="prayer_fajr">الفجر</string>
+    <string name="prayer_sunrise">الشروق</string>
+    <string name="prayer_dhuhr">الظهر</string>
+    <string name="prayer_asr">العصر</string>
+    <string name="prayer_maghrib">المغرب</string>
+    <string name="prayer_isha">العشاء</string>
+    <string name="prayer_pill">🕌  %1$s %2$s  ·  %3$s</string>
+    <string name="countdown_hours_minutes">بعد %1$d س %2$d د</string>
+    <string name="countdown_minutes">بعد %1$d د</string>
 </resources>

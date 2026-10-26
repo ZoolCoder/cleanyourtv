@@ -1,6 +1,7 @@
 package com.gathin.tvhome;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -19,6 +20,7 @@ public class ClockActivity extends Activity {
 
 
     private ClockScene scene;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

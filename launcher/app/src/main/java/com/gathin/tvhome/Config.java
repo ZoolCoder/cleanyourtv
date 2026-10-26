@@ -246,6 +246,14 @@ final class Config {
     final List<String> topBarApps;
     /** The greeting above the clock (Good evening); false hides it (config.xml, show_greeting). */
     final boolean showGreeting;
+    /** config.json weather: the weather pill, at latitude/longitude (decimal degrees, as strings). */
+    final boolean weather;
+    final String latitude;
+    final String longitude;
+    /** config.json hijri_date: the Hijri (Umm al-Qura) date under the date. */
+    final boolean hijriDate;
+    /** config.json prayer_times: the next-prayer pill, at latitude/longitude. */
+    final boolean prayerTimes;
     /** The date and the line between it and the clock in the clock's full white instead of dimmed (config.xml, header_white). */
     final boolean headerWhite;
     /** The clock screensaver over Home's wallpaper instead of the black glow (config.xml, clock_wallpaper). */
@@ -272,7 +280,13 @@ final class Config {
                    List<RaceWeekend.Race> raceCalendar, boolean cinematicHome, boolean ambientGlow, boolean appGlow, boolean fadeRows, int homeIdleClockMinutes,
                    boolean keyFilter, boolean dockGlass, String glowStyle, boolean wallpaperCaptions,
                    boolean handleViewInputs, boolean tileMenu, boolean dockEvenPadding, boolean dockBand, boolean cinematicDots, boolean cinematicWhiteFocus, boolean wifiStatusColor, int cinematicScrim, int cinematicArt,
-                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly) {
+                   Map<String, Set<String>> wallpaperMoods, boolean gamepadPassthrough, boolean consumeVolumeKeys, boolean powerOnHome, boolean homeLongPressHome, boolean wifiStatusWarnings, List<String> topBarApps, boolean showGreeting, boolean headerWhite, boolean clockWallpaper, int clockWallpaperDim, boolean clockGlow, String glassStyle, boolean singleRow, boolean dockBandAll, boolean lunarDate, int lunarUtcOffset, boolean dateBelowClock, boolean vpnPill, String locale, boolean powerOnHomeAlways, boolean inputsConnectedOnly,
+                   boolean weather, String latitude, String longitude, boolean hijriDate, boolean prayerTimes) {
+        this.hijriDate = hijriDate;
+        this.prayerTimes = prayerTimes;
+        this.weather = weather;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.handleViewInputs = handleViewInputs;
         this.tileMenu = tileMenu;
         this.inputKeycodes = inputKeycodes;
@@ -499,6 +513,11 @@ final class Config {
         String glassStyle = res.getString(R.string.glass_style);
         boolean singleRow = res.getBoolean(R.bool.single_row);
         boolean dockBandAll = res.getBoolean(R.bool.dock_band_all);
+        boolean weather = res.getBoolean(R.bool.weather);
+        String latitude = res.getString(R.string.latitude).trim();
+        String longitude = res.getString(R.string.longitude).trim();
+        boolean hijri = res.getBoolean(R.bool.hijri_date);
+        boolean prayer = res.getBoolean(R.bool.prayer_times);
         boolean applied = false;
 
         File dir = dir(ctx);
@@ -605,6 +624,9 @@ final class Config {
             dockBandAll = bool(json, "dock_band_all", dockBandAll);
             glowStyle = string(json, "glow_style", glowStyle);
             glassStyle = string(json, "glass_style", glassStyle);
+            weather = bool(json, "weather", weather);
+            hijri = bool(json, "hijri_date", hijri);
+            prayer = bool(json, "prayer_times", prayer);
         }
         // A top-bar app is moved there, not copied: it leaves the grid.
         for (String pkg : topBarApps) if (!hidden.contains(pkg)) hidden.add(pkg);
@@ -665,7 +687,7 @@ final class Config {
                 dockBand, cinematicDots, cinematicWhiteFocus, wifiStatusColor, cinematicScrim, cinematicArt, wallpaperMoods, gamepadPassthrough,
                 consumeVolumeKeys, powerOnHome, homeLongPressHome, wifiStatusWarnings, topBarApps, showGreeting, headerWhite, clockWallpaper,
                 Math.max(0, Math.min(90, clockWallpaperDim)), clockGlow, glassStyle, singleRow && dockRow, dockBandAll, lunar, lunarOffset,
-                dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly);
+                dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, weather, latitude, longitude, hijri, prayer);
     }
 
     /**

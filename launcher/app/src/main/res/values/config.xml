@@ -226,6 +226,17 @@
          still step). A theme's config.json can set it too. Off by default. -->
     <bool name="home_long_press_home">false</bool>
 
+    <!-- Weather pill in the top bar: the temperature and sky now at latitude/longitude (below), from Open-Meteo's
+         free forecast (no key), refreshed every 30 minutes while Home is on screen. The last reading is kept over
+         restarts and while the network is away. Needs latitude/longitude; a theme's config.json can set weather too.
+         The only key that needs the INTERNET permission: see docs/weather.md before you build with it. -->
+    <bool name="weather">false</bool>
+    <!-- Hijri (Umm al-Qura) date under the date, e.g. "14 Jumada I 1448 AH"; also "hijri_date": true in config.json. -->
+    <bool name="hijri_date">false</bool>
+    <!-- Next-prayer pill in the top bar: the prayer, its time and how long until it, computed on the TV (no network)
+         for latitude/longitude by the Egyptian General Authority of Survey's method (Fajr 19.5°, Isha 17.5°, Asr at
+         shadow length 1) in the TV's time zone. Also "prayer_times": true in config.json. -->
+    <bool name="prayer_times">false</bool>
     <!-- Show the Solar Hijri (Shamsi) date used in Iran and Afghanistan, e.g. "27 Mehr 1405", above the
          Gregorian date. -->
     <bool name="shamsi_date">false</bool>
@@ -418,8 +429,9 @@
          "sky_intensity": 60 in a theme's config.json. -->
     <integer name="sky_intensity">0</integer>
     <!-- Where the TV is, in decimal degrees, so the sky's sunrise and sunset glows follow the real sun
-         (computed on the TV, no network). Empty: a fixed temperate day, sunset glow around 19:00.
-         Vilnius: 54.69 and 25.28. -->
+         (computed on the TV, no network), and the place the weather and prayer pills are for. Empty: a fixed
+         temperate day, sunset glow around 19:00, no weather or prayer pill. Vilnius: 54.69 and 25.28.
+         A build setting, never a theme key: a theme is public, a place is not. -->
     <string name="latitude" translatable="false"></string>
     <string name="longitude" translatable="false"></string>
 

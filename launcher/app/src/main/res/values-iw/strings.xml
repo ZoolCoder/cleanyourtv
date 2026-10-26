@@ -147,4 +147,36 @@
     <string name="race_countdown_hours">%1$d שע׳ %2$d דק׳</string>
     <string name="race_countdown_days">%1$d ימ׳ %2$d שע׳</string>
     <string name="last_opened">פתיחה אחרונה: %1$s</string>
+    <string name="weather_clear">בהיר</string>
+    <string name="weather_partly_cloudy">מעונן חלקית</string>
+    <string name="weather_cloudy">מעונן</string>
+    <string name="weather_fog">ערפל</string>
+    <string name="weather_drizzle">טפטוף</string>
+    <string name="weather_rain">גשם</string>
+    <string name="weather_snow">שלג</string>
+    <string name="weather_thunderstorm">סופת רעמים</string>
+    <string name="hijri_date">%1$d %2$s %3$d לה׳</string>
+    <string-array name="hijri_months">
+        <item>מוחרם</item>
+        <item>צפר</item>
+        <item>רביע א׳</item>
+        <item>רביע ב׳</item>
+        <item>ג׳ומאדא א׳</item>
+        <item>ג׳ומאדא ב׳</item>
+        <item>רג׳ב</item>
+        <item>שעבאן</item>
+        <item>רמדאן</item>
+        <item>שוואל</item>
+        <item>ד׳ו אל-קעדה</item>
+        <item>ד׳ו אל-חיג׳ה</item>
+    </string-array>
+    <string name="prayer_fajr">פג׳ר</string>
+    <string name="prayer_sunrise">זריחה</string>
+    <string name="prayer_dhuhr">ד׳הר</string>
+    <string name="prayer_asr">עצר</string>
+    <string name="prayer_maghrib">מע׳רב</string>
+    <string name="prayer_isha">עשאא</string>
+    <string name="prayer_pill">🕌  %1$s %2$s  ·  %3$s</string>
+    <string name="countdown_hours_minutes">בעוד %1$d שע׳ %2$d דק׳</string>
+    <string name="countdown_minutes">בעוד %1$d דק׳</string>
 </resources>

@@ -247,22 +247,32 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
-                    <TextView
-                        android:id="@+id/greeting"
-                        android:gravity="center_horizontal"
+                    <!-- The greeting's row: with the weather or prayer pill on (infoPills below), the code gives it
+                         the pills' height so the pills sit on this line and never over the buttons. -->
+                    <LinearLayout
+                        android:id="@+id/greetingRow"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:maxLines="1"
-                        android:autoSizeTextType="uniform"
-                        android:autoSizeMinTextSize="9sp"
-                        android:autoSizeMaxTextSize="12sp"
-                        android:autoSizeStepGranularity="1sp"
-                        android:ellipsize="end"
-                        android:textColor="#8CFFFFFF"
-                        android:textSize="12sp"
-                        android:fontFamily="@string/font_medium"
-                        android:letterSpacing="0"
-                        android:textAllCaps="true" />
+                        android:orientation="horizontal"
+                        android:gravity="bottom">
+
+                        <TextView
+                            android:id="@+id/greeting"
+                            android:gravity="center_horizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:autoSizeTextType="uniform"
+                            android:autoSizeMinTextSize="9sp"
+                            android:autoSizeMaxTextSize="12sp"
+                            android:autoSizeStepGranularity="1sp"
+                            android:ellipsize="end"
+                            android:textColor="#8CFFFFFF"
+                            android:textSize="12sp"
+                            android:fontFamily="@string/font_medium"
+                            android:letterSpacing="0"
+                            android:textAllCaps="true" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -325,6 +335,35 @@
                 android:letterSpacing="0.04"
                 android:focusable="false"
                 android:visibility="gone" />
+
+            <!-- Weather pill (config.xml weather) and next-prayer pill (config.xml prayer_times), on the greeting's
+                 line and flush with the buttons' left edge: in the buttons' row they would squeeze the date out.
+                 Display only: not focusable, so the pills' key handling never lands on them. Gone by default; the
+                 code shows the row and gives greetingRow its height when a pill is on. -->
+            <LinearLayout
+                android:id="@+id/infoPills"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/btnWeather"
+                    style="@style/TopButton"
+                    android:textDirection="ltr"
+                    android:focusable="false"
+                    android:clickable="false"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/btnPrayer"
+                    style="@style/TopButton"
+                    android:focusable="false"
+                    android:clickable="false"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/topButtons"

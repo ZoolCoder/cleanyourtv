@@ -180,6 +180,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     /** config show_inputs_pill: false keeps the Inputs pill hidden even when the TV has inputs. */
     private boolean showInputsPill = true;
     private TextView btnWifi;
+    /** The weather pill, or null without config.xml weather. */
+    private Weather weather;
+    /** The next-prayer pill, or null without config.xml prayer_times. */
+    private PrayerPill prayerPill;
+    private boolean hijri;
     /** The network pill's icon as last set, so a refresh that changes nothing does not lay the top bar out again. */
     private int wifiIcon;
     /** The pills have been filled in once; later resumes refresh them after the first frame. */
@@ -385,6 +390,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private java.util.Map<Integer, String> homeAppKeys = java.util.Collections.emptyMap();
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -464,6 +470,15 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // still follows the dock.
         if (!cfg.dockTitle) hero.setVisibility(View.GONE);
         greeting = findViewById(R.id.greeting);
+        if ("ar".equals(getResources().getConfiguration().getLocales().get(0).getLanguage())) {
+            // Arabic letters join: the header's letter spacing would pull the words apart.
+            for (int id : new int[] {R.id.greeting, R.id.date, R.id.shamsiDate, R.id.lunarDate}) {
+                ((TextView) findViewById(id)).setLetterSpacing(0f);
+            }
+            // Naskh at the Latin caps size is too small to read from the sofa.
+            greeting.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+            ((TextView) findViewById(R.id.date)).setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+        }
         clockBlock = findViewById(R.id.leftBlock);
         greetingColor = greeting.getCurrentTextColor();
         if (!cfg.showGreeting) greeting.setVisibility(View.GONE);
@@ -503,6 +518,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         lunar = cfg.lunarDate;
         lunarOffset = Lunar.offsetFor(cfg.lunarUtcOffset, Locale.getDefault());
         if (lunar) lunarDate.setVisibility(View.VISIBLE);
+        // The Hijri line reuses the lunar date's slot; a theme has one or the other.
+        hijri = cfg.hijriDate && !lunar;
+        if (hijri) lunarDate.setVisibility(View.VISIBLE);
         greetingName = cfg.greetingName;
         if (cfg.dateBelowClock) moveDateBelowClock();
         if (shamsi) {
@@ -738,6 +756,17 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         });
         btnLibraryTop.setVisibility(cfg.libraryButton && cfg.appLibrary ? View.VISIBLE : View.GONE);
         addTopBarApps(cfg.topBarApps, cfg.launchActions);
+        if (cfg.weather && !cfg.latitude.isEmpty() && !cfg.longitude.isEmpty()) {
+            weather = new Weather(findViewById(R.id.btnWeather), cfg.latitude, cfg.longitude);
+        }
+        if (cfg.prayerTimes && !cfg.latitude.isEmpty() && !cfg.longitude.isEmpty()) {
+            prayerPill = new PrayerPill(findViewById(R.id.btnPrayer), cfg.latitude, cfg.longitude);
+        }
+        if (weather != null || prayerPill != null) {
+            // The pills take the greeting's line, flush with the buttons' edge; the line grows to the pill height.
+            findViewById(R.id.infoPills).setVisibility(View.VISIBLE);
+            findViewById(R.id.greetingRow).setMinimumHeight(Math.round(42 * density));
+        }
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;
         wifiIconOnly = iconOnlyButtons && cfg.wifiLabelWidth <= 0;
@@ -956,6 +985,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return;
         }
         restartIdleClock();
+        if (weather != null) weather.start();
+        if (prayerPill != null) prayerPill.start();
         promptsPaused = false;
         if (grid.getAdapter() == null) grid.setAdapter(adapter);   // dropped by onTrimMemory
         switch (tileRefresh.onResume(packagesChangedSinceRebuild())) {
@@ -1162,6 +1193,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         ambient.animate().cancel();
         heroArt.animate().cancel();
         handler.removeCallbacks(minuteTick);
+        if (weather != null) weather.stop();
+        if (prayerPill != null) prayerPill.stop();
         stopStats();
         if (diya != null) diya.stop();
         cancelPendingFocusScroll();
@@ -2325,7 +2358,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         ViewGroup bar = findViewById(R.id.topButtons);
         for (int i = 0; i < bar.getChildCount(); i++) {
             View button = bar.getChildAt(i);
-            if (button != btnInputs && button.getVisibility() == View.VISIBLE) return button;
+            if (button != btnInputs && button.isFocusable() && button.getVisibility() == View.VISIBLE) return button;
         }
         return findViewById(R.id.btnSettings);
     }
@@ -2531,6 +2564,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         if (shamsi) shamsiDate.setText(Shamsi.today(getResources()));
         if (lunar) lunarDate.setText(Lunar.today(getResources(), lunarOffset));
+        if (hijri) lunarDate.setText(Hijri.today(getResources()));
     }
 
     // ---- race-weekend panel (a theme's race_calendar) -----------------------------------------------

@@ -4,10 +4,13 @@
     <string name="tab_ar" translatable="false">العربية</string>
     <string name="tab_en" translatable="false">English</string>
     <string name="title">Sudan News · أخبار السودان</string>
-    <string name="hint">OK reads the story · Up switches the language</string>
     <string name="loading">Loading the news…</string>
     <string name="updated">Updated %1$s</string>
     <string name="failed">Could not load the news. Check the TV\'s internet connection.</string>
     <string name="empty">No headlines in this language right now.</string>
-    <string name="back">Back returns to the headlines</string>
+    <string name="key_ok" translatable="false">OK</string>
+    <string name="key_back">Back</string>
+    <string name="hint_read">Read full story</string>
+    <string name="hint_language">Show this language</string>
+    <string name="hint_back_headlines">Return to headlines</string>
 </resources>

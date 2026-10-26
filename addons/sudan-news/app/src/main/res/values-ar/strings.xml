@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title">أخبار السودان · Sudan News</string>
-    <string name="hint">زر OK يعرض الخبر · زر الأعلى يغيّر اللغة</string>
     <string name="loading">جارٍ تحميل الأخبار…</string>
     <string name="updated">آخر تحديث %1$s</string>
     <string name="failed">تعذّر تحميل الأخبار. تحقّق من اتصال التلفزيون بالإنترنت.</string>
     <string name="empty">لا توجد عناوين بهذه اللغة الآن.</string>
-    <string name="back">زر الرجوع يعيدك إلى العناوين</string>
+    <string name="key_back">رجوع</string>
+    <string name="hint_read">قراءة الخبر كاملاً</string>
+    <string name="hint_language">عرض هذه اللغة</string>
+    <string name="hint_back_headlines">العودة إلى العناوين</string>
 </resources>

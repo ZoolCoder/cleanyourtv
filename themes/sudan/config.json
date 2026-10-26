@@ -24,5 +24,5 @@
   "ramadan_countdown": true,
   "prayer_alert": true,
   "language_choice": true,
-  "language": "ar-EG-u-nu-latn"
+  "locale": "ar-EG-u-nu-latn"
 }

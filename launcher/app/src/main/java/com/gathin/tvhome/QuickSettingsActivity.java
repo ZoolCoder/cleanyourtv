@@ -2,6 +2,7 @@ package com.gathin.tvhome;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -22,6 +23,7 @@ public final class QuickSettingsActivity extends Activity {
     protected void attachBaseContext(android.content.Context base) {
         super.attachBaseContext(LauncherLocale.wrap(base));   // locale
     }
+
 
 
     @Override

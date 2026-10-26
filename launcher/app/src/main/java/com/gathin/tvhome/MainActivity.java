@@ -767,6 +767,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             // The pills take the greeting's line, flush with the buttons' edge; the line grows to the pill height.
             findViewById(R.id.infoPills).setVisibility(View.VISIBLE);
             findViewById(R.id.greetingRow).setMinimumHeight(Math.round(42 * density));
+            wallpaperPlayer.captionBelow(findViewById(R.id.topButtons));
         }
         iconOnlyButtons = cfg.iconOnlyButtons;
         topMenu = cfg.topMenu;

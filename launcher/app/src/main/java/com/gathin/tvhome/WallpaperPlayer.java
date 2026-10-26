@@ -237,6 +237,28 @@ final class WallpaperPlayer {
         return text;
     }
 
+    /**
+     * Keeps the caption under row: with the weather or prayer pill on, the top bar grows a line and its buttons
+     * would cover the caption at its fixed margin. Never moves it up past that margin.
+     */
+    void captionBelow(View row) {
+        if (caption == null) return;
+        int gap = Math.round(8 * root.getResources().getDisplayMetrics().density);
+        int margin = ((FrameLayout.LayoutParams) caption.getLayoutParams()).topMargin;
+        row.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            int[] at = new int[2];
+            int[] origin = new int[2];
+            v.getLocationInWindow(at);
+            root.getLocationInWindow(origin);
+            int below = Math.max(margin, at[1] - origin[1] + v.getHeight() + gap);
+            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) caption.getLayoutParams();
+            if (params.topMargin == below) return;
+            params.topMargin = below;
+            // Not inside this layout pass: a request from here would be dropped until the next one.
+            caption.post(() -> caption.setLayoutParams(params));
+        });
+    }
+
     /** The displayed picture's name and credit, faded across a change; a picture without either hides the caption. */
     private void showCaption(boolean fade) {
         if (caption == null) return;

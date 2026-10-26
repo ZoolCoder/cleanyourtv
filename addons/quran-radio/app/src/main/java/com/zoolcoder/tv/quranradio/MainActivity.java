@@ -7,9 +7,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.LayerDrawable;
@@ -21,11 +24,13 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -44,12 +49,14 @@ import java.util.concurrent.Future;
  * Quran on the TV: live radio stations and the surahs of a few reciters, both listed in config.xml. Audio
  * plays with MediaPlayer only while the app is open; leaving it stops the sound, and nothing runs in the
  * background. The screen stays on while a recitation plays. The list is on one side and a flat now-playing
- * panel, drawn with shapes and text only, on the other.
+ * panel, drawn with shapes and text only, on the other, in the Apple TV look: glow background, lifted focus.
  */
 public class MainActivity extends Activity {
-    private static final int BACKGROUND = 0xFF0B1A12, CARD = 0xFF16281D, RAISED = 0xFF20382A, DIVIDER = 0xFF294235,
-            ACCENT = 0xFFFFC542, MUTED = 0xFF9DB8A8, DISABLED = 0xFF53665B;
-    private static final float FOCUS_SCALE = 1.03f;
+    private static final int BACKGROUND = 0xFF0B1A12, GLOW = 0x26FFC342, SURFACE = 0x9916281D,
+            SURFACE_FOCUSED = 0xFF2C4838, TEXT = 0xFFFFFFFF, TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF,
+            PILL = 0x29FFFFFF, TRACK = 0x1FFFFFFF, TRACK_LINE = 0x33FFFFFF, ON_LIGHT = 0xFF0B1A12,
+            ACCENT = 0xFFFFC342, ACCENT_TINT = 0x26FFC342, FOCUS_STROKE = 0xFFFFFFFF;
+    private static final float ROW_SCALE = 1.02f, TILE_SCALE = 1.04f;
     private static final int RADIO = 0, RECITERS = 1;
     private static final int IDLE = 0, LOADING = 1, LOADED = 2, FAILED = 3;
 
@@ -58,8 +65,11 @@ public class MainActivity extends Activity {
     private final List<Catalog.Reciter> reciters = new ArrayList<>();
     private String[] surahNames = new String[115];
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private TextView hint, liveLabel, panelName, panelSurah, status, statusDetail, clock;
-    private View liveDot;
+    private TextView okChip, okLabel, backLabel, tabsChip, tabsLabel, pill, panelName, panelSecondary, panelSurah,
+            statusDetail, clock;
+    private LinearLayout hintBar;
+    private View focusedView;
+    private Drawable pillPlaying, pillNeutral;
     private PlayButton playButton;
     private LinearLayout progress;
     private View progressFill, progressRest;
@@ -77,7 +87,7 @@ public class MainActivity extends Activity {
 
     private MediaPlayer player;
     private boolean ready, paused;
-    private String playingKey, playingName, playingSurah;
+    private String playingKey, playingName, playingSecondary, playingSurah;
     private boolean live, offline;
     private Catalog.Reciter queueReciter;
     private int queueIndex;
@@ -99,42 +109,61 @@ public class MainActivity extends Activity {
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
         page.setLayoutDirection(direction);
-        page.setPadding(dp(48), dp(28), dp(48), dp(28));
+        page.setPadding(dp(48), dp(28), dp(48), dp(24));
+        page.setClipChildren(false);
+        page.setClipToPadding(false);
+        page.setBackground(glow());
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setClipChildren(false);
         View marker = new View(this);
-        marker.setBackground(shape(ACCENT, 3, 0, 0));
-        header.addView(marker, new LinearLayout.LayoutParams(dp(6), dp(28)));
-        TextView title = directed(text(getString(R.string.title), 28, Color.WHITE));
+        marker.setBackground(shape(ACCENT, 2));
+        header.addView(marker, new LinearLayout.LayoutParams(dp(4), dp(26)));
+        TextView title = directed(text(getString(R.string.title), 30, TEXT));
         title.setTypeface(null, Typeface.BOLD);
         title.setPadding(dp(12), 0, dp(12), 0);
         header.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         tabs[RADIO] = tab(getString(R.string.tab_radio), RADIO);
         tabs[RECITERS] = tab(getString(R.string.tab_reciters), RECITERS);
-        header.addView(tabs[RADIO]);
-        header.addView(tabs[RECITERS]);
+        LinearLayout track = new LinearLayout(this);
+        track.setClipChildren(false);
+        track.setGravity(Gravity.CENTER_VERTICAL);
+        track.setPadding(dp(4), dp(4), dp(4), dp(4));
+        track.setBackground(shape(TRACK, 26));
+        track.addView(tabs[RADIO]);
+        track.addView(tabs[RECITERS]);
+        header.addView(track);
         page.addView(header);
 
         list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
+        list.setClipChildren(false);
         listScroll = new ScrollView(this);
+        // Children may draw into the padding, but nothing past the scroll view's own edges.
+        listScroll.setClipChildren(false);
         listScroll.setClipToPadding(false);
-        listScroll.setPadding(dp(8), dp(8), dp(8), dp(8));
+        listScroll.setOutlineProvider(ViewOutlineProvider.BOUNDS);
+        listScroll.setClipToOutline(true);
+        listScroll.setPadding(dp(12), dp(12), dp(12), dp(12));
         listScroll.addView(list);
         LinearLayout body = new LinearLayout(this);
-        body.addView(listScroll, new LinearLayout.LayoutParams(dp(392), LinearLayout.LayoutParams.MATCH_PARENT));
+        body.setClipChildren(false);
+        // The list's 12 dp padding holds the scaled row; negative margins line its rows up with the title.
+        LinearLayout.LayoutParams listParams = new LinearLayout.LayoutParams(dp(392),
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        listParams.setMarginStart(-dp(12));
+        listParams.setMarginEnd(-dp(12));
+        body.addView(listScroll, listParams);
         View gap = new View(this);
         body.addView(gap, new LinearLayout.LayoutParams(dp(24), 1));
         body.addView(buildPanel(), new LinearLayout.LayoutParams(dp(448), LinearLayout.LayoutParams.MATCH_PARENT));
         LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f);
-        bodyParams.topMargin = dp(16);
+        bodyParams.topMargin = dp(12);
         page.addView(body, bodyParams);
 
-        hint = directed(text(getString(R.string.hint), 16, MUTED));
-        hint.setPadding(0, dp(12), 0, 0);
-        page.addView(hint);
+        page.addView(buildHintBar());
         setContentView(page);
         showTabs();
         showList(false);
@@ -187,10 +216,11 @@ public class MainActivity extends Activity {
 
     // ---- playback ----
 
-    private void play(String url, String key, String name, String surah, boolean isLive) {
+    private void play(String url, String key, String name, String secondary, String surah, boolean isLive) {
         release();
         playingKey = key;
         playingName = name;
+        playingSecondary = secondary;
         playingSurah = surah;
         live = isLive;
         offline = false;
@@ -241,14 +271,16 @@ public class MainActivity extends Activity {
 
     private void playStation(Catalog.Station station) {
         queueReciter = null;
-        play(station.url, "s:" + station.url, station.name, null, true);
+        String[] names = names(station);
+        play(station.url, "s:" + station.url, names[0], names[1], null, true);
     }
 
     private void playSurah(Catalog.Reciter reciter, int index) {
         queueReciter = reciter;
         queueIndex = index;
         int surah = reciter.surahs[index];
-        play(Catalog.surahUrl(reciter, surah), surahKey(reciter, surah), reciter.name, surahTitle(surah), false);
+        play(Catalog.surahUrl(reciter, surah), surahKey(reciter, surah), reciter.name, reciter.recitation,
+                surahTitle(surah), false);
     }
 
     /** The next surah of the same recitation follows; after the last one the sound stops. */
@@ -359,6 +391,7 @@ public class MainActivity extends Activity {
         release();
         playingKey = null;
         playingName = null;
+        playingSecondary = null;
         playingSurah = null;
         offline = false;
         queueReciter = null;
@@ -472,18 +505,23 @@ public class MainActivity extends Activity {
     // ---- screens ----
 
     private TextView tab(String label, int index) {
-        TextView tab = directed(text(label, 18, Color.WHITE));
-        tab.setTypeface(null, Typeface.BOLD);
+        TextView tab = directed(text(label, 18, TEXT_2));
+        tab.setTypeface(MEDIUM);
         tab.setGravity(Gravity.CENTER);
-        tab.setMinHeight(dp(48));
-        tab.setPadding(dp(24), dp(8), dp(24), dp(8));
+        tab.setPadding(dp(20), 0, dp(20), 0);
         tab.setFocusable(true);
         tab.setClickable(true);
-        tab.setOnFocusChangeListener(SCALE_ON_FOCUS);
+        tab.setBackground(tabBackground());
+        tab.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        tab.setOnFocusChangeListener((v, focused) -> {
+            lift(v, focused, TILE_SCALE);
+            showTabs();
+            focusMoved(v, focused);
+        });
         tab.setOnClickListener(v -> selectTab(index));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMarginStart(dp(12));
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(44));
+        if (index > 0) params.setMarginStart(dp(8));
         tab.setLayoutParams(params);
         return tab;
     }
@@ -497,12 +535,12 @@ public class MainActivity extends Activity {
         showList(true);
     }
 
-    /** The chosen tab is filled with the accent; the focused one also has the white and accent ring. */
+    /** The chosen tab is a white pill with dark text; a focused one adds the white outline and lifts. */
     private void showTabs() {
         for (int i = 0; i < tabs.length; i++) {
             boolean chosen = i == tab;
-            tabs[i].setBackground(focusable(chosen ? ACCENT : CARD, 24, chosen ? 0 : 1));
-            tabs[i].setTextColor(chosen ? BACKGROUND : Color.WHITE);
+            tabs[i].setSelected(chosen);
+            tabs[i].setTextColor(chosen ? ON_LIGHT : tabs[i].isFocused() ? TEXT : TEXT_2);
         }
     }
 
@@ -510,39 +548,42 @@ public class MainActivity extends Activity {
         list.removeAllViews();
         View focus = null;
         if (openReciter != null) {
-            hint.setText(R.string.hint_surahs);
-            list.addView(directed(text(openReciter.name + " · " + openReciter.recitation, 18, MUTED)));
+            TextView section = directed(text(openReciter.name + " · " + openReciter.recitation, 20, TEXT_2));
+            section.setTypeface(MEDIUM);
+            section.setPadding(dp(4), 0, dp(4), dp(8));
+            list.addView(section);
             for (int i = 0; i < openReciter.surahs.length; i++) {
                 int index = i;
                 int surah = openReciter.surahs[i];
                 String key = surahKey(openReciter, surah);
-                View row = row(surahTitle(surah), null, key, v -> playSurah(openReciter, index));
+                View row = row(surahTitle(surah), null, null, key, v -> playSurah(openReciter, index), false);
                 list.addView(row);
                 if (focus == null || key.equals(playingKey)) focus = row;
             }
         } else {
-            hint.setText(R.string.hint);
             if (tab == RADIO) {
                 for (Catalog.Station station : stations) {
-                    list.addView(row(station.name, null, "s:" + station.url, v -> playStation(station)));
+                    String[] names = names(station);
+                    list.addView(row(names[0], names[1], getString(R.string.live), "s:" + station.url,
+                            v -> playStation(station), true));
                 }
             } else if (loadState == LOADING) {
-                list.addView(directed(text(getString(R.string.loading), 18, MUTED)));
+                list.addView(directed(text(getString(R.string.loading), 18, TEXT_2)));
             } else if (loadState == FAILED) {
-                list.addView(directed(text(getString(R.string.failed), 18, MUTED)));
+                list.addView(directed(text(getString(R.string.failed), 18, TEXT_2)));
             } else {
                 for (int i = 0; i < reciters.size(); i++) {
                     int index = i;
                     Catalog.Reciter reciter = reciters.get(i);
-                    list.addView(row(reciter.name, reciter.recitation, "c:" + reciter.id + reciter.server,
+                    list.addView(row(reciter.name, reciter.recitation, null, reciterKey(reciter),
                             v -> {
                                 reciterFocus = index;
                                 openReciter = reciter;
                                 showList(false);
-                            }));
+                            }, false));
                 }
             }
-            if (list.getChildCount() == 0) list.addView(directed(text(getString(R.string.empty), 18, MUTED)));
+            if (list.getChildCount() == 0) list.addView(directed(text(getString(R.string.empty), 18, TEXT_2)));
             if (tab == RECITERS && loadState == LOADED && reciterFocus < list.getChildCount()) {
                 focus = list.getChildAt(reciterFocus);
             } else {
@@ -552,6 +593,7 @@ public class MainActivity extends Activity {
         refreshMarks();
         listScroll.scrollTo(0, 0);
         if (!keepTabFocus && focus != null) focus.requestFocus();
+        updateHint();
     }
 
     private View firstRow() {
@@ -561,53 +603,186 @@ public class MainActivity extends Activity {
         return null;
     }
 
-    private View row(String title, String subtitle, String key, View.OnClickListener onClick) {
+    private View row(String title, String secondary, String idleStatus, String key, View.OnClickListener onClick,
+            boolean station) {
         LinearLayout row = new LinearLayout(this);
         row.setLayoutDirection(arabic ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setMinimumHeight(dp(subtitle == null ? 56 : 64));
+        row.setClipChildren(false);
+        row.setMinimumHeight(dp(secondary == null ? 56 : 64));
         row.setPadding(dp(16), dp(8), dp(16), dp(8));
-        row.setBackground(focusable(CARD, 10, 1));
+        row.setBackground(rowBackground());
+        row.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
         row.setFocusable(true);
         row.setClickable(true);
         row.setTag(key);
-        row.setOnFocusChangeListener(SCALE_ON_FOCUS);
+        row.setOnFocusChangeListener((v, focused) -> {
+            lift(v, focused, ROW_SCALE);
+            focusMoved(v, focused);
+        });
 
-        TextView mark = text("", 16, ACCENT);
-        mark.setGravity(Gravity.CENTER);
-        row.addView(mark, new LinearLayout.LayoutParams(dp(24), LinearLayout.LayoutParams.WRAP_CONTENT));
+        View disc;
+        if (station) {
+            disc = new RadioGlyph(this);
+        } else {
+            TextView note = text("\u266A", 18, ACCENT);
+            note.setGravity(Gravity.CENTER);
+            disc = note;
+        }
+        disc.setBackground(oval(PILL));
+        row.addView(disc, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
         LinearLayout words = new LinearLayout(this);
         words.setOrientation(LinearLayout.VERTICAL);
-        TextView label = directed(text(title, 20, Color.WHITE));
-        label.setTag(title);
+        words.setPadding(dp(14), 0, dp(14), 0);
+        TextView label = directed(text(title, 19, TEXT));
+        label.setTypeface(MEDIUM);
+        label.setSingleLine();
+        label.setEllipsize(TextUtils.TruncateAt.END);
         words.addView(label);
-        if (subtitle != null) words.addView(directed(text(subtitle, 16, MUTED)));
+        if (secondary != null) {
+            TextView second = directed(text(secondary, 15, TEXT_2));
+            second.setSingleLine();
+            second.setEllipsize(TextUtils.TruncateAt.END);
+            if (isArabic(secondary)) second.setLineSpacing(0, ARABIC_TITLE_SPACING);
+            words.addView(second);
+        }
+        TextView state = directed(text(idleStatus == null ? "" : idleStatus, 14, TEXT_3));
+        state.setTag(idleStatus);
+        state.setVisibility(idleStatus == null ? View.GONE : View.VISIBLE);
+        words.addView(state);
         row.addView(words, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         row.setOnClickListener(v -> {
-            if (key.equals(playingKey) && player != null && ready) togglePause();
+            if (isPlayingKey(key) && player != null && ready) togglePause();
             else onClick.onClick(v);
         });
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(0, dp(4), 0, dp(4));
+        params.setMargins(0, dp(5), 0, dp(5));
         row.setLayoutParams(params);
         return row;
     }
 
-    /** The row that is playing is gold with a dot, hollow when paused. */
+    /** A station key is the one playing; a reciter key is too while one of that reciter's surahs plays. */
+    private boolean isPlayingKey(String key) {
+        if (key.equals(playingKey)) return true;
+        return queueReciter != null && playingKey != null && key.equals(reciterKey(queueReciter));
+    }
+
+    /** The playing row gets the accent tint and "Live - Playing" in accent; the idle status returns when it stops. */
     private void refreshMarks() {
         for (int i = 0; i < list.getChildCount(); i++) {
             View row = list.getChildAt(i);
             if (!(row instanceof ViewGroup) || row.getTag() == null) continue;
-            ViewGroup group = (ViewGroup) row;
-            TextView mark = (TextView) group.getChildAt(0);
-            TextView label = (TextView) ((ViewGroup) group.getChildAt(1)).getChildAt(0);
-            boolean current = row.getTag().equals(playingKey);
-            mark.setText(!current ? "" : paused ? "○" : "●");
-            label.setTextColor(current ? ACCENT : Color.WHITE);
+            ViewGroup words = (ViewGroup) ((ViewGroup) row).getChildAt(1);
+            TextView state = (TextView) words.getChildAt(words.getChildCount() - 1);
+            boolean current = isPlayingKey((String) row.getTag());
+            row.setActivated(current);
+            if (current) {
+                boolean station = state.getTag() != null;
+                state.setText(paused ? "\u25CB " + getString(R.string.state_paused)
+                        : "\u25CF " + getString(station ? R.string.live_playing : R.string.playing));
+                state.setTextColor(paused ? TEXT_2 : ACCENT);
+                state.setVisibility(View.VISIBLE);
+            } else {
+                String idle = (String) state.getTag();
+                state.setText(idle == null ? "" : idle);
+                state.setTextColor(TEXT_3);
+                state.setVisibility(idle == null ? View.GONE : View.VISIBLE);
+            }
         }
+        updateHint();
+    }
+
+    /** "Arabic - English" station names: the language of the screen comes first, the other under it. */
+    private String[] names(Catalog.Station station) {
+        int dot = station.name.indexOf(" \u00B7 ");
+        if (dot < 0) return new String[] {station.name, null};
+        String first = station.name.substring(0, dot).trim();
+        String second = station.name.substring(dot + 3).trim();
+        boolean firstArabic = isArabic(first);
+        return arabic == firstArabic ? new String[] {first, second} : new String[] {second, first};
+    }
+
+    private static boolean isArabic(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.UnicodeBlock.of(value.charAt(i)) == Character.UnicodeBlock.ARABIC) return true;
+        }
+        return false;
+    }
+
+    private static String reciterKey(Catalog.Reciter reciter) {
+        return "c:" + reciter.id + reciter.server;
+    }
+
+    // ---- remote hint bar ----
+
+    /** Key chips and what the keys do right now: one row, mirrored in RTL with the page. */
+    private View buildHintBar() {
+        hintBar = new LinearLayout(this);
+        hintBar.setGravity(Gravity.CENTER_VERTICAL);
+        hintBar.setPadding(0, dp(12), 0, 0);
+        okChip = chip(getString(R.string.key_ok));
+        hintBar.addView(okChip);
+        okLabel = hintLabel();
+        hintBar.addView(okLabel);
+        hintBar.addView(chip(getString(R.string.key_back)));
+        backLabel = hintLabel();
+        hintBar.addView(backLabel);
+        tabsChip = chip("\u2191");
+        hintBar.addView(tabsChip);
+        tabsLabel = hintLabel();
+        tabsLabel.setText(R.string.hint_tabs);
+        hintBar.addView(tabsLabel);
+        return hintBar;
+    }
+
+    private TextView chip(String key) {
+        TextView chip = text(key, 12, TEXT);
+        chip.setTypeface(null, Typeface.BOLD);
+        chip.setGravity(Gravity.CENTER);
+        chip.setPadding(dp(6), dp(2), dp(6), dp(2));
+        chip.setBackground(shape(PILL, 100));
+        return chip;
+    }
+
+    private TextView hintLabel() {
+        TextView label = directed(text("", 14, TEXT_2));
+        label.setPadding(dp(8), 0, dp(24), 0);
+        return label;
+    }
+
+    private void focusMoved(View view, boolean focused) {
+        if (focused) focusedView = view;
+        else if (focusedView == view) focusedView = null;
+        updateHint();
+    }
+
+    /** What OK and Back really do: OK follows the focused view, Back follows onBackPressed. */
+    private void updateHint() {
+        if (okLabel == null) return;
+        boolean running = player != null && ready;
+        int ok;
+        if (focusedView == playButton) {
+            ok = !running ? 0 : paused ? R.string.hint_resume : R.string.hint_pause;
+        } else if (focusedView instanceof TextView) {
+            ok = R.string.hint_open_tab;
+        } else if (focusedView != null && focusedView.getTag() instanceof String) {
+            String key = (String) focusedView.getTag();
+            if (running && isPlayingKey(key)) ok = paused ? R.string.hint_resume : R.string.hint_pause;
+            else ok = key.startsWith("c:") ? R.string.hint_open_surahs : R.string.hint_play;
+        } else {
+            ok = 0;
+        }
+        okLabel.setText(ok == 0 ? "" : getString(ok));
+        okLabel.setVisibility(ok == 0 ? View.GONE : View.VISIBLE);
+        okChip.setVisibility(ok == 0 ? View.GONE : View.VISIBLE);
+        backLabel.setText(openReciter != null ? R.string.hint_to_reciters
+                : player != null || playingKey != null ? R.string.hint_stop : R.string.hint_close);
+        boolean topLevel = openReciter == null;
+        tabsChip.setVisibility(topLevel ? View.VISIBLE : View.GONE);
+        tabsLabel.setVisibility(topLevel ? View.VISIBLE : View.GONE);
     }
 
     // ---- now-playing panel ----
@@ -616,59 +791,58 @@ public class MainActivity extends Activity {
         LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL);
         panel.setGravity(Gravity.CENTER_VERTICAL);
+        panel.setClipChildren(false);
         panel.setPadding(dp(32), dp(24), dp(32), dp(24));
-        panel.setBackground(shape(CARD, 14, 0, 0));
+        panel.setBackground(shape(SURFACE, 18));
 
-        LinearLayout liveRow = new LinearLayout(this);
-        liveRow.setGravity(Gravity.CENTER_VERTICAL);
-        liveDot = new View(this);
-        GradientDrawable dot = new GradientDrawable();
-        dot.setShape(GradientDrawable.OVAL);
-        dot.setColor(ACCENT);
-        liveDot.setBackground(dot);
-        liveRow.addView(liveDot, new LinearLayout.LayoutParams(dp(12), dp(12)));
-        liveLabel = directed(text(getString(R.string.live), 18, ACCENT));
-        liveLabel.setTypeface(null, Typeface.BOLD);
-        liveLabel.setPadding(dp(8), 0, 0, 0);
-        liveRow.addView(liveLabel);
-        panel.addView(liveRow);
+        pillPlaying = shape(ACCENT_TINT, 100);
+        pillNeutral = shape(PILL, 100);
+        pill = directed(text("", 15, ACCENT));
+        pill.setTypeface(MEDIUM);
+        pill.setPadding(dp(12), dp(4), dp(12), dp(4));
+        panel.addView(pill, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        panelName = directed(text("", 28, Color.WHITE));
+        panelName = directed(text("", 30, TEXT));
         panelName.setTypeface(null, Typeface.BOLD);
-        panelName.setPadding(0, dp(8), 0, 0);
+        panelName.setMaxLines(2);
+        panelName.setEllipsize(TextUtils.TruncateAt.END);
+        panelName.setPadding(0, dp(12), 0, 0);
         panel.addView(panelName);
-        panelSurah = directed(text("", 22, ACCENT));
-        panelSurah.setPadding(0, dp(4), 0, 0);
+        panelSecondary = directed(text("", 22, TEXT_2));
+        panelSecondary.setMaxLines(2);
+        panelSecondary.setEllipsize(TextUtils.TruncateAt.END);
+        panelSecondary.setPadding(0, dp(4), 0, 0);
+        panel.addView(panelSecondary);
+        panelSurah = directed(text("", 19, ACCENT));
+        panelSurah.setTypeface(MEDIUM);
+        panelSurah.setPadding(0, dp(8), 0, 0);
         panel.addView(panelSurah);
 
         playButton = new PlayButton(this);
         playButton.setOnClickListener(v -> togglePause());
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(dp(64), dp(64));
+        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(dp(72), dp(72));
         buttonParams.gravity = Gravity.CENTER_HORIZONTAL;
         buttonParams.topMargin = dp(24);
         panel.addView(playButton, buttonParams);
 
-        status = text("", 17, Color.WHITE);
-        status.setTypeface(null, Typeface.BOLD);
-        status.setGravity(Gravity.CENTER);
-        status.setPadding(0, dp(16), 0, 0);
-        panel.addView(status);
-        statusDetail = text(getString(R.string.offline_hint), 16, MUTED);
+        statusDetail = text(getString(R.string.offline_hint), 15, TEXT_2);
         statusDetail.setGravity(Gravity.CENTER);
+        statusDetail.setPadding(0, dp(16), 0, 0);
         panel.addView(statusDetail);
 
         progress = new LinearLayout(this);
-        progress.setBackground(shape(DIVIDER, 4, 0, 0));
+        progress.setBackground(shape(TRACK_LINE, 2));
         progressFill = new View(this);
-        progressFill.setBackground(shape(ACCENT, 4, 0, 0));
+        progressFill.setBackground(shape(ACCENT, 2));
         progressRest = new View(this);
-        progress.addView(progressFill, new LinearLayout.LayoutParams(0, dp(8), 0f));
-        progress.addView(progressRest, new LinearLayout.LayoutParams(0, dp(8), 1f));
+        progress.addView(progressFill, new LinearLayout.LayoutParams(0, dp(4), 0f));
+        progress.addView(progressRest, new LinearLayout.LayoutParams(0, dp(4), 1f));
         LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(8));
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(4));
         barParams.topMargin = dp(24);
         panel.addView(progress, barParams);
-        clock = text("", 16, MUTED);
+        clock = text("", 14, TEXT_3);
         clock.setGravity(Gravity.CENTER);
         clock.setPadding(0, dp(8), 0, 0);
         panel.addView(clock);
@@ -681,24 +855,22 @@ public class MainActivity extends Activity {
         boolean active = playingKey != null;
         boolean connecting = active && !ready;
         boolean surah = playingSurah != null;
-        liveLabel.setVisibility(active ? View.VISIBLE : View.GONE);
-        liveLabel.setText(live ? R.string.live : R.string.recitation);
-        liveDot.setVisibility(active && live && !paused ? View.VISIBLE : View.GONE);
+        pill.setVisibility(active || offline ? View.VISIBLE : View.GONE);
         panelName.setText(playingName == null ? getString(R.string.idle) : playingName);
+        boolean second = playingSecondary != null && !playingSecondary.isEmpty();
+        panelSecondary.setText(playingSecondary);
+        panelSecondary.setVisibility(second ? View.VISIBLE : View.GONE);
+        panelSecondary.setLineSpacing(0, second && isArabic(playingSecondary) ? ARABIC_TITLE_SPACING : 1f);
         panelSurah.setText(playingSurah);
         panelSurah.setVisibility(surah ? View.VISIBLE : View.GONE);
         playButton.setState(ready && !paused, active && ready);
         if (connecting) {
-            status.setText(R.string.connecting);
-            status.setTextColor(MUTED);
+            showPill(getString(R.string.connecting), false, false);
         } else if (offline) {
-            status.setText("× " + getString(R.string.state_offline));
-            status.setTextColor(Color.WHITE);
+            showPill("\u00D7 " + getString(R.string.state_offline), false, true);
         } else if (active) {
-            status.setText(paused ? "○ " + getString(R.string.state_paused) : "● " + getString(R.string.state_playing));
-            status.setTextColor(paused ? Color.WHITE : ACCENT);
-        } else {
-            status.setText("");
+            showPill(paused ? "\u25CB " + getString(R.string.state_paused)
+                    : "\u25CF " + getString(R.string.state_playing), !paused, paused);
         }
         statusDetail.setVisibility(offline ? View.VISIBLE : View.GONE);
         int surahBar = surah && ready ? View.VISIBLE : View.GONE;
@@ -706,6 +878,13 @@ public class MainActivity extends Activity {
         clock.setVisibility(surahBar);
         handler.removeCallbacks(tick);
         if (surahBar == View.VISIBLE) tick.run();
+    }
+
+    /** "Playing now" is accent text on an accent tint; every other state is white on the neutral pill. */
+    private void showPill(String label, boolean accent, boolean strong) {
+        pill.setText(label);
+        pill.setBackground(accent ? pillPlaying : pillNeutral);
+        pill.setTextColor(accent ? ACCENT : strong ? TEXT : TEXT_2);
     }
 
     /** Position of the surah, once a second while it is on screen and playing. */
@@ -738,37 +917,107 @@ public class MainActivity extends Activity {
 
     // ---- shapes ----
 
-    private static final View.OnFocusChangeListener SCALE_ON_FOCUS = (v, focused) -> {
-        float scale = focused ? FOCUS_SCALE : 1f;
-        v.setScaleX(scale);
-        v.setScaleY(scale);
-    };
+    private static final float ARABIC_TITLE_SPACING = 1.25f;
+    private static final Typeface MEDIUM = Typeface.create("sans-serif-medium", Typeface.NORMAL);
 
-    private GradientDrawable shape(int fill, int radius, int strokeWidth, int strokeColor) {
+    /** Focus lifts the view: it scales, and a soft shadow shows under it. */
+    private void lift(View view, boolean focused, float scale) {
+        float to = focused ? scale : 1f;
+        view.animate().scaleX(to).scaleY(to).setDuration(150).start();
+        view.setElevation(focused ? dp(8) : 0);
+    }
+
+    private GradientDrawable shape(int fill, int radius) {
         GradientDrawable shape = new GradientDrawable();
         shape.setColor(fill);
         shape.setCornerRadius(dp(radius));
-        if (strokeWidth > 0) shape.setStroke(dp(strokeWidth), strokeColor);
         return shape;
     }
 
-    /**
-     * Idle, with an optional divider line, or focused: the surface lightens, with a 2 dp accent stroke inside a
-     * 1 dp white one. The state list is built with the view, so a focus change allocates nothing.
-     */
-    private Drawable focusable(int fill, int radius, int dividerWidth) {
-        boolean raised = fill == CARD;
-        GradientDrawable outer = shape(Color.TRANSPARENT, radius, 1, Color.WHITE);
-        GradientDrawable inner = shape(raised ? RAISED : fill, radius - 1, 2, ACCENT);
-        LayerDrawable focused = new LayerDrawable(new Drawable[] {outer, inner});
-        focused.setLayerInset(1, dp(1), dp(1), dp(1), dp(1));
+    private GradientDrawable oval(int fill) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setShape(GradientDrawable.OVAL);
+        shape.setColor(fill);
+        return shape;
+    }
+
+    private GradientDrawable outlined(int fill, int radius) {
+        GradientDrawable shape = shape(fill, radius);
+        shape.setStroke(dp(2), FOCUS_STROKE);
+        return shape;
+    }
+
+    /** List row: focused = lighter fill + white outline; playing (activated) = accent tint; both when both. */
+    private Drawable rowBackground() {
         StateListDrawable states = new StateListDrawable();
-        states.addState(new int[] {android.R.attr.state_focused}, focused);
-        states.addState(new int[0], shape(fill, radius, dividerWidth, DIVIDER));
+        states.addState(new int[] {android.R.attr.state_focused, android.R.attr.state_activated},
+                outlined(blend(SURFACE_FOCUSED, ACCENT_TINT), 14));
+        states.addState(new int[] {android.R.attr.state_focused}, outlined(SURFACE_FOCUSED, 14));
+        states.addState(new int[] {android.R.attr.state_activated}, shape(blend(SURFACE, ACCENT_TINT), 14));
+        states.addState(new int[0], shape(SURFACE, 14));
         return states;
     }
 
-    /** The 64 dp round control: a play triangle or two pause bars on the accent, grey when nothing plays. */
+    /** Tab: chosen = white fill; focused adds the outline and a faint fill when not chosen. */
+    private Drawable tabBackground() {
+        StateListDrawable states = new StateListDrawable();
+        states.addState(new int[] {android.R.attr.state_focused, android.R.attr.state_selected},
+                outlined(Color.WHITE, 22));
+        states.addState(new int[] {android.R.attr.state_focused}, outlined(PILL, 22));
+        states.addState(new int[] {android.R.attr.state_selected}, shape(Color.WHITE, 22));
+        states.addState(new int[0], shape(Color.TRANSPARENT, 22));
+        return states;
+    }
+
+    /** Opaque result of a translucent colour laid over a base, so a row never shows the glow through. */
+    private static int blend(int base, int over) {
+        float a = Color.alpha(over) / 255f;
+        int baseAlpha = Color.alpha(base);
+        return Color.argb(baseAlpha,
+                Math.round(Color.red(over) * a + Color.red(base) * (1 - a)),
+                Math.round(Color.green(over) * a + Color.green(base) * (1 - a)),
+                Math.round(Color.blue(over) * a + Color.blue(base) * (1 - a)));
+    }
+
+    /** The window base, lit by an accent glow from the top-start corner. */
+    private Drawable glow() {
+        GradientDrawable light = new GradientDrawable();
+        light.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        light.setGradientCenter(arabic ? 1f : 0f, 0f);
+        light.setGradientRadius(dp(672));
+        light.setColors(new int[] {GLOW, GLOW & 0x00FFFFFF});
+        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND), light});
+    }
+
+    /** A radio mast with a wave on each side, in the accent. */
+    private final class RadioGlyph extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF arc = new RectF();
+
+        RadioGlyph(Context context) {
+            super(context);
+            paint.setColor(ACCENT);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            float c = getWidth() / 2f, u = getWidth() / 40f;
+            paint.setStrokeWidth(2 * u);
+            for (int ring = 1; ring <= 2; ring++) {
+                float r = (4 + 5 * ring) * u;
+                arc.set(c - r, c - r, c + r, c + r);
+                canvas.drawArc(arc, -45, 90, false, paint);
+                canvas.drawArc(arc, 135, 90, false, paint);
+            }
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(c, c, 3 * u, paint);
+            paint.setStyle(Paint.Style.STROKE);
+        }
+    }
+
+    /** The 72 dp round control: a play triangle or two pause bars on the accent; white when focused. */
     private final class PlayButton extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path triangle = new Path();
@@ -778,7 +1027,17 @@ public class MainActivity extends Activity {
             super(context);
             setFocusable(true);
             setClickable(true);
-            setOnFocusChangeListener(SCALE_ON_FOCUS);
+            setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    outline.setOval(0, 0, view.getWidth(), view.getHeight());
+                }
+            });
+            setOnFocusChangeListener((v, focused) -> {
+                lift(v, focused, TILE_SCALE);
+                invalidate();
+                focusMoved(v, focused);
+            });
         }
 
         void setState(boolean playing, boolean enabledLook) {
@@ -790,24 +1049,26 @@ public class MainActivity extends Activity {
         @Override
         protected void onDraw(Canvas canvas) {
             float c = getWidth() / 2f;
+            paint.setColor(enabledLook ? ACCENT : PILL);
+            canvas.drawCircle(c, c, c, paint);
             if (isFocused()) {
-                paint.setColor(Color.WHITE);
-                canvas.drawCircle(c, c, c, paint);
-                paint.setColor(BACKGROUND);
-                canvas.drawCircle(c, c, c - dp(1), paint);
+                float ring = 3 * getWidth() / 72f;
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(ring);
+                paint.setColor(FOCUS_STROKE);
+                canvas.drawCircle(c, c, c - ring / 2, paint);
+                paint.setStyle(Paint.Style.FILL);
             }
-            paint.setColor(enabledLook ? ACCENT : DISABLED);
-            canvas.drawCircle(c, c, c - dp(4), paint);
-            paint.setColor(BACKGROUND);
-            float u = getWidth() / 64f;
+            paint.setColor(enabledLook ? ON_LIGHT : TEXT_3);
+            float u = getWidth() / 72f;
             if (playing) {
-                canvas.drawRect(c - 9 * u, c - 11 * u, c - 3 * u, c + 11 * u, paint);
-                canvas.drawRect(c + 3 * u, c - 11 * u, c + 9 * u, c + 11 * u, paint);
+                canvas.drawRect(c - 10 * u, c - 12 * u, c - 3 * u, c + 12 * u, paint);
+                canvas.drawRect(c + 3 * u, c - 12 * u, c + 10 * u, c + 12 * u, paint);
             } else {
                 triangle.reset();
-                triangle.moveTo(c - 7 * u, c - 12 * u);
-                triangle.lineTo(c + 11 * u, c);
-                triangle.lineTo(c - 7 * u, c + 12 * u);
+                triangle.moveTo(c - 8 * u, c - 13 * u);
+                triangle.lineTo(c + 12 * u, c);
+                triangle.lineTo(c - 8 * u, c + 13 * u);
                 triangle.close();
                 canvas.drawPath(triangle, paint);
             }

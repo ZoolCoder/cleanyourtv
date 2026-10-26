@@ -1,11 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="title">إذاعة القرآن · Quran Radio</string>
-    <string name="hint">زر OK يشغّل أو يوقف مؤقتًا · زر الأعلى يغيّر القسم · زر الرجوع يوقف</string>
-    <string name="hint_surahs">زر OK يشغّل السورة وتتبعها التالية · زر الرجوع يعيدك إلى القرّاء</string>
+    <string name="key_back">رجوع</string>
+    <string name="hint_play">تشغيل</string>
+    <string name="hint_pause">إيقاف مؤقت</string>
+    <string name="hint_resume">تشغيل</string>
+    <string name="hint_open_surahs">فتح السور</string>
+    <string name="hint_open_tab">فتح القسم</string>
+    <string name="hint_tabs">الأقسام</string>
+    <string name="hint_to_reciters">العودة إلى القرّاء</string>
+    <string name="hint_stop">إيقاف</string>
+    <string name="hint_close">إغلاق</string>
     <string name="idle">اختر إذاعة أو قارئًا</string>
     <string name="live">مباشر</string>
-    <string name="recitation">تلاوة</string>
+    <string name="live_playing">مباشر · يعمل الآن</string>
+    <string name="playing">يعمل الآن</string>
     <string name="state_playing">يعمل الآن</string>
     <string name="state_paused">متوقف مؤقتاً</string>
     <string name="state_offline">غير متصل</string>

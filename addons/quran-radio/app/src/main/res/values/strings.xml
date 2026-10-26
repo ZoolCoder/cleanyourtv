@@ -4,11 +4,21 @@
     <string name="tab_radio" translatable="false">الإذاعة · Radio</string>
     <string name="tab_reciters" translatable="false">القرّاء · Reciters</string>
     <string name="title">Quran Radio · إذاعة القرآن</string>
-    <string name="hint">OK plays or pauses · Up switches the tab · Back stops</string>
-    <string name="hint_surahs">OK plays the surah, the next one follows · Back returns to the reciters</string>
+    <string name="key_ok" translatable="false">OK</string>
+    <string name="key_back">Back</string>
+    <string name="hint_play">Play</string>
+    <string name="hint_pause">Pause</string>
+    <string name="hint_resume">Play</string>
+    <string name="hint_open_surahs">Open surahs</string>
+    <string name="hint_open_tab">Open tab</string>
+    <string name="hint_tabs">Tabs</string>
+    <string name="hint_to_reciters">Return to reciters</string>
+    <string name="hint_stop">Stop</string>
+    <string name="hint_close">Close</string>
     <string name="idle">Choose a station or a reciter</string>
     <string name="live">Live</string>
-    <string name="recitation">Recitation</string>
+    <string name="live_playing">Live · Playing</string>
+    <string name="playing">Playing</string>
     <string name="state_playing">Playing now</string>
     <string name="state_paused">Paused</string>
     <string name="state_offline">Offline</string>

@@ -7,11 +7,12 @@
   "wallpaper_captions": true,
   "wallpaper_credits": true,
   "cinematic_home": true,
-  "cinematic_scrim": 40,
+  "cinematic_white_focus": true,
+  "cinematic_scrim": 70,
   "cinematic_art": 25,
   "dock_glass": true,
   "icon_only_buttons": true,
-  "app_glow": true,
+  "app_glow": false,
   "glow_style": "horizon",
   "focus_overshoot": false,
   "reduced_motion": true,
@@ -24,5 +25,6 @@
   "ramadan_countdown": true,
   "prayer_alert": true,
   "language_choice": true,
+  "settings_hints": true,
   "locale": "ar-EG-u-nu-latn"
 }

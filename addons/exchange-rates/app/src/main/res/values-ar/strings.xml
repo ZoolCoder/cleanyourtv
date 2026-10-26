@@ -5,5 +5,6 @@
     <string name="failed">تعذّر تحميل الأسعار. تحقّق من اتصال التلفزيون بالإنترنت. · Could not load the rates. Check the TV\'s internet connection.</string>
     <string name="offline">دون اتصال: تُعرض آخر أسعار محفوظة. · Offline: showing the last saved rates.</string>
     <string name="old">هذه الأسعار عمرها %1$d يوماً. · These rates are %1$d days old.</string>
+    <string name="updated">آخر تحديث %2$s · Updated %1$s</string>
     <string name="unit">1 =</string>
 </resources>

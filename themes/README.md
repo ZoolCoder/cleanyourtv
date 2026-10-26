@@ -71,6 +71,7 @@ updated. Add-ons with custom shell installers still need Bash; this native Windo
 | `twilight/` | Three original anime landscape wallpapers in `wallpapers/` (Mount Fuji twilight, seaside coastal train, ancient stone arch), rotating with caption under the buttons; frosted-glass dock at 60% opacity, ambient glow disabled so the artwork stays calm. See `twilight/CREDITS.md` | <img src="twilight/screenshot.jpg" width="320" alt="twilight theme"> |
 | `onyx/` | Deep `#0E0F12` OLED dark canvas with no wallpaper, greeting, or ambient glow; a 5-column dock with no band or title, rim-only focus highlight (`glass_style: rim`), no focus overshoot, icon-only top buttons, and the app library enabled. By [@socmarin](https://github.com/socmarin) | <img src="onyx/screenshot.jpg" width="320" alt="onyx theme"> |
 | `orba/` | The look of [Orba](https://github.com/btalal/orba), an OLED-friendly launcher: a midnight-blue wallpaper with cyan-to-violet light waves along the bottom edge, drawn in code, five floating tiles with no dock band, title or greeting, the focus glowing in each app's own colour with a soft halo and no overshoot, icon-only top buttons, rows that fade under the clock, and the clock over the waves after ten idle minutes | <img src="orba/screenshot.jpg" width="320" alt="orba theme"> |
+| `sudan/` | Twelve photos of Sudan from Wikimedia Commons (the pyramids of Meroë and Nuri, Jebel Barkal, the Nile at Khartoum, Port Sudan, the mosque of Suakin), a new one every 20 minutes with its Arabic caption; the cinematic shelf with a light scrim, a frosted dock, horizon glow, round icon-only buttons. Turns on the Hijri date, the next-prayer pill, the weather pill and Arabic text (`locale`), the first three for the place set in `config.xml`: see [docs/weather.md](../docs/weather.md). The photos are CC BY / CC BY-SA / public domain, not MIT: see `sudan/CREDITS.md` | <img src="sudan/screenshot.jpg" width="320" alt="sudan theme"> |
 
 Every theme folder has a `screenshot.jpg` of Home with that theme on a real TV. `tools/theme.sh` never
 pushes it; it is only here so you can see a theme before you try it.
@@ -115,6 +116,8 @@ A new key needs one there in the same pull request.
 | `top_bar_apps` | list of package names | Apps shown as round buttons with their own logo in the top bar, left of the network pill; they leave the grid |
 | `show_inputs_pill` | bool | The Inputs pill in the top bar, shown when the TV has inputs (`true` by default); `false` hides it, and with `top_menu` it also leaves Inputs out of the gear's menu (streamers with no HDMI input, such as the Chromecast with Google TV); what the remote's Input button does is unchanged |
 | `icon_only_buttons` | bool | Wi-Fi and Settings as round icon buttons; Inputs keeps its label. The VPN badge is drawn in the Wi-Fi pill's label, so with `wifi_label_width` at 0 it goes with the label: add `vpn_pill` to keep the VPN state on screen (`false` by default) |
+| `weather` | bool | A weather pill in the top bar: the sky as an emoji, the temperature and a word for it, now, at config.xml's `latitude` and `longitude`, from Open-Meteo's free forecast every 30 minutes while Home is on screen; the last reading is kept over restarts. The one key that needs the `INTERNET` permission, which the manifest carries for it: see [docs/weather.md](../docs/weather.md). Off by default, and hidden without a place |
+| `prayer_times` | bool | A pill with the next of the five daily prayers, its time and how long until it, computed on the TV (no network) for config.xml's `latitude` and `longitude` by the Egyptian General Authority of Survey's angles, in the TV's time zone. Off by default, and hidden without a place |
 | `icon_only_inputs` | bool | The Inputs pill as a round icon button too, its label kept as the TalkBack description (`false` by default). Works with or without `icon_only_buttons` |
 | `top_menu` | bool | Inputs, Wi-Fi and Settings folded into one round gear, centred on the header: OK drops a menu with the three plus Reorder apps, hold OK keeps the launcher menu (`false` by default) |
 | `launcher_settings_button` | bool | Make the header Settings action open Launcher settings directly with a matching 22dp home icon; also changes the Settings row when `top_menu` is on. Hold OK keeps module-card and ordering tools. The settings page includes Reorder apps and TV settings (`false` by default) |
@@ -135,6 +138,7 @@ A new key needs one there in the same pull request.
 | `shamsi_date` | bool | Show the Solar Hijri date above the Gregorian one |
 | `lunar_date` | bool | Show the lunisolar date under the Gregorian one, e.g. `LUNAR 13/9 · YEAR OF THE HORSE`, or `13/9 ÂM LỊCH · BÍNH NGỌ` in Vietnamese; a leap month is marked. Off by default |
 | `lunar_utc_offset` | 0 to 14 | Hours east of UTC the lunar calendar is computed for: `7` is the Vietnamese calendar, `8` the Chinese one, `9` the Korean one; they differ by a day now and then (and by a month in 1985). Unset: 7 when the TV is in Vietnamese, 9 in Korean, 8 otherwise |
+| `hijri_date` | bool | The Hijri (Umm al-Qura, from `java.time`) date under the Gregorian one, e.g. `14 Jumada I 1448 AH`; `lunar_date` wins when both are on. Off by default |
 | `date_below_clock` | bool | The date (with the Shamsi and lunar lines) on its own line under the clock instead of beside it, for a top bar whose pills leave the date too little room (`false` by default) |
 | `locale` | string | The language the launcher shows itself in, as a language tag (`"vi"`, `"pt-BR"`, `"ar-EG-u-nu-latn"` for Arabic with Western digits), instead of the TV's: for firmware with no menu entry for a language the launcher speaks (a China-market Xiaomi offers Chinese and English only). Empty by default, which follows the TV |
 | `greeting_name` | string | A name after the greeting, e.g. `"Mr. Trịnh"` for GOOD MORNING, MR. TRỊNH; empty for the greeting alone |
@@ -282,7 +286,8 @@ the plain background; the default is off (the reference launcher looks exactly a
 That evening peak is a fixed reference day, sunrise 07:30 and sunset 19:00 on the TV's clock. The
 launcher follows the real sun only when `latitude` and `longitude` are set in
 `launcher/app/src/main/res/values/config.xml`, which is a build setting a theme cannot carry: see
-[docs/sky.md](../docs/sky.md) for the two lines and what still falls back.
+[docs/sky.md](../docs/sky.md) for the two lines and what still falls back. The `weather` and `prayer_times` pills use
+the same two lines.
 
 ## Adding a theme
 

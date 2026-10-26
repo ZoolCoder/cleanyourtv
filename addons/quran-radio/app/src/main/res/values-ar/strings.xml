@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">إذاعة القرآن · Quran Radio</string>
+    <string name="hint">زر OK يشغّل أو يوقف مؤقتًا · زر الأعلى يغيّر القسم · زر الرجوع يوقف</string>
+    <string name="hint_surahs">زر OK يشغّل السورة وتتبعها التالية · زر الرجوع يعيدك إلى القرّاء</string>
+    <string name="idle">اختر إذاعة أو قارئًا</string>
+    <string name="live">مباشر</string>
+    <string name="recitation">تلاوة</string>
+    <string name="state_playing">يعمل الآن</string>
+    <string name="state_paused">متوقف مؤقتاً</string>
+    <string name="state_offline">غير متصل</string>
+    <string name="connecting">جارٍ الاتصال…</string>
+    <string name="loading">جارٍ تحميل القرّاء…</string>
+    <string name="failed">تعذّر تحميل القرّاء. تحقّق من اتصال التلفزيون بالإنترنت.</string>
+    <string name="offline_hint">تعذّر التشغيل. تحقّق من اتصال التلفزيون بالإنترنت.</string>
+    <string name="empty">لا توجد إذاعات أو قرّاء في القائمة.</string>
+</resources>

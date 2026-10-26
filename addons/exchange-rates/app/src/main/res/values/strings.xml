@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Exchange Rates</string>
+    <string name="title">Sudanese pound · الجنيه السوداني</string>
+    <string name="loading">Loading the rates… · جارٍ تحميل الأسعار…</string>
+    <string name="failed">Could not load the rates. Check the TV\'s internet connection. · تعذّر تحميل الأسعار. تحقّق من اتصال التلفزيون بالإنترنت.</string>
+    <string name="offline">Offline: showing the last saved rates. · دون اتصال: تُعرض آخر أسعار محفوظة.</string>
+    <string name="old">These rates are %1$d days old. · هذه الأسعار عمرها %1$d يوماً.</string>
+    <string name="sdg" translatable="false">SDG</string>
+    <string name="unit">1 =</string>
+    <!-- Both languages on every TV: the honesty notice is not left to the TV's language. -->
+    <string name="source_en" translatable="false">Official rate · ExchangeRate-API · updated %1$s</string>
+    <string name="source_ar" translatable="false">السعر الرسمي · ExchangeRate-API · آخر تحديث %1$s</string>
+    <string name="note_en" translatable="false">This is the official reference rate. The parallel-market rate that people actually use in Sudan is different, and usually much higher.</string>
+    <string name="note_ar" translatable="false">هذا هو السعر الرسمي المرجعي. سعر السوق الموازي الذي يتعامل به الناس فعلياً في السودان مختلف، وعادةً أعلى بكثير.</string>
+    <string name="attribution" translatable="false">Rates By Exchange Rate API · www.exchangerate-api.com</string>
+</resources>

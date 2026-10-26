@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="title">ركن الأطفال · Kids\' Corner</string>
+    <string name="hint">زر OK يشغّل الفيديو في تطبيق يوتيوب · الأعلى والأسفل يغيّران القناة</string>
+    <string name="loading">جارٍ تحميل الفيديوهات…</string>
+    <string name="failed">تعذّر تحميل الفيديوهات. تحقّق من اتصال التلفزيون بالإنترنت.</string>
+    <string name="row_failed">تعذّر تحميل هذه القناة.</string>
+    <string name="no_player">لا يوجد تطبيق يوتيوب على هذا التلفزيون.</string>
+</resources>

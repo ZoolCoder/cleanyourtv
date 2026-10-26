@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Family Notes</string>
+    <string name="title">Family Notes · ملاحظات العائلة</string>
+    <string name="switch_label">Receive notes from phones</string>
+    <string name="state_off">Off. Nothing is listening.</string>
+    <string name="state_starting">Starting…</string>
+    <string name="state_running">On. Listening on the home network.</string>
+    <string name="state_port">The port is in use by another app. Change it in config.xml and rebuild.</string>
+    <string name="address_label">On the phone, open this address (same Wi-Fi)</string>
+    <string name="no_address">No home network address found. Connect the TV to Wi-Fi or Ethernet.</string>
+    <string name="pin_label">PIN to type on the phone</string>
+    <string name="pin_hint">Five wrong PINs lock all notes out for 5 minutes.</string>
+    <string name="new_pin">New PIN</string>
+    <string name="overlay_ok">Pop-ups over the picture are allowed.</string>
+    <string name="overlay_missing">Pop-ups are not allowed yet, so notes are kept here only. Allow them from a computer:\n%1$s</string>
+    <string name="notes_label">Last 10 notes</string>
+    <string name="no_notes">No notes yet.</string>
+    <string name="clear">Clear</string>
+    <string name="pin_changed">New PIN is ready. Use it on the phone from now on.</string>
+    <string name="overlay_label">Pop-up permission</string>
+    <string name="clear_confirm">Press OK again to clear</string>
+    <string name="channel_name">Family Notes server</string>
+    <string name="notification_text">Listening for notes on the home network</string>
+</resources>

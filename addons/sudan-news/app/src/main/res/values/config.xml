@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The news feeds. A line is "language | source name | RSS feed URL | keyword": language is ar or en and
+     picks the tab the headlines go to; the keyword is optional and keeps only the stories whose headline or
+     summary contains it, for a feed that also covers other countries. Write & in a URL as &amp;.
+     Edit the list before you build; add or drop lines freely.
+
+     More outlets, headlines only (Google News items carry no summary):
+     <item>ar | أخبار جوجل | https://news.google.com/rss/search?q=%D8%A7%D9%84%D8%B3%D9%88%D8%AF%D8%A7%D9%86&amp;hl=ar&amp;gl=SD&amp;ceid=SD:ar |</item>
+     <item>en | Google News | https://news.google.com/rss/search?q=Sudan&amp;hl=en&amp;gl=US&amp;ceid=US:en |</item> -->
+<resources>
+    <string-array name="feeds" translatable="false">
+        <item>ar | راديو دبنقا | https://www.dabangasudan.org/ar/feed |</item>
+        <item>ar | سودان تربيون | https://sudantribune.net/feed/ |</item>
+        <item>ar | أخبار الأمم المتحدة | https://news.un.org/feed/subscribe/ar/news/region/africa/feed/rss.xml | السودان</item>
+        <item>en | Radio Dabanga | https://www.dabangasudan.org/en/feed |</item>
+        <item>en | UN News | https://news.un.org/feed/subscribe/en/news/region/africa/feed/rss.xml | Sudan</item>
+    </string-array>
+</resources>

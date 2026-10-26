@@ -54,6 +54,9 @@ Nothing is guessed from the time zone: it only decides which clock the minutes a
 **A theme cannot set this.** `sky_intensity` comes from a theme's `config.json`, but the place is a
 launcher build setting — `SkyView` reads those two string resources and `Config` never looks for them
 in a theme. A theme that wants the right sun says so in its own README, with the two lines above.
+The `weather` and `prayer_times` pills ([docs/weather.md](weather.md)) read the same two resources, so
+one place serves the sky, the weather and the prayer times, and a theme can switch the pills on without
+knowing where the TV is.
 
 ## Cost
 

@@ -11,7 +11,8 @@
     <string name="address_off">Turn on the switch above to connect a phone.</string>
     <string name="no_address">No home network address found. Connect the TV to Wi-Fi or Ethernet.</string>
     <string name="pin_label">Enter this PIN</string>
-    <string name="pin_hint">Five wrong PINs lock notes out for 5 minutes.</string>
+    <string name="pin_hint">Five wrong PINs lock a phone out and change the PIN.</string>
+    <string name="pin_rotated">Too many wrong PINs, so the PIN changed</string>
     <string name="new_pin">New PIN</string>
     <string name="overlay_ok">Pop-ups over the picture are allowed.</string>
     <string name="overlay_missing">Pop-ups are not allowed yet, so notes are kept here only. Allow them from a computer:\n%1$s</string>
@@ -34,4 +35,31 @@
     <string name="key_back">Back</string>
     <string name="hint_select">Select</string>
     <string name="hint_home">Return to home</string>
+    <string name="overlay_heading" translatable="false">Family note · ملاحظة عائلية</string>
+    <string name="overlay_from" translatable="false">From: %1$s · من: %1$s</string>
+    <string name="away_tag" translatable="false">✈ from abroad · من الخارج</string>
+    <string name="quiet_label" translatable="false">Quiet hours · ساعات الهدوء</string>
+    <string name="quiet_hint">Notes are kept, but nothing pops up</string>
+    <plurals name="locked_for">
+        <item quantity="one">Locked for %d more minute after wrong PINs</item>
+        <item quantity="other">Locked for %d more minutes after wrong PINs</item>
+    </plurals>
+
+    <!-- Family away. The panel shows only when relay_url is set: the HTTPS address of your own relay/ deploy. -->
+    <string name="relay_url" translatable="false"></string>
+    <string name="away_label" translatable="false">Family away · العائلة في الخارج</string>
+    <string name="away_switch">Notes from family abroad</string>
+    <string name="away_invite">Scan with the phone camera, copy the link and send it on WhatsApp.</string>
+    <string name="away_new_link">New link</string>
+    <string name="away_delete">Delete box</string>
+    <string name="away_setup">Setting up…</string>
+    <string name="away_offline">Can\'t reach the relay</string>
+    <string name="away_contact">Last contact %1$s</string>
+    <string name="away_gone">The link expired. Turn off and on for a new one.</string>
+    <string name="away_off">Off. The box and its link are kept.</string>
+    <string name="away_needs_on">Turn on Receive notes first</string>
+    <string name="away_rotate_title">Make a new link?</string>
+    <string name="away_rotate_body">Links you shared before stop working. Send the new one to everyone abroad.</string>
+    <string name="away_delete_title">Delete the box?</string>
+    <string name="away_delete_body">Family abroad can no longer send notes. Notes already on this TV stay.</string>
 </resources>

@@ -75,6 +75,18 @@ public class NoteEndpointTest {
     }
 
     @Test
+    public void wrongPinsAreCountedPerPhone() {
+        for (int i = 0; i < 5; i++) assertEquals(403, endpoint.handle(from("10.0.0.9", "name=a&text=b&pin=000000")).status);
+        assertEquals(429, endpoint.handle(from("10.0.0.9", "name=a&text=b&pin=123456")).status);
+        assertEquals(200, endpoint.handle(from("10.0.0.2", "name=a&text=b&pin=123456")).status);
+    }
+
+    private HttpRequest from(String peer, String body) {
+        HttpRequest base = request("POST", "/note", "application/x-www-form-urlencoded", body);
+        return new HttpRequest(base.method, base.path, base.headers, base.body, peer);
+    }
+
+    @Test
     public void badFieldsAre400AfterThePinPasses() {
         assertEquals(400, post("name=&text=b&pin=123456").status);
         assertEquals(400, post("name=a&text=&pin=123456").status);

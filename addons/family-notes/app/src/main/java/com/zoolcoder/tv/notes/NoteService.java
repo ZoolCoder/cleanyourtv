@@ -18,10 +18,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.Calendar;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Runs the note server while the switch is on, and shows each note on arrival. Receives text only and
- * exposes nothing from the TV. Stops itself when the switch goes off.
+ * exposes nothing from the TV. Stops itself when the switch goes off. With a relay set and Family away on, it
+ * also polls the relay for notes from abroad: the app's only outgoing connection.
  */
 public class NoteService extends Service {
     private static final String TAG = "FamilyNotes";
@@ -31,7 +36,19 @@ public class NoteService extends Service {
     private Store store;
     private OverlayCard card;
     private NoteServer server;
-    private boolean destroyed;
+    private AwayPoller away;
+    private ScheduledFuture<?> nextPoll;
+    private volatile boolean destroyed;
+
+    /** The relay this build talks to, or null: the Family away panel and polling exist only with one. */
+    static String relay(Context context) {
+        String url = context.getString(R.string.relay_url).trim();
+        return RelayClient.usable(url) ? url : null;
+    }
+
+    static AwayBox awayBox(Context context) {
+        return new AwayBox(context.getSharedPreferences(AwayBox.FILE, Context.MODE_PRIVATE));
+    }
 
     /** Starts the service when the switch is on, stops it when off. */
     static void sync(Context context) {
@@ -75,14 +92,38 @@ public class NoteService extends Service {
             return START_NOT_STICKY;
         }
         if (server == null) startServer();
+        pollAwayNow();
         return START_STICKY;
+    }
+
+    /** Each start of the service, the app opening included, polls at once and restarts the two-minute rhythm. */
+    private void pollAwayNow() {
+        String relay = relay(this);
+        if (relay == null) return;
+        if (away == null) {
+            away = new AwayPoller(awayBox(this), new RelayClient(relay), System::currentTimeMillis, new SecureRandom(),
+                    this::onNote);
+        }
+        scheduleAway(0);
+    }
+
+    private synchronized void scheduleAway(long delay) {
+        if (nextPoll != null) nextPoll.cancel(false);
+        nextPoll = destroyed ? null : AwayPoller.THREAD.schedule(this::pollAway, delay, TimeUnit.MILLISECONDS);
+    }
+
+    private void pollAway() {
+        if (destroyed) return;
+        long delay = away.poll();
+        if (delay != AwayPoller.STOP) scheduleAway(delay);
     }
 
     private void startServer() {
         int port = getResources().getInteger(R.integer.port);
         if (port < 1024 || port > 65535) port = 8765;
-        NoteEndpoint endpoint = new NoteEndpoint(readPage(), store::pin,
-                new PinGuard(System::currentTimeMillis, store.lockoutMemory()), System::currentTimeMillis, this::onNote);
+        PinGuard guard = new PinGuard(System::currentTimeMillis, store.lockoutMemory());
+        guard.setOnTrip(() -> store.rotatePinAfterLockout(System.currentTimeMillis()));
+        NoteEndpoint endpoint = new NoteEndpoint(readPage(), store::pin, guard, System::currentTimeMillis, this::onNote);
         NoteServer candidate = new NoteServer(port, endpoint);
         try {
             candidate.start();
@@ -94,9 +135,14 @@ public class NoteService extends Service {
         }
     }
 
-    /** Called on a connection thread. */
+    /**
+     * Called on a connection thread, or the Family away thread. In quiet hours the note is kept and listed, but
+     * nothing pops up.
+     */
     private void onNote(Note note) {
         store.add(note);
+        Calendar now = Calendar.getInstance();
+        if (QuietHours.isQuiet(store.quiet(), now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE))) return;
         int seconds = Math.max(3, getResources().getInteger(R.integer.popup_seconds));
         main.post(() -> {
             if (!destroyed) card.show(note, seconds);
@@ -119,6 +165,10 @@ public class NoteService extends Service {
         destroyed = true;
         if (server != null) server.stop();
         server = null;
+        synchronized (this) {
+            if (nextPoll != null) nextPoll.cancel(false);
+            nextPoll = null;
+        }
         main.removeCallbacksAndMessages(null);
         card.hide();
         super.onDestroy();

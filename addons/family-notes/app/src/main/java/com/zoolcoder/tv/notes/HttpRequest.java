@@ -20,16 +20,29 @@ final class HttpRequest {
     final String path;
     final Map<String, String> headers;
     final String body;
+    /** The phone's address, so wrong PINs are counted per phone; "" when unknown. */
+    final String peer;
 
     HttpRequest(String method, String path, Map<String, String> headers, String body) {
+        this(method, path, headers, body, "");
+    }
+
+    HttpRequest(String method, String path, Map<String, String> headers, String body, String peer) {
         this.method = method;
         this.path = path;
         this.headers = headers;
         this.body = body;
+        this.peer = peer;
     }
 
     static HttpRequest read(InputStream in) throws IOException, HttpException {
+        return read(in, "", null);
+    }
+
+    /** headRead, when given, runs once the headers are in: the server then grants the body more time. */
+    static HttpRequest read(InputStream in, String peer, Runnable headRead) throws IOException, HttpException {
         String head = readHead(in);
+        if (headRead != null) headRead.run();
         String[] lines = head.split("\r\n", -1);
         String[] start = lines[0].split(" ", -1);
         if (start.length != 3 || start[0].isEmpty() || start[1].isEmpty() || !start[2].startsWith("HTTP/1.")) {
@@ -50,7 +63,7 @@ final class HttpRequest {
         int query = path.indexOf('?');
         if (query >= 0) path = path.substring(0, query);
         String body = "POST".equals(start[0]) ? readBody(in, headers.get("content-length")) : "";
-        return new HttpRequest(start[0], path, headers, body);
+        return new HttpRequest(start[0], path, headers, body, peer);
     }
 
     /** Reads up to the blank line that ends the headers, one byte at a time so the body is left unread. */

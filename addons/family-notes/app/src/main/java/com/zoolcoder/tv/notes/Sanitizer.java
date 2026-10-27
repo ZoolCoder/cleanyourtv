@@ -27,15 +27,18 @@ final class Sanitizer {
             if (c == '\r' && i + 1 < raw.length() && raw.charAt(i + 1) == '\n') continue;
             if (c == '\r' || c == '\n') {
                 out.append(singleLine ? ' ' : '\n');
+            } else if (Character.getType(c) == Character.SPACE_SEPARATOR) {
+                // Every kind of space becomes a plain one, so no-break and wide spaces cannot fake a gap.
+                out.append(' ');
             } else if (!isStripped(c)) {
                 out.append(c);
             }
         }
-        // Trim each line, then drop empty ones: "max 4 lines" counts lines with something on them.
+        // Trim each line and collapse its spaces, then drop empty ones: "max 4 lines" counts lines with something on them.
         StringBuilder lines = new StringBuilder();
         int count = 0;
         for (String line : out.toString().split("\n", -1)) {
-            String trimmed = line.trim();
+            String trimmed = collapse(line);
             if (trimmed.isEmpty()) continue;
             if (++count > maxLines) return null;
             if (lines.length() > 0) lines.append('\n');
@@ -45,11 +48,31 @@ final class Sanitizer {
         return lines.toString();
     }
 
-    /** Control characters, plus the invisible ones that reorder or fake text: bidi overrides and line/paragraph separators. */
+    /** Trims, and turns each run of spaces into one, so a name cannot pad itself to look like another. */
+    private static String collapse(String line) {
+        StringBuilder out = new StringBuilder(line.length());
+        boolean space = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == ' ') {
+                space = out.length() > 0;
+            } else {
+                if (space) out.append(' ');
+                space = false;
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
+    /**
+     * Control characters, plus every invisible format character: bidi overrides and isolates, zero-width
+     * spaces and joiners, the Arabic letter mark (U+061C) and the byte-order mark; and the line and paragraph
+     * separators. Without them a name of only zero-width spaces would pass as non-empty and show as nothing.
+     */
     private static boolean isStripped(char c) {
-        return Character.isISOControl(c)
-                || (c >= '‪' && c <= '‮')
-                || (c >= '⁦' && c <= '⁩')
-                || c == ' ' || c == ' ';
+        int type = Character.getType(c);
+        return Character.isISOControl(c) || type == Character.FORMAT
+                || type == Character.LINE_SEPARATOR || type == Character.PARAGRAPH_SEPARATOR;
     }
 }

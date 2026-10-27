@@ -1,6 +1,7 @@
 package com.zoolcoder.tv.notes;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -14,6 +15,13 @@ public class StoreParseTest {
         assertEquals(1, notes.size());
         assertEquals("Mum", notes.get(0).name);
         assertEquals(5, notes.get(0).time);
+    }
+
+    @Test
+    public void theFromAbroadTagIsKept() {
+        List<Note> notes = Store.parse("[{\"n\":\"Amna\",\"t\":\"Hi\",\"w\":5,\"a\":true},{\"n\":\"Mum\",\"t\":\"x\",\"w\":4}]");
+        assertTrue(notes.get(0).away);
+        assertFalse(notes.get(1).away);
     }
 
     @Test

@@ -12,4 +12,19 @@
     <string name="failed">Could not load the videos. Check the TV\'s internet connection.</string>
     <string name="row_failed">Could not load this channel.</string>
     <string name="no_player">No YouTube app found on this TV.</string>
+    <string name="continue_watching_en" translatable="false">Continue watching</string>
+    <string name="continue_watching_ar" translatable="false">تابع المشاهدة</string>
+    <string name="favourite_off" translatable="false">☆ Favourite · المفضلة</string>
+    <string name="favourite_on" translatable="false">★ Favourite · المفضلة</string>
+    <string name="unavailable" translatable="false">Videos unavailable · الفيديوهات غير متاحة</string>
+    <string name="try_again" translatable="false">Try again · حاول مجددًا</string>
+    <string name="hint_favourite">Add to favourites</string>
+    <string name="hint_unfavourite">Remove from favourites</string>
+    <string name="hint_retry">Try again</string>
+    <string name="offline">Offline: showing the videos saved last time.</string>
+    <string name="banner_play">Play</string>
+    <string name="banner_channel">Change channel</string>
+    <string name="banner_return">Return</string>
+    <string name="banner_dismiss">Press OK to hide this</string>
+    <string name="hint_help">Help</string>
 </resources>

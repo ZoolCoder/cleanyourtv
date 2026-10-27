@@ -97,6 +97,7 @@ A new key needs one there in the same pull request.
 | `language_choice` | bool | A Language row in Launcher settings: the TV's own language or one of the launcher's, kept on the TV and winning over `locale` until Follow theme. Off by default |
 | `language_tags` | string[] | config.xml only (`<string-array name="language_tags">`): the tags the Language row offers, one per translation the launcher ships; a build list, not a theme key |
 | `settings_hints` | bool | In Launcher settings: a one-line explanation under each setting, a check mark inside the selected option, and a white outline on the focused one. Off by default |
+| `text_scale` | int | Text size in percent of the TV's own, 100 to 150, for a far sofa or weaker eyes; it multiplies the TV's font size setting. `100` by default, which changes nothing |
 | `show_greeting` | bool | The greeting above the clock (`true` by default); `false` hides it |
 | `header_white` | bool | The date and the line between the clock and the date in the clock's full white instead of dimmed (`false` by default) |
 | `module_cards` | bool | Look for module cards and ask about them (`true`); `false` turns the feature off |

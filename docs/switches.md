@@ -64,3 +64,4 @@ fits the rules; keys from before the rule sit on its wanted list until a screens
 | `wallpaper_credits` | <img src="switches/wallpaper_credits.jpg" width="320" alt="wallpaper_credits on a TV"> |
 | `language_choice` | <img src="switches/language_choice.jpg" width="320" alt="language_choice on a TV"> |
 | `language_tags` | <img src="switches/language_choice.jpg" width="320" alt="the Language row's list, from language_tags"> |
+| `text_scale` | <img src="switches/text_scale.jpg" width="320" alt="text_scale at 120 on a TV"> |

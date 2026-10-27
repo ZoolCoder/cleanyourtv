@@ -254,6 +254,10 @@
          option so it does not rest on colour alone, and a white outline for the focused one. Off by default; a
          theme can set "settings_hints": true. -->
     <bool name="settings_hints">false</bool>
+    <!-- Text size in percent of the TV's own, 100 to 150: larger letters for viewers on a far sofa or with weaker
+         eyes, on top of the TV's font size setting. 100 (the default) changes nothing. A theme can set
+         "text_scale": 120. -->
+    <integer name="text_scale">100</integer>
     <!-- The languages the Language row offers, as BCP-47 tags: the launcher's translations plus Arabic with Western digits. -->
     <string-array name="language_tags" translatable="false">
         <item>ar</item>

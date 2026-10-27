@@ -23,14 +23,19 @@ final class LauncherLocale {
         return Locale.forLanguageTag(tag.trim());
     }
 
-    /** base with the configured language, or base itself when locale is off. */
+    /** base with the configured language and text size, or base itself when both are off. */
     static Context wrap(Context base) {
-        Locale locale = parse(Config.load(base).locale);
-        if (locale == null) return base;
-        // Formatters that take no Context (the clock's date, the lunar line) follow the default locale.
-        Locale.setDefault(locale);
+        Config config = Config.load(base);
+        Locale locale = parse(config.locale);
+        if (locale == null && config.textScale == 100) return base;
         Configuration c = new Configuration(base.getResources().getConfiguration());
-        c.setLocale(locale);
+        if (locale != null) {
+            // Formatters that take no Context (the clock's date, the lunar line) follow the default locale.
+            Locale.setDefault(locale);
+            c.setLocale(locale);
+        }
+        // text_scale: every sp size grows with fontScale, on top of the TV's own font size setting.
+        c.fontScale *= config.textScale / 100f;
         return base.createConfigurationContext(c);
     }
 }

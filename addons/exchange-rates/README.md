@@ -35,11 +35,31 @@ for their rate.
   does not list shows a dash. Edit the list before you build.
 - The page is laid out right to left when the TV is in Arabic; the notice is always shown in both languages.
 
+## On the screen
+
+- **Update time and offline.** The top end says "Updated 26 Oct, 00:02", the source's own update time.
+  When a refresh fails, the line under it reads "Offline · showing rates from <date, time>" in amber and a
+  **Try again** pill appears beside it (Up from the top row reaches it). Without any saved rates it reads
+  "Rates unavailable". A currency the source does not list shows a dash, never 0.
+- **Change since the previous update.** The app also keeps the answer before the newest one. Each tile
+  shows ▲ or ▼ and the difference in SDG against that earlier update, in plain grey: a dearer dollar is
+  good news for some families and bad for others, so it is never green or red. Nothing shows on the first
+  run, or when the rate did not move at the precision shown.
+- **Large view.** OK on a tile opens the currency full screen: code, English and Arabic names,
+  `1 USD = 458.6 SDG` in large type, the inverse (`1 SDG = 0.0022 USD`, two significant digits), the
+  change since the previous update with its date, the source and the update time. Back returns to the
+  same tile.
+- **Pins.** **★ Pin** in the large view moves that currency to the front of the grid, with a ★ on its tile;
+  press it again to unpin. Pinned currencies keep their config.xml order among themselves.
+- Rates use tabular figures, so the digits line up from tile to tile. The bottom start shows the remote
+  keys for the screen you are on.
+
 ## Permissions
 
 - `INTERNET`: one HTTPS GET of `open.er-api.com`, only while the app is open. Nothing is sent but the
-  request. The last answer (about 5 KB of rates) is saved in the app's own preferences so the screen has
-  something to show offline; nothing runs in the background.
+  request. The last answer and the one before it (about 5 KB of rates each) and the pinned currency codes
+  are saved in the app's own preferences, so the screen has something to show offline and can show the
+  change; nothing runs in the background.
 
 No network state, no background service, no telemetry, no ads. Backups are off.
 
@@ -59,7 +79,8 @@ Settings, then Module cards.
 The release build is signed with the debug key so it installs over ADB like the launcher. Sign your own
 builds with your own key if you hand them out; the launcher pins its Show answer to the signing key.
 
-`./gradlew testReleaseUnitTest` runs the tests of the rate reading, conversion and number format on the JVM.
+`./gradlew testReleaseUnitTest` runs the tests of the rate reading, conversion, number format, change arrows, inverse rate and pin order
+on the JVM.
 
 ## Credits
 

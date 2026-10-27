@@ -2,13 +2,25 @@
 <resources>
     <string name="app_name" translatable="false">Exchange Rates</string>
     <string name="title">Sudanese pound · الجنيه السوداني</string>
-    <string name="loading">Loading the rates… · جارٍ تحميل الأسعار…</string>
-    <string name="failed">Could not load the rates. Check the TV\'s internet connection. · تعذّر تحميل الأسعار. تحقّق من اتصال التلفزيون بالإنترنت.</string>
-    <string name="offline">Offline: showing the last saved rates. · دون اتصال: تُعرض آخر أسعار محفوظة.</string>
+    <string name="loading">Updating rates… · جارٍ تحديث الأسعار…</string>
+    <string name="failed">Rates unavailable. Check the TV\'s internet connection. · الأسعار غير متاحة. تحقّق من اتصال التلفزيون بالإنترنت.</string>
+    <string name="offline">Offline · showing rates from %1$s · دون اتصال · أسعار %2$s</string>
     <string name="old">These rates are %1$d days old. · هذه الأسعار عمرها %1$d يوماً.</string>
     <string name="updated">Updated %1$s · آخر تحديث %2$s</string>
     <string name="sdg" translatable="false">SDG</string>
     <string name="unit">1 =</string>
+    <string name="retry">Try again · إعادة المحاولة</string>
+    <string name="pin">★ Pin · تثبيت</string>
+    <string name="unpin">★ Pinned · مثبّتة</string>
+    <string name="change">%1$s SDG since the previous update, %2$s · منذ التحديث السابق</string>
+    <string name="no_change">No change since the previous update, %1$s · لا تغيير منذ التحديث السابق</string>
+    <string name="hint_details">Details · التفاصيل</string>
+    <string name="hint_retry">Try again · إعادة المحاولة</string>
+    <string name="hint_home">Home · الرئيسية</string>
+    <string name="hint_pin">Pin or unpin · تثبيت</string>
+    <string name="hint_rates">Return to rates · الأسعار</string>
+    <string name="key_ok" translatable="false">OK</string>
+    <string name="key_back" translatable="false">Back</string>
     <!-- Both languages on every TV: the honesty notice is not left to the TV's language. -->
     <string name="source_en" translatable="false">Official rate · ExchangeRate-API</string>
     <string name="source_ar" translatable="false">السعر الرسمي · ExchangeRate-API</string>

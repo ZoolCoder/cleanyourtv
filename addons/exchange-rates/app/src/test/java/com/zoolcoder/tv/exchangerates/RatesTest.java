@@ -106,4 +106,59 @@ public class RatesTest {
         assertNull(Rates.parseCurrency("SDG | الجنيه السوداني | Sudanese pound"));
         assertNull(Rates.parseCurrency("USD | |"));
     }
+
+    private static Rates.Snapshot snapshot(long updatedMs, double sdg, double eur) {
+        java.util.Map<String, Double> perUsd = new java.util.HashMap<>();
+        perUsd.put("USD", 1.0);
+        perUsd.put("SDG", sdg);
+        if (eur > 0) perUsd.put("EUR", eur);
+        return new Rates.Snapshot(updatedMs, perUsd);
+    }
+
+    @Test
+    public void changeAgainstThePreviousUpdate() {
+        Rates.Snapshot before = snapshot(1000, 450, 0.9), now = snapshot(2000, 458.6, 0.9);
+        assertEquals(8.6, Rates.change(now, before, "USD"), 1e-9);
+        assertTrue(Double.isNaN(Rates.change(now, null, "USD")));
+        assertTrue(Double.isNaN(Rates.change(now, snapshot(1000, 450, 0), "EUR")));
+        assertTrue(Rates.isNewer(before, now));
+        assertTrue(!Rates.isNewer(now, now));
+        assertTrue(!Rates.isNewer(null, now));
+    }
+
+    @Test
+    public void changeIsShownAtTheRatePrecisionAndHiddenWhenNothingMoved() {
+        Rates.Formatter formatter = new Rates.Formatter(java.util.Locale.US);
+        assertEquals("\u25B2 8.6", formatter.change(8.6, 458.6));
+        assertEquals("\u25BC 0.04", formatter.change(-0.04, 12.41));
+        assertEquals("", formatter.change(0.02, 458.6));
+        assertEquals("", formatter.change(0, 458.6));
+        assertEquals("", formatter.change(Double.NaN, 458.6));
+        assertEquals("", formatter.change(1, Double.NaN));
+    }
+
+    @Test
+    public void inverseRateHasTwoSignificantDigits() {
+        Rates.Formatter formatter = new Rates.Formatter(java.util.Locale.US);
+        assertEquals("0.0022", formatter.inverse(458.564782));
+        assertEquals("0.00068", formatter.inverse(1480.3));
+        assertEquals("0.081", formatter.inverse(12.41));
+        assertEquals("0.50", formatter.inverse(2));
+        assertEquals("2.00", formatter.inverse(0.5));
+        assertEquals("—", formatter.inverse(Double.NaN));
+        assertEquals("—", formatter.inverse(0));
+    }
+
+    @Test
+    public void pinnedCurrenciesComeFirstInConfigOrder() {
+        java.util.List<Rates.Currency> all = java.util.Arrays.asList(
+                new Rates.Currency("USD", "", ""), new Rates.Currency("SAR", "", ""),
+                new Rates.Currency("AED", "", ""), new Rates.Currency("EGP", "", ""));
+        java.util.List<Rates.Currency> ordered = Rates.ordered(all,
+                new java.util.HashSet<>(java.util.Arrays.asList("EGP", "SAR", "GBP")));
+        StringBuilder codes = new StringBuilder();
+        for (Rates.Currency currency : ordered) codes.append(currency.code).append(' ');
+        assertEquals("SAR EGP USD AED ", codes.toString());
+        assertEquals(all, Rates.ordered(all, java.util.Collections.emptySet()));
+    }
 }

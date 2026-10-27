@@ -15,17 +15,23 @@ import java.util.concurrent.Semaphore;
 
 /**
  * A tiny HTTP/1.1 server on a java.net.ServerSocket. Peers outside the home network are closed at once; at
- * most 2 connections are handled at a time (a third gets 503); a request must arrive within 5 seconds in
- * total, and every answer closes the connection.
+ * most 8 connections are handled at a time and one per phone (more get 503); the headers must arrive within
+ * 2 seconds and the whole request within 5, a connection that sends nothing for 1 second is closed, and every
+ * answer closes the connection.
  */
 final class NoteServer {
-    static final int MAX_CONNECTIONS = 2;
+    static final int MAX_CONNECTIONS = 8;
+    static final int HEAD_MS = 2000;
     static final int TIMEOUT_MS = 5000;
+    static final int IDLE_MS = 1000;
+    /** Pause after a failed accept (out of file descriptors, say), so the loop cannot spin. */
+    static final int ACCEPT_BACKOFF_MS = 200;
 
     private final int port;
     private final NoteEndpoint endpoint;
     private final Semaphore slots = new Semaphore(MAX_CONNECTIONS);
     private final Set<Socket> open = ConcurrentHashMap.newKeySet();
+    private final Set<InetAddress> busy = ConcurrentHashMap.newKeySet();
     private volatile ServerSocket server;
 
     NoteServer(int port, NoteEndpoint endpoint) {
@@ -66,9 +72,13 @@ final class NoteServer {
         while (!socket.isClosed()) {
             try {
                 Socket peer = socket.accept();
-                if (!AddressFilter.allowed(peer.getInetAddress())) {
+                InetAddress address = peer.getInetAddress();
+                if (!AddressFilter.allowed(address)) {
                     close(peer);
+                } else if (!busy.add(address)) {
+                    refuse(peer);
                 } else if (!slots.tryAcquire()) {
+                    busy.remove(address);
                     refuse(peer);
                 } else {
                     open.add(peer);
@@ -78,17 +88,20 @@ final class NoteServer {
                 }
             } catch (IOException e) {
                 if (socket.isClosed()) return;
+                pause();
             }
         }
     }
 
     private void serve(Socket peer) {
         try {
-            peer.setSoTimeout(TIMEOUT_MS);
-            InputStream in = new BufferedInputStream(new Deadline(peer.getInputStream(), TIMEOUT_MS));
+            peer.setSoTimeout(IDLE_MS);
+            Deadline deadline = new Deadline(peer.getInputStream(), HEAD_MS);
+            InputStream in = new BufferedInputStream(deadline);
+            String address = peer.getInetAddress().getHostAddress();
             Response response;
             try {
-                response = endpoint.handle(HttpRequest.read(in));
+                response = endpoint.handle(HttpRequest.read(in, address, () -> deadline.extend(TIMEOUT_MS)));
             } catch (HttpException e) {
                 response = Response.text(e.status, e.getMessage());
             }
@@ -97,14 +110,23 @@ final class NoteServer {
             // A phone that went away or was too slow: nothing to answer.
         } finally {
             open.remove(peer);
+            busy.remove(peer.getInetAddress());
             close(peer);
             slots.release();
         }
     }
 
+    private static void pause() {
+        try {
+            Thread.sleep(ACCEPT_BACKOFF_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     private static void refuse(Socket peer) {
         try {
-            peer.setSoTimeout(TIMEOUT_MS);
+            peer.setSoTimeout(IDLE_MS);
             send(peer, Response.text(503, "busy"));
         } catch (IOException ignored) {
             // Busy and gone: nothing to do.
@@ -127,14 +149,21 @@ final class NoteServer {
         }
     }
 
-    /** Fails reads once the whole request has taken longer than the limit, so a trickle cannot hold a slot. */
-    private static final class Deadline extends InputStream {
+    /** Fails reads once the request has taken longer than the limit, so a trickle cannot hold a slot. */
+    static final class Deadline extends InputStream {
         private final InputStream in;
-        private final long end;
+        private final long start;
+        private volatile long end;
 
         Deadline(InputStream in, int millis) {
             this.in = in;
-            this.end = System.nanoTime() + millis * 1_000_000L;
+            this.start = System.nanoTime();
+            this.end = start + millis * 1_000_000L;
+        }
+
+        /** Moves the limit to millis after the start, once the headers are in and the body may follow. */
+        void extend(int millis) {
+            end = start + millis * 1_000_000L;
         }
 
         private void check() throws SocketTimeoutException {

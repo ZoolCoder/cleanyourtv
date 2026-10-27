@@ -77,10 +77,12 @@
     msg.textContent = a[1];
   }
   function counted() { count.textContent = text.value.length + " / 280"; }
+  // The PIN lives only as long as this tab (sessionStorage); the name is kept on the phone.
   function remember(key, value) {
-    try { if (value) localStorage.setItem(key, value); else localStorage.removeItem(key); } catch (e) {}
+    try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch (e) {}
   }
-  try { name.value = localStorage.getItem("fn-name") || ""; pin.value = localStorage.getItem("fn-pin") || ""; } catch (e) {}
+  try { localStorage.removeItem("fn-pin"); } catch (e) {}
+  try { name.value = localStorage.getItem("fn-name") || ""; pin.value = sessionStorage.getItem("fn-pin") || ""; } catch (e) {}
   // The TV's QR code carries the PIN after the #, which never leaves the phone. Take it, then drop it from the address bar.
   var fromCode = /^#(\d{6})$/.exec(location.hash);
   if (fromCode) {

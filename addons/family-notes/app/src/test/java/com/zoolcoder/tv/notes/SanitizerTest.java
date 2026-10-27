@@ -32,6 +32,25 @@ public class SanitizerTest {
     }
 
     @Test
+    public void stripsInvisibleFormatCharacters() {
+        assertEquals("ab", Sanitizer.name("a\u200Bb"));
+        assertEquals("ab", Sanitizer.name("a\u200D\u200Cb"));
+        assertEquals("ab", Sanitizer.name("\uFEFFa\u061Cb"));
+        assertEquals("ab", Sanitizer.text("a\u2060\u00ADb"));
+        assertNull(Sanitizer.name("\u200B\u200B\u200B"));
+        assertNull(Sanitizer.text("\u200E\u200F\u2066"));
+    }
+
+    @Test
+    public void everyKindOfSpaceBecomesOnePlainSpace() {
+        assertEquals("Mum Dad", Sanitizer.name("Mum\u00A0Dad"));
+        assertEquals("Mum Dad", Sanitizer.name("Mum\u3000\u2003Dad"));
+        assertEquals("Mum Dad", Sanitizer.name("  Mum      Dad  "));
+        assertEquals("a b\nc", Sanitizer.text("a   b\n  c"));
+        assertNull(Sanitizer.name("\u00A0\u2007\u202F"));
+    }
+
+    @Test
     public void nameIsOneLine() {
         assertEquals("Mum Dad", Sanitizer.name("Mum\nDad"));
     }

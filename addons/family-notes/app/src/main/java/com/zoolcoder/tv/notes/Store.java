@@ -16,7 +16,7 @@ final class Store {
     static final String FILE = "family_notes";
     static final int KEEP = 10;
     private static final String ENABLED = "enabled", PIN = "pin", NOTES = "notes", STATE = "state",
-            WRONG = "wrong", LOCKED_UNTIL = "locked_until";
+            WRONG = "wrong", LOCKED_UNTIL = "locked_until", QUIET = "quiet", PIN_ROTATED = "pin_rotated";
     private static final Object LOCK = new Object();
 
     private final SharedPreferences prefs;
@@ -52,7 +52,45 @@ final class Store {
 
     void newPin() {
         synchronized (LOCK) {
-            prefs.edit().putString(PIN, PinGuard.newPin(new SecureRandom())).commit();
+            prefs.edit().putString(PIN, PinGuard.newPin(new SecureRandom())).remove(PIN_ROTATED).commit();
+        }
+    }
+
+    /** A lockout tripped: whoever was guessing loses all progress, and the screen says the PIN changed. */
+    void rotatePinAfterLockout(long now) {
+        synchronized (LOCK) {
+            prefs.edit().putString(PIN, PinGuard.newPin(new SecureRandom())).putLong(PIN_ROTATED, now).commit();
+        }
+    }
+
+    /** When a lockout last made a new PIN (wall time), or 0 since the owner chose one. */
+    long pinRotated() {
+        try {
+            return prefs.getLong(PIN_ROTATED, 0);
+        } catch (ClassCastException e) {
+            return 0;
+        }
+    }
+
+    /** The quiet-hours choice, an index into QuietHours; 0 is Off. */
+    int quiet() {
+        try {
+            return QuietHours.valid(prefs.getInt(QUIET, 0));
+        } catch (ClassCastException e) {
+            return 0;
+        }
+    }
+
+    void setQuiet(int choice) {
+        prefs.edit().putInt(QUIET, QuietHours.valid(choice)).apply();
+    }
+
+    /** When the wrong-PIN lockout ends (wall time), or 0. */
+    long lockedUntil() {
+        try {
+            return prefs.getLong(LOCKED_UNTIL, 0);
+        } catch (ClassCastException e) {
+            return 0;
         }
     }
 
@@ -105,7 +143,7 @@ final class Store {
                 String name = Sanitizer.name(o.optString("n", null));
                 String text = Sanitizer.text(o.optString("t", null));
                 long time = o.optLong("w", -1);
-                if (name != null && text != null && time >= 0) list.add(new Note(name, text, time));
+                if (name != null && text != null && time >= 0) list.add(new Note(name, text, time, o.optBoolean("a")));
             }
         } catch (JSONException e) {
             list.clear();
@@ -122,7 +160,9 @@ final class Store {
             try {
                 for (int i = 0; i < list.size() && i < KEEP; i++) {
                     Note n = list.get(i);
-                    array.put(new JSONObject().put("n", n.name).put("t", n.text).put("w", n.time));
+                    JSONObject o = new JSONObject().put("n", n.name).put("t", n.text).put("w", n.time);
+                    if (n.away) o.put("a", true);
+                    array.put(o);
                 }
             } catch (JSONException e) {
                 return;

@@ -28,7 +28,8 @@ final class OverlayCard {
     private final Runnable advance = this::advance;
     private final NoteQueue queue = new NoteQueue();
     private LinearLayout card;
-    private TextView avatar, from, time, body;
+    private TextView avatar, heading, from, time, body;
+    private View bar;
     private boolean attached;
     private int seconds;
 
@@ -61,7 +62,12 @@ final class OverlayCard {
             return;
         }
         if (card == null) build();
-        from.setText(note.name);
+        // A fixed heading and "From:" so a name like "Bank: call now" cannot pass for the app or the TV speaking.
+        heading.setText(note.away
+                ? context.getString(R.string.overlay_heading) + "   " + context.getString(R.string.away_tag)
+                : context.getString(R.string.overlay_heading));
+        from.setText(context.getString(R.string.overlay_from, note.name));
+        bar.setBackgroundColor(Senders.colour(note.name));
         avatar.setText(note.name.isEmpty() ? "" : new String(Character.toChars(note.name.codePointAt(0))));
         time.setText(DateUtils.formatDateTime(context, note.time, DateUtils.FORMAT_SHOW_TIME));
         body.setText(note.text);
@@ -77,15 +83,14 @@ final class OverlayCard {
         main.postDelayed(advance, seconds * 1000L);
     }
 
-    /** Dark translucent card, 4 dp accent bar on the leading side, clipped to the rounded corners. */
+    /** Dark translucent card, 4 dp bar in the sender's colour on the leading side, clipped to the rounded corners. */
     private void build() {
         card = new LinearLayout(context);
         Look.panel(context, card, 0xE6101C16, 18);
         card.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
         card.setClipToOutline(true);
 
-        View bar = new View(context);
-        bar.setBackgroundColor(Look.ACCENT);
+        bar = new View(context);
         card.addView(bar, new LinearLayout.LayoutParams(Look.dp(context, 4), LinearLayout.LayoutParams.MATCH_PARENT));
 
         LinearLayout content = new LinearLayout(context);
@@ -106,9 +111,15 @@ final class OverlayCard {
         column.setPaddingRelative(Look.dp(context, 12), 0, 0, 0);
         content.addView(column, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
+        heading = text(13, Look.TEXT_3);
+        heading.setSingleLine(true);
+        heading.setEllipsize(TextUtils.TruncateAt.END);
+        heading.setPadding(0, 0, 0, Look.dp(context, 2));
+        column.addView(heading);
+
         LinearLayout top = new LinearLayout(context);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        from = Look.medium(text(19, Look.TEXT));
+        from = Look.medium(text(18, Look.TEXT));
         from.setSingleLine(true);
         from.setEllipsize(TextUtils.TruncateAt.END);
         time = text(14, Look.TEXT_3);

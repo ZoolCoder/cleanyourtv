@@ -66,7 +66,7 @@ final class NoteEndpoint {
         }
         Map<String, String> form = Form.parse(request.body);
         if (form == null) return Response.text(400, "bad form");
-        switch (guard.check(form.get("pin"), pin.get())) {
+        switch (guard.check(request.peer, form.get("pin"), pin.get())) {
             case LOCKED:
                 return Response.text(429, "too many wrong PINs, try again later");
             case WRONG:

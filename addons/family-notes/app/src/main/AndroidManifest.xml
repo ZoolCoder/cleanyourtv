@@ -4,7 +4,8 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
-    <!-- INTERNET is needed to listen on a port; the app makes no outgoing connection. -->
+    <!-- INTERNET is needed to listen on a port. The only outgoing connection is to the Family away relay, and only
+         when relay_url is set and Family away is on. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- One foreground service keeps the listening server alive while the switch is on. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -20,7 +21,8 @@
         android:banner="@drawable/banner"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen"
-        android:allowBackup="false">
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
 
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="landscape">
             <intent-filter>
@@ -45,7 +47,8 @@
                 android:value="Listens on the home network for short text notes from family phones and shows them over the picture" />
         </service>
 
-        <receiver android:name=".BootReceiver" android:exported="true">
+        <!-- Not exported: the system still delivers its own boot and update broadcasts; other apps cannot. -->
+        <receiver android:name=".BootReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />

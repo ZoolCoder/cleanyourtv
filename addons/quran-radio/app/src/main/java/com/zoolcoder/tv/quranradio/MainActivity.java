@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Outline;
@@ -24,6 +25,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -38,8 +40,11 @@ import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,6 +64,7 @@ public class MainActivity extends Activity {
     private static final float ROW_SCALE = 1.02f, TILE_SCALE = 1.04f;
     private static final int RADIO = 0, RECITERS = 1;
     private static final int IDLE = 0, LOADING = 1, LOADED = 2, FAILED = 3;
+    private static final String FAVOURITES = "favourites", ANSWER = "answer:", SAVED_AT = "saved_at:";
 
     private final TextView[] tabs = new TextView[2];
     private final List<Catalog.Station> stations = new ArrayList<>();
@@ -86,20 +92,34 @@ public class MainActivity extends Activity {
     private Thread loader;
 
     private MediaPlayer player;
-    private boolean ready, paused;
-    private String playingKey, playingName, playingSecondary, playingSurah;
-    private boolean live, offline;
+    private boolean ready, paused, showConnecting;
+    private String playingKey, playingName, playingSecondary, playingSurah, playingUrl;
+    private boolean live, failed;
+    // What OK on a failed station, surah or the play button tries again.
+    private String failedKey;
+    private Runnable lastRequest;
+    private final Playback.Retry retry = new Playback.Retry();
     private Catalog.Reciter queueReciter;
     private int queueIndex;
     private AudioManager audio;
     private AudioFocusRequest focusRequest;
     private boolean pausedByFocus, noisyRegistered;
 
+    private SharedPreferences prefs;
+    private final Set<String> favourites = new HashSet<>();
+    private TextView favouritePill, sleepPill;
+    private int sleepStep;
+    private long sleepEndsAt;
+    // When the Reciters tab shows the saved list because the refresh failed: the time it was saved, else 0.
+    private long catalogOfflineSince;
+
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         arabic = "ar".equals(Locale.getDefault().getLanguage());
         audio = getSystemService(AudioManager.class);
+        prefs = getSharedPreferences("quran", MODE_PRIVATE);
+        favourites.addAll(prefs.getStringSet(FAVOURITES, new HashSet<>()));
         for (String line : getResources().getStringArray(R.array.stations)) {
             Catalog.Station station = Catalog.parseStation(line);
             if (station != null) stations.add(station);
@@ -185,17 +205,37 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    /** Back leaves a reciter's surahs, then stops the sound, then closes the app. */
+    /**
+     * Back from the player panel returns to the list and the sound keeps playing; from a reciter's surahs it
+     * returns to the reciters; from the top list it closes the app, which stops the sound (onStop).
+     */
     @Override
     public void onBackPressed() {
-        if (openReciter != null) {
+        if (inPanel(focusedView)) {
+            View row = playingRow();
+            if (row != null) row.requestFocus();
+        } else if (openReciter != null) {
             openReciter = null;
             showList(false);
-        } else if (player != null || playingKey != null) {
-            stop();
         } else {
             super.onBackPressed();
         }
+    }
+
+    private boolean inPanel(View view) {
+        return view != null && (view == playButton || view == favouritePill || view == sleepPill);
+    }
+
+    /** The list row of what plays or failed, else the first row. */
+    private View playingRow() {
+        for (int i = 0; i < list.getChildCount(); i++) {
+            View row = list.getChildAt(i);
+            if (row.getTag() instanceof String && (isPlayingKey((String) row.getTag())
+                    || row.getTag().equals(failedKey))) {
+                return row;
+            }
+        }
+        return firstRow();
     }
 
     @Override
@@ -216,22 +256,33 @@ public class MainActivity extends Activity {
 
     // ---- playback ----
 
+    /** A new choice: its retry starts fresh, and "Connecting…" shows only if it is not playing within 500 ms. */
     private void play(String url, String key, String name, String secondary, String surah, boolean isLive) {
         release();
         playingKey = key;
+        playingUrl = url;
         playingName = name;
         playingSecondary = secondary;
         playingSurah = surah;
         live = isLive;
-        offline = false;
+        failed = false;
+        failedKey = null;
+        retry.reset();
+        startAttempt();
+    }
+
+    private void startAttempt() {
         ready = false;
         paused = false;
         renderPanel();
+        refreshMarks();
         if (!requestFocus()) {
             fail();
             return;
         }
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        handler.postDelayed(connecting, Playback.CONNECTING_DELAY_MS);
+        handler.postDelayed(timeout, Playback.TIMEOUT_MS);
         MediaPlayer next = new MediaPlayer();
         player = next;
         next.setAudioAttributes(new AudioAttributes.Builder()
@@ -240,44 +291,73 @@ public class MainActivity extends Activity {
                 .build());
         next.setOnPreparedListener(p -> {
             if (p != player) return;
+            handler.removeCallbacks(connecting);
+            handler.removeCallbacks(timeout);
             ready = true;
+            showConnecting = false;
+            retry.reset();
             setNoisyListening(true);
             try {
+                applySleepVolume();
                 p.start();
             } catch (IllegalStateException e) {
-                fail();
+                attemptFailed();
                 return;
             }
             showPlaybackState();
         });
         next.setOnCompletionListener(p -> {
             if (p != player) return;
-            if (live) fail();
+            if (live) attemptFailed();
             else playNextSurah();
         });
         next.setOnErrorListener((p, what, extra) -> {
-            if (p == player) fail();
+            if (p == player) attemptFailed();
             return true;
         });
         try {
-            next.setDataSource(url);
+            next.setDataSource(playingUrl);
             next.prepareAsync();
         } catch (IOException | IllegalStateException | IllegalArgumentException | SecurityException e) {
+            attemptFailed();
+        }
+    }
+
+    private final Runnable connecting = () -> {
+        if (player == null || ready) return;
+        showConnecting = true;
+        showPlaybackState();
+    };
+
+    private final Runnable timeout = this::attemptFailed;
+
+    private final Runnable retryNow = this::startAttempt;
+
+    /** A start failed, timed out or a live stream ended: one more try after 2 s, then "Could not play". */
+    private void attemptFailed() {
+        if (playingKey == null) return;
+        if (!retry.retryAfterFailure()) {
             fail();
             return;
         }
-        refreshMarks();
+        release();
+        // The panel keeps saying "Connecting…" through the pause before the retry.
+        showConnecting = true;
+        showPlaybackState();
+        handler.postDelayed(retryNow, Playback.RETRY_DELAY_MS);
     }
 
     private void playStation(Catalog.Station station) {
         queueReciter = null;
+        lastRequest = () -> playStation(station);
         String[] names = names(station);
-        play(station.url, "s:" + station.url, names[0], names[1], null, true);
+        play(station.url, stationKey(station), names[0], names[1], null, true);
     }
 
     private void playSurah(Catalog.Reciter reciter, int index) {
         queueReciter = reciter;
         queueIndex = index;
+        lastRequest = () -> playSurah(reciter, index);
         int surah = reciter.surahs[index];
         play(Catalog.surahUrl(reciter, surah), surahKey(reciter, surah), reciter.name, reciter.recitation,
                 surahTitle(surah), false);
@@ -292,6 +372,12 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** The play button: pause or resume what plays, or try a failed one again. */
+    private void onPlayButton() {
+        if (failed && lastRequest != null) lastRequest.run();
+        else togglePause();
+    }
+
     private void togglePause() {
         if (player == null || !ready) return;
         pausedByFocus = false;
@@ -303,7 +389,7 @@ public class MainActivity extends Activity {
         try {
             player.pause();
         } catch (IllegalStateException e) {
-            fail();
+            attemptFailed();
             return;
         }
         paused = true;
@@ -316,12 +402,92 @@ public class MainActivity extends Activity {
         try {
             player.start();
         } catch (IllegalStateException e) {
-            fail();
+            attemptFailed();
             return;
         }
         paused = false;
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         showPlaybackState();
+    }
+
+    // ---- favourites and the sleep timer ----
+
+    private static String stationKey(Catalog.Station station) {
+        return "s:" + station.url;
+    }
+
+    private Catalog.Station playingStation() {
+        if (playingKey == null || !playingKey.startsWith("s:")) return null;
+        for (Catalog.Station station : stations) {
+            if (playingKey.equals(stationKey(station))) return station;
+        }
+        return null;
+    }
+
+    /** The favourite pill marks the playing station; the list puts favourites first, with a star. */
+    private void toggleFavourite() {
+        Catalog.Station station = playingStation();
+        if (station == null) return;
+        if (!favourites.remove(station.url)) favourites.add(station.url);
+        prefs.edit().putStringSet(FAVOURITES, new HashSet<>(favourites)).apply();
+        renderPanel();
+        if (tab == RADIO && openReciter == null) showList(true);
+        updateHint();
+    }
+
+    /** Off, 15, 30, 60, 90 minutes from now, then off again. */
+    private void cycleSleep() {
+        if (playingKey == null) return;
+        sleepStep = Playback.nextSleepStep(sleepStep);
+        handler.removeCallbacks(sleepTick);
+        sleepEndsAt = sleepStep == 0 ? 0 : SystemClock.elapsedRealtime() + sleepStep * 60000L;
+        applySleepVolume();
+        if (sleepStep != 0) handler.postDelayed(sleepTick, 1000);
+        renderSleep();
+    }
+
+    private void clearSleep() {
+        handler.removeCallbacks(sleepTick);
+        sleepStep = 0;
+        sleepEndsAt = 0;
+    }
+
+    private long sleepRemaining() {
+        return sleepEndsAt == 0 ? Long.MAX_VALUE : sleepEndsAt - SystemClock.elapsedRealtime();
+    }
+
+    /** Once a second while the timer runs: the minutes left, and the fade in the last ten seconds. */
+    private final Runnable sleepTick = new Runnable() {
+        @Override
+        public void run() {
+            if (sleepEndsAt == 0) return;
+            long remaining = sleepRemaining();
+            if (remaining <= 0) {
+                stop();
+                return;
+            }
+            applySleepVolume();
+            renderSleep();
+            handler.postDelayed(this, remaining <= Playback.FADE_MS ? 500 : 1000);
+        }
+    };
+
+    private void applySleepVolume() {
+        if (player == null) return;
+        float volume = Playback.fadeVolume(sleepRemaining());
+        try {
+            player.setVolume(volume, volume);
+        } catch (IllegalStateException ignored) {
+            // A player being released has no volume to set.
+        }
+    }
+
+    private void renderSleep() {
+        if (sleepPill == null) return;
+        String label = sleepStep == 0 ? getString(R.string.sleep_off) : getString(R.string.sleep_minutes,
+                String.format(Locale.US, "%d", Playback.minutesLeft(sleepRemaining())));
+        if (!label.contentEquals(sleepPill.getText())) sleepPill.setText(label);
+        sleepPill.setTextColor(sleepStep == 0 ? TEXT : ACCENT);
     }
 
     // ---- audio focus and headphones ----
@@ -387,29 +553,39 @@ public class MainActivity extends Activity {
         refreshMarks();
     }
 
+    /** The sound stops for good: the sleep timer goes with it. */
     private void stop() {
         release();
+        clearSleep();
         playingKey = null;
         playingName = null;
         playingSecondary = null;
         playingSurah = null;
-        offline = false;
+        failed = false;
+        failedKey = null;
         queueReciter = null;
         renderPanel();
         refreshMarks();
     }
 
+    /** The retry failed too: say so, keep the name on screen, and let OK try again. */
     private void fail() {
+        String key = playingKey;
         release();
+        clearSleep();
         playingKey = null;
         queueReciter = null;
-        offline = true;
+        failed = true;
+        failedKey = key;
         renderPanel();
         refreshMarks();
     }
 
     private void release() {
         handler.removeCallbacks(tick);
+        handler.removeCallbacks(connecting);
+        handler.removeCallbacks(timeout);
+        handler.removeCallbacks(retryNow);
         if (player != null) {
             MediaPlayer old = player;
             player = null;
@@ -423,11 +599,16 @@ public class MainActivity extends Activity {
         ready = false;
         paused = false;
         pausedByFocus = false;
+        showConnecting = false;
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     // ---- reciters from mp3quran.net ----
 
+    /**
+     * The last good answers are saved on the TV and show at once; a refresh runs once per process and
+     * replaces them when every answer came back. When it fails, the saved list stays with an offline line.
+     */
     private void loadReciters() {
         if (loadState == LOADING || loadState == LOADED) return;
         String language = arabic ? "ar" : "eng";
@@ -438,59 +619,111 @@ public class MainActivity extends Activity {
             loadState = LOADED;
             return;
         }
-        loadState = LOADING;
-        int id = ++loadId;
         List<Catalog.Ref> refs = new ArrayList<>();
         for (String line : getResources().getStringArray(R.array.reciters)) {
             Catalog.Ref ref = Catalog.parseRef(line);
             if (ref != null) refs.add(ref);
         }
+        // One URL per reciter, the surah names last.
+        String[] urls = new String[refs.size() + 1];
+        for (int i = 0; i < refs.size(); i++) urls[i] = Catalog.reciterUrl(refs.get(i), language);
+        urls[refs.size()] = Catalog.suwarUrl(language);
+        String[] saved = new String[urls.length];
+        for (int i = 0; i < urls.length; i++) saved[i] = prefs.getString(ANSWER + urls[i], null);
+        long savedAt = prefs.getLong(SAVED_AT + language, 0);
+        boolean shown = savedAt != 0 && showAnswers(refs, saved);
+        if (!shown) loadState = LOADING;
+        int id = ++loadId;
         loader = new Thread(() -> {
-            List<Catalog.Reciter> found = new ArrayList<>();
-            String[] names = new String[115];
-            ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, Math.min(4, refs.size())));
+            String[] fresh = new String[urls.length];
+            ExecutorService pool = Executors.newFixedThreadPool(Math.max(1, Math.min(4, urls.length)));
             try {
-                List<Callable<Catalog.Reciter>> jobs = new ArrayList<>();
-                for (Catalog.Ref ref : refs) {
-                    jobs.add(() -> Catalog.parseReciter(Api.get(Catalog.reciterUrl(ref, language)), ref));
-                }
-                Future<String> suwar = pool.submit(() -> Api.get(Catalog.suwarUrl(language)));
-                for (Future<Catalog.Reciter> result : pool.invokeAll(jobs)) {
+                List<Callable<String>> jobs = new ArrayList<>();
+                for (String url : urls) jobs.add(() -> Api.get(url));
+                List<Future<String>> results = pool.invokeAll(jobs);
+                for (int i = 0; i < results.size(); i++) {
                     try {
-                        Catalog.Reciter reciter = result.get();
-                        if (reciter != null) found.add(reciter);
+                        fresh[i] = results.get(i).get();
                     } catch (Exception ignored) {
-                        // One reciter down leaves the others on screen.
+                        // One answer down leaves the others on screen.
                     }
-                }
-                try {
-                    names = Catalog.parseSuwar(suwar.get());
-                } catch (Exception ignored) {
-                    names = Catalog.parseSuwar("");
                 }
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             } finally {
                 pool.shutdownNow();
             }
-            String[] surahs = names;
-            if (found.size() == refs.size() && !Thread.currentThread().isInterrupted()) {
-                synchronized (MainActivity.class) {
-                    cachedReciters = found;
-                    cachedSurahNames = surahs;
-                    cachedLanguage = language;
-                }
-            }
+            if (Thread.currentThread().isInterrupted()) return;
             runOnUiThread(() -> {
                 if (id != loadId || isDestroyed()) return;
-                reciters.clear();
-                reciters.addAll(found);
-                surahNames = surahs;
-                loadState = found.isEmpty() ? FAILED : LOADED;
-                if (tab == RECITERS && openReciter == null) showList(tabs[RECITERS].isFocused());
+                onAnswers(refs, urls, saved, fresh, shown, savedAt, language);
             });
         });
         loader.start();
+    }
+
+    private void onAnswers(List<Catalog.Ref> refs, String[] urls, String[] saved, String[] fresh, boolean shown,
+            long savedAt, String language) {
+        boolean complete = showAnswersIfComplete(refs, fresh);
+        if (complete) {
+            SharedPreferences.Editor editor = prefs.edit();
+            for (int i = 0; i < urls.length; i++) editor.putString(ANSWER + urls[i], fresh[i]);
+            editor.putLong(SAVED_AT + language, System.currentTimeMillis()).apply();
+            catalogOfflineSince = 0;
+            synchronized (MainActivity.class) {
+                cachedReciters = new ArrayList<>(reciters);
+                cachedSurahNames = surahNames;
+                cachedLanguage = language;
+            }
+            // The same answers as the saved ones: the list on screen stays as it is, with the focus.
+            if (shown && java.util.Arrays.equals(fresh, saved)) return;
+        } else if (shown) {
+            catalogOfflineSince = savedAt;
+        } else {
+            String[] merged = new String[fresh.length];
+            for (int i = 0; i < fresh.length; i++) merged[i] = fresh[i] != null ? fresh[i] : saved[i];
+            showAnswers(refs, merged);
+            catalogOfflineSince = 0;
+            if (reciters.isEmpty()) loadState = FAILED;
+        }
+        if (tab == RECITERS && openReciter == null) showList(!inList(focusedView));
+    }
+
+    /** Parses the answers onto the screen when all of them are there and every reciter parsed. */
+    private boolean showAnswersIfComplete(List<Catalog.Ref> refs, String[] answers) {
+        for (String answer : answers) {
+            if (answer == null) return false;
+        }
+        return showAnswers(refs, answers) && reciters.size() == refs.size();
+    }
+
+    /** Reciters (and the surah names, last) from raw answers; false when none of the reciters parsed. */
+    private boolean showAnswers(List<Catalog.Ref> refs, String[] answers) {
+        List<Catalog.Reciter> found = new ArrayList<>();
+        for (int i = 0; i < refs.size(); i++) {
+            if (answers[i] == null) continue;
+            Catalog.Reciter reciter = Catalog.parseReciter(answers[i], refs.get(i));
+            if (reciter != null) found.add(reciter);
+        }
+        if (found.isEmpty()) return false;
+        reciters.clear();
+        reciters.addAll(found);
+        String suwar = answers[refs.size()];
+        surahNames = Catalog.parseSuwar(suwar == null ? "" : suwar);
+        loadState = LOADED;
+        return true;
+    }
+
+    private boolean inList(View view) {
+        return view != null && view.getParent() == list;
+    }
+
+    /** "26/10 14:32" in Latin digits, like the surah clock. */
+    private static String savedTime(long millis) {
+        Calendar at = Calendar.getInstance();
+        at.setTimeInMillis(millis);
+        return String.format(Locale.US, "%d/%d %02d:%02d", at.get(Calendar.DAY_OF_MONTH),
+                at.get(Calendar.MONTH) + 1, at.get(Calendar.HOUR_OF_DAY), at.get(Calendar.MINUTE));
     }
 
     private String surahTitle(int surah) {
@@ -561,10 +794,12 @@ public class MainActivity extends Activity {
                 if (focus == null || key.equals(playingKey)) focus = row;
             }
         } else {
+            int offset = 0;
             if (tab == RADIO) {
-                for (Catalog.Station station : stations) {
+                for (Catalog.Station station : Playback.favouritesFirst(stations, favourites)) {
                     String[] names = names(station);
-                    list.addView(row(names[0], names[1], getString(R.string.live), "s:" + station.url,
+                    String title = favourites.contains(station.url) ? "\u2605 " + names[0] : names[0];
+                    list.addView(row(title, names[1], getString(R.string.live), stationKey(station),
                             v -> playStation(station), true));
                 }
             } else if (loadState == LOADING) {
@@ -572,6 +807,13 @@ public class MainActivity extends Activity {
             } else if (loadState == FAILED) {
                 list.addView(directed(text(getString(R.string.failed), 18, TEXT_2)));
             } else {
+                if (catalogOfflineSince != 0) {
+                    TextView offline = directed(text(getString(R.string.catalog_offline,
+                            savedTime(catalogOfflineSince)), 14, TEXT_3));
+                    offline.setPadding(dp(4), 0, dp(4), dp(4));
+                    list.addView(offline);
+                    offset = 1;
+                }
                 for (int i = 0; i < reciters.size(); i++) {
                     int index = i;
                     Catalog.Reciter reciter = reciters.get(i);
@@ -584,8 +826,8 @@ public class MainActivity extends Activity {
                 }
             }
             if (list.getChildCount() == 0) list.addView(directed(text(getString(R.string.empty), 18, TEXT_2)));
-            if (tab == RECITERS && loadState == LOADED && reciterFocus < list.getChildCount()) {
-                focus = list.getChildAt(reciterFocus);
+            if (tab == RECITERS && loadState == LOADED && reciterFocus + offset < list.getChildCount()) {
+                focus = list.getChildAt(reciterFocus + offset);
             } else {
                 focus = firstRow();
             }
@@ -677,13 +919,24 @@ public class MainActivity extends Activity {
             if (!(row instanceof ViewGroup) || row.getTag() == null) continue;
             ViewGroup words = (ViewGroup) ((ViewGroup) row).getChildAt(1);
             TextView state = (TextView) words.getChildAt(words.getChildCount() - 1);
-            boolean current = isPlayingKey((String) row.getTag());
-            row.setActivated(current);
-            if (current) {
+            String key = (String) row.getTag();
+            boolean current = isPlayingKey(key);
+            boolean rowFailed = key.equals(failedKey);
+            row.setActivated(current && ready);
+            if (current && ready) {
                 boolean station = state.getTag() != null;
                 state.setText(paused ? "\u25CB " + getString(R.string.state_paused)
                         : "\u25CF " + getString(station ? R.string.live_playing : R.string.playing));
                 state.setTextColor(paused ? TEXT_2 : ACCENT);
+                state.setVisibility(View.VISIBLE);
+            } else if (current && showConnecting) {
+                state.setText(R.string.connecting);
+                state.setTextColor(TEXT_2);
+                state.setVisibility(View.VISIBLE);
+            } else if (rowFailed) {
+                // No dot and no accent: a failed stream never looks like a paused one.
+                state.setText("\u00D7 " + getString(R.string.could_not_play));
+                state.setTextColor(TEXT);
                 state.setVisibility(View.VISIBLE);
             } else {
                 String idle = (String) state.getTag();
@@ -765,12 +1018,19 @@ public class MainActivity extends Activity {
         boolean running = player != null && ready;
         int ok;
         if (focusedView == playButton) {
-            ok = !running ? 0 : paused ? R.string.hint_resume : R.string.hint_pause;
+            ok = failed ? R.string.hint_try_again : !running ? 0 : paused ? R.string.hint_resume : R.string.hint_pause;
+        } else if (focusedView == favouritePill) {
+            Catalog.Station station = playingStation();
+            ok = station == null ? 0 : favourites.contains(station.url) ? R.string.hint_remove_favourite
+                    : R.string.hint_add_favourite;
+        } else if (focusedView == sleepPill) {
+            ok = R.string.hint_sleep;
         } else if (focusedView instanceof TextView) {
             ok = R.string.hint_open_tab;
         } else if (focusedView != null && focusedView.getTag() instanceof String) {
             String key = (String) focusedView.getTag();
             if (running && isPlayingKey(key)) ok = paused ? R.string.hint_resume : R.string.hint_pause;
+            else if (key.equals(failedKey)) ok = R.string.hint_try_again;
             else ok = key.startsWith("c:") ? R.string.hint_open_surahs : R.string.hint_play;
         } else {
             ok = 0;
@@ -778,11 +1038,20 @@ public class MainActivity extends Activity {
         okLabel.setText(ok == 0 ? "" : getString(ok));
         okLabel.setVisibility(ok == 0 ? View.GONE : View.VISIBLE);
         okChip.setVisibility(ok == 0 ? View.GONE : View.VISIBLE);
-        backLabel.setText(openReciter != null ? R.string.hint_to_reciters
-                : player != null || playingKey != null ? R.string.hint_stop : R.string.hint_close);
+        backLabel.setText(backHint());
         boolean topLevel = openReciter == null;
         tabsChip.setVisibility(topLevel ? View.VISIBLE : View.GONE);
         tabsLabel.setVisibility(topLevel ? View.VISIBLE : View.GONE);
+    }
+
+    /** Exactly what onBackPressed does from here. */
+    private int backHint() {
+        if (inPanel(focusedView)) {
+            return openReciter != null ? R.string.hint_to_surahs
+                    : tab == RADIO ? R.string.hint_to_stations : R.string.hint_to_reciters;
+        }
+        if (openReciter != null) return R.string.hint_to_reciters;
+        return player != null || playingKey != null ? R.string.hint_close_stop : R.string.hint_close;
     }
 
     // ---- now-playing panel ----
@@ -819,12 +1088,24 @@ public class MainActivity extends Activity {
         panelSurah.setPadding(0, dp(8), 0, 0);
         panel.addView(panelSurah);
 
+        // Favourite, play and sleep on one row: a focusable pill each side, as long-press is unreliable on remotes.
+        LinearLayout controls = new LinearLayout(this);
+        controls.setGravity(Gravity.CENTER);
+        controls.setClipChildren(false);
+        favouritePill = controlPill(v -> toggleFavourite());
+        controls.addView(favouritePill, new LinearLayout.LayoutParams(0, dp(44), 1f));
         playButton = new PlayButton(this);
-        playButton.setOnClickListener(v -> togglePause());
+        playButton.setOnClickListener(v -> onPlayButton());
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(dp(72), dp(72));
-        buttonParams.gravity = Gravity.CENTER_HORIZONTAL;
-        buttonParams.topMargin = dp(24);
-        panel.addView(playButton, buttonParams);
+        buttonParams.setMarginStart(dp(16));
+        buttonParams.setMarginEnd(dp(16));
+        controls.addView(playButton, buttonParams);
+        sleepPill = controlPill(v -> cycleSleep());
+        controls.addView(sleepPill, new LinearLayout.LayoutParams(0, dp(44), 1f));
+        LinearLayout.LayoutParams controlsParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        controlsParams.topMargin = dp(24);
+        panel.addView(controls, controlsParams);
 
         statusDetail = text(getString(R.string.offline_hint), 15, TEXT_2);
         statusDetail.setGravity(Gravity.CENTER);
@@ -853,9 +1134,7 @@ public class MainActivity extends Activity {
     /** One place decides what the panel says; the state text is never colour alone. */
     private void renderPanel() {
         boolean active = playingKey != null;
-        boolean connecting = active && !ready;
         boolean surah = playingSurah != null;
-        pill.setVisibility(active || offline ? View.VISIBLE : View.GONE);
         panelName.setText(playingName == null ? getString(R.string.idle) : playingName);
         boolean second = playingSecondary != null && !playingSecondary.isEmpty();
         panelSecondary.setText(playingSecondary);
@@ -863,21 +1142,69 @@ public class MainActivity extends Activity {
         panelSecondary.setLineSpacing(0, second && isArabic(playingSecondary) ? ARABIC_TITLE_SPACING : 1f);
         panelSurah.setText(playingSurah);
         panelSurah.setVisibility(surah ? View.VISIBLE : View.GONE);
-        playButton.setState(ready && !paused, active && ready);
-        if (connecting) {
-            showPill(getString(R.string.connecting), false, false);
-        } else if (offline) {
-            showPill("\u00D7 " + getString(R.string.state_offline), false, true);
-        } else if (active) {
+        playButton.setState(ready && !paused, (active && ready) || failed);
+        // Before 500 ms the pill keeps its place but says nothing, so a quick start never flashes "Connecting…".
+        int pillVisibility = View.GONE;
+        if (failed) {
+            showPill("\u00D7 " + getString(R.string.could_not_play), false, true);
+            pillVisibility = View.VISIBLE;
+        } else if (active && ready) {
             showPill(paused ? "\u25CB " + getString(R.string.state_paused)
                     : "\u25CF " + getString(R.string.state_playing), !paused, paused);
+            pillVisibility = View.VISIBLE;
+        } else if (active) {
+            showPill(getString(R.string.connecting), false, false);
+            pillVisibility = showConnecting ? View.VISIBLE : View.INVISIBLE;
         }
-        statusDetail.setVisibility(offline ? View.VISIBLE : View.GONE);
+        pill.setVisibility(pillVisibility);
+        statusDetail.setVisibility(failed ? View.VISIBLE : View.GONE);
         int surahBar = surah && ready ? View.VISIBLE : View.GONE;
         progress.setVisibility(surahBar);
         clock.setVisibility(surahBar);
         handler.removeCallbacks(tick);
         if (surahBar == View.VISIBLE) tick.run();
+        renderControls(active);
+    }
+
+    /** Favourite only for a station; both pills only while something plays. Invisible keeps the button centred. */
+    private void renderControls(boolean active) {
+        Catalog.Station station = playingStation();
+        boolean favourite = station != null && favourites.contains(station.url);
+        favouritePill.setText((favourite ? "\u2605 " : "\u2606 ") + getString(R.string.favourite));
+        favouritePill.setTextColor(favourite ? ACCENT : TEXT);
+        setShown(favouritePill, station != null);
+        setShown(sleepPill, active);
+        renderSleep();
+    }
+
+    /** Hides a pill without moving the play button; focus on it moves to the play button first. */
+    private void setShown(View view, boolean shown) {
+        if (!shown && view.isFocused()) playButton.requestFocus();
+        view.setVisibility(shown ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    /** A panel pill: neutral fill, the white outline and a lift when focused; built once. */
+    private TextView controlPill(View.OnClickListener onClick) {
+        TextView pill = directed(text("", 15, TEXT));
+        pill.setTypeface(MEDIUM);
+        pill.setGravity(Gravity.CENTER);
+        pill.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
+        pill.setSingleLine();
+        pill.setEllipsize(TextUtils.TruncateAt.END);
+        pill.setPadding(dp(12), 0, dp(12), 0);
+        pill.setFocusable(true);
+        pill.setClickable(true);
+        StateListDrawable states = new StateListDrawable();
+        states.addState(new int[] {android.R.attr.state_focused}, outlined(SURFACE_FOCUSED, 22));
+        states.addState(new int[0], shape(PILL, 22));
+        pill.setBackground(states);
+        pill.setOutlineProvider(ViewOutlineProvider.BACKGROUND);
+        pill.setOnFocusChangeListener((v, focused) -> {
+            lift(v, focused, TILE_SCALE);
+            focusMoved(v, focused);
+        });
+        pill.setOnClickListener(onClick);
+        return pill;
     }
 
     /** "Playing now" is accent text on an accent tint; every other state is white on the neutral pill. */

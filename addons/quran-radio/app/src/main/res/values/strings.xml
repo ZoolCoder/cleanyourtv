@@ -13,7 +13,6 @@
     <string name="hint_open_tab">Open tab</string>
     <string name="hint_tabs">Tabs</string>
     <string name="hint_to_reciters">Return to reciters</string>
-    <string name="hint_stop">Stop</string>
     <string name="hint_close">Close</string>
     <string name="idle">Choose a station or a reciter</string>
     <string name="live">Live</string>
@@ -21,11 +20,22 @@
     <string name="playing">Playing</string>
     <string name="state_playing">Playing now</string>
     <string name="state_paused">Paused</string>
-    <string name="state_offline">Offline</string>
     <string name="connecting">Connecting…</string>
     <string name="loading">Loading the reciters…</string>
     <string name="failed">Could not load the reciters. Check the TV\'s internet connection.</string>
-    <string name="offline_hint">Could not play. Check the TV\'s internet connection.</string>
     <string name="empty">No stations or reciters in the list.</string>
     <string name="surah_format" translatable="false">%1$d. %2$s</string>
+    <string name="could_not_play">Could not play</string>
+    <string name="offline_hint">Check the TV\'s internet connection, then press OK to try again.</string>
+    <string name="hint_try_again">Try again</string>
+    <string name="favourite">Favourite</string>
+    <string name="hint_add_favourite">Add to favourites</string>
+    <string name="hint_remove_favourite">Remove from favourites</string>
+    <string name="sleep_off">Sleep: Off</string>
+    <string name="sleep_minutes">Sleep %1$s min</string>
+    <string name="hint_sleep">Change sleep timer</string>
+    <string name="hint_to_stations">Return to stations</string>
+    <string name="hint_to_surahs">Return to surahs</string>
+    <string name="hint_close_stop">Close and stop the sound</string>
+    <string name="catalog_offline">Offline · list saved %1$s</string>
 </resources>

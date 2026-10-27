@@ -9,4 +9,24 @@
     <string name="hint_read">قراءة الخبر كاملاً</string>
     <string name="hint_language">عرض هذه اللغة</string>
     <string name="hint_back_headlines">العودة إلى العناوين</string>
+    <string name="offline">لا يوجد اتصال. تُعرض أخبار %1$s.</string>
+    <string name="tab_saved">★ المحفوظة</string>
+    <string name="save">☆ حفظ</string>
+    <string name="saved">★ محفوظ</string>
+    <string name="listen">▶ استمع</string>
+    <string name="stop">■ إيقاف</string>
+    <string name="retry">↻ إعادة المحاولة</string>
+    <string name="hint_retry">إعادة المحاولة</string>
+    <string name="hint_select">اختيار</string>
+    <string name="saved_empty">اضغط OK على «حفظ» في أي خبر ليبقى هنا، حتى دون اتصال.</string>
+    <string name="saved_status_empty">الأخبار التي تحفظها تبقى على هذا التلفزيون.</string>
+    <plurals name="saved_status">
+        <item quantity="zero">لا أخبار محفوظة</item>
+        <item quantity="one">خبر محفوظ واحد على هذا التلفزيون</item>
+        <item quantity="two">خبران محفوظان على هذا التلفزيون</item>
+        <item quantity="few">%1$d أخبار محفوظة على هذا التلفزيون</item>
+        <item quantity="many">%1$d خبراً محفوظاً على هذا التلفزيون</item>
+        <item quantity="other">%1$d خبر محفوظ على هذا التلفزيون</item>
+    </plurals>
+    <string name="hint_saved_tab">عرض الأخبار المحفوظة</string>
 </resources>

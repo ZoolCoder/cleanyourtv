@@ -33,4 +33,6 @@ android {
 dependencies {
     // Test only (never in the APK): plain JVM tests for the feed parsing, src/test.
     testImplementation 'junit:junit:4.13.2'
+    // The JVM has no org.json (Android's is a stub in unit tests); the real one is for the tests only.
+    testImplementation 'org.json:json:20240303'
 }

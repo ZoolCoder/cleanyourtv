@@ -17,13 +17,26 @@ ordinary app.
   many more outlets, as headlines without a summary.
 - **When it reads them:** when the app opens, and again when you come back to it after 15 minutes. A
   feed that does not load is skipped and the others are shown.
-- The tab follows the TV's language at start: Arabic when the TV is in Arabic, English otherwise. Up from
-  the list reaches the tabs.
+- The tab is the one you used last; on the first run it follows the TV's language: Arabic when the TV is
+  in Arabic, English otherwise. Up from the list reaches the tabs.
+- **Offline:** the stories of the last good load are kept on the TV and shown at once when the app opens.
+  When the feeds cannot be read, they stay on screen with "Offline" and the time they are from, and a
+  **Try again** pill beside the status reloads on OK. Grey placeholder rows stand in for the headlines
+  while the very first load runs.
+- **Save for later:** OK on a headline moves to its story, where **☆ Save** keeps it in the **★ Saved**
+  tab (up to 50, newest first, the oldest makes room). Saved stories are kept on the TV and readable
+  offline; OK on **★ Saved** removes one.
+- **Listen:** **▶ Listen** reads the headline and summary aloud with the TV's own text-to-speech voice,
+  and OK again stops it. It shows only for a language the TV's voice speaks (many Fire TV and Android TV
+  voices have no Arabic), and stops when you move to another story or leave the app.
 
 ## Permissions
 
 - `INTERNET`: HTTPS GETs of the feeds listed in `config.xml`, only while the app is open. Nothing is sent
-  but the requests, nothing is stored, and nothing runs in the background.
+  but the requests, and nothing runs in the background. The last load and the saved stories are kept
+  in the app's own storage on the TV, and the tab you used last in its preferences.
+- A `<queries>` entry for the text-to-speech service, so Listen can find the TV's voice. It is not a
+  permission; the speech is made on the TV.
 
 No network state, no background service, no telemetry, no ads. Backups are off.
 
@@ -43,7 +56,7 @@ Settings, then Module cards.
 The release build is signed with the debug key so it installs over ADB like the launcher. Sign your own
 builds with your own key if you hand them out; the launcher pins its Show answer to the signing key.
 
-`./gradlew testReleaseUnitTest` runs the feed-reading tests on the JVM.
+`./gradlew testReleaseUnitTest` runs the feed-reading and saved-list tests on the JVM.
 
 ## Credits
 

@@ -1,6 +1,7 @@
 package com.zoolcoder.tv.sudannews;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -11,6 +12,8 @@ import android.graphics.drawable.LayerDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
@@ -23,6 +26,10 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -47,14 +54,17 @@ public class MainActivity extends Activity {
             ON_LIGHT = 0xFF0B1A12, ACCENT = 0xFFD9364F, GLOW = 0x26D9364F, SCRIM = 0xCC0B1A12;
     private static final float ROW_SCALE = 1.02f, TAB_SCALE = 1.04f;
     // What the remote hint bar describes: where focus is.
-    private static final int HINT_TABS = 0, HINT_ROW = 1, HINT_DETAIL = 2;
+    private static final int HINT_TABS = 0, HINT_ROW = 1, HINT_DETAIL = 2, HINT_RETRY = 3, HINT_ACTION = 4;
     private static final int MAX_SHOWN = 60;
     private static final Typeface MEDIUM = Typeface.create("sans-serif-medium", Typeface.NORMAL);
     private static final long STALE_MS = 15 * DateUtils.MINUTE_IN_MILLIS;
+    private static final String KEPT = "stories.json";
+    private static final long MAX_KEPT_BYTES = 1024 * 1024;
+    private static final String SAVED_FILE = "saved.json", SAVED_TAB = "saved", PREFS = "news", TAB_KEY = "tab";
 
     private final List<Feed.Story> stories = new ArrayList<>();
-    private final TextView[] tabs = new TextView[2];
-    private TextView status;
+    private final TextView[] tabs = new TextView[3];
+    private TextView status, retry;
     private LinearLayout list;
     private ScrollView listScroll, detail;
     private TextView moreCue;
@@ -64,26 +74,40 @@ public class MainActivity extends Activity {
     private LinearLayout body;
     private View focusedRow, shownRow;
     private String language;
-    private long loadedAt;
+    private long loadedAt, keptAt;
     private int loadId;
     private boolean loading;
+    // The feeds' own status line; the saved tab shows its own line instead.
+    private CharSequence feedStatus = "";
+    private boolean feedRetry;
     private Thread loader;
     private Drawable.ConstantState rowBack;
-    private Drawable panelFocus;
+    private Drawable panelFocus, panelActive;
+    private Saved saved = new Saved();
+    private boolean savedReady;
+    // The story in the panel, and its Listen pill.
+    private Feed.Story shownStory;
+    private TextView listen, saveButton;
+    private boolean firstRowPending = true;
+    private TextToSpeech speech;
+    private boolean speechArabic, speechEnglish, speaking;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        language = "ar".equals(Locale.getDefault().getLanguage()) ? "ar" : "en";
-
-        boolean rtl = "ar".equals(language);
+        boolean rtl = "ar".equals(Locale.getDefault().getLanguage());
+        // The tab the viewer used last; the TV's language on the first run.
+        language = prefs().getString(TAB_KEY, rtl ? "ar" : "en");
         panelFocus = focusedFill(18);
+        panelActive = shape(SURFACE, 18);
 
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
         page.setLayoutDirection(direction(rtl));
         page.setBackground(glow(rtl));
         page.setClipChildren(false);
+        // The list reaches 16 dp into the margin so a lifted row is not cut at the screen edge.
+        page.setClipToPadding(false);
         page.setPadding(dp(48), dp(28), dp(48), dp(24));
 
         // Header: accent marker, title and update line on the start side, the language tabs on the other.
@@ -103,18 +127,36 @@ public class MainActivity extends Activity {
         TextView title = directed(text(getString(R.string.title), 30, Color.WHITE), rtl);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         heading.addView(title);
+        // The update line, with a Try again pill beside it when the feeds could not be read.
+        LinearLayout statusRow = new LinearLayout(this);
+        statusRow.setGravity(Gravity.CENTER_VERTICAL);
+        statusRow.setClipChildren(false);
         status = directed(text(getString(R.string.loading), 14, TEXT_3), rtl);
-        heading.addView(status);
+        statusRow.addView(status);
+        retry = pill(getString(R.string.retry));
+        retry.setVisibility(View.GONE);
+        retry.setOnClickListener(v -> {
+            // Focus leaves the pill before it hides, so it does not fall somewhere random.
+            tabs[tabIndex()].requestFocus();
+            load();
+        });
+        LinearLayout.LayoutParams retryParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        retryParams.setMarginStart(dp(12));
+        statusRow.addView(retry, retryParams);
+        heading.addView(statusRow);
         header.addView(heading, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
 
         LinearLayout tabRow = new LinearLayout(this);
         tabRow.setClipChildren(false);
+        // A lifted end tab reaches past the 4 dp track padding.
+        tabRow.setClipToPadding(false);
         tabRow.setPadding(dp(4), dp(4), dp(4), dp(4));
         tabRow.setBackground(shape(TRACK, 26));
         tabs[0] = tab(getString(R.string.tab_ar), "ar");
         tabs[1] = tab(getString(R.string.tab_en), "en");
-        tabRow.addView(tabs[0]);
-        tabRow.addView(tabs[1]);
+        tabs[2] = tab(getString(R.string.tab_saved), SAVED_TAB);
+        for (TextView tab : tabs) tabRow.addView(tab);
         header.addView(tabRow);
         page.addView(header);
 
@@ -136,7 +178,9 @@ public class MainActivity extends Activity {
         detail.setFocusable(true);
         detail.setOutlineProvider(ViewOutlineProvider.BOUNDS);
         detail.setClipToOutline(true);
-        detail.setOnFocusChangeListener((v, focused) -> v.setBackground(focused ? panelFocus : null));
+        // The line cut by the bottom edge fades out above the ⌄ cue.
+        detail.setVerticalFadingEdgeEnabled(true);
+        detail.setFadingEdgeLength(dp(48));
         detail.setOnScrollChangeListener((v, x, y, oldX, oldY) -> updateMoreCue());
         // A ⌄ over the bottom edge while more of the story is below.
         moreCue = text("\u2304", 22, TEXT_2);
@@ -146,12 +190,13 @@ public class MainActivity extends Activity {
         moreCue.setVisibility(View.GONE);
         FrameLayout detailFrame = new FrameLayout(this);
         detailFrame.setClipChildren(false);
-        detailFrame.addView(detail, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        // The panel stops above a strip kept for the cue, so the cue never sits on a line of the story.
+        FrameLayout.LayoutParams panelParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        panelParams.bottomMargin = dp(32);
+        detailFrame.addView(detail, panelParams);
         FrameLayout.LayoutParams cueParams = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
-                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        cueParams.bottomMargin = dp(8);
+                FrameLayout.LayoutParams.WRAP_CONTENT, dp(28), Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         detailFrame.addView(moreCue, cueParams);
 
         // Headlines 488 dp and story 352 dp with a 24 dp gap: the 864 dp of a 960 dp screen. The scroll
@@ -176,9 +221,129 @@ public class MainActivity extends Activity {
         page.addView(hintBar, hintParams);
         setContentView(page);
         rtlPage = rtl;
-        page.getViewTreeObserver().addOnGlobalFocusChangeListener((oldView, newView) -> showHint(newView));
+        page.getViewTreeObserver().addOnGlobalFocusChangeListener((oldView, newView) -> {
+            // The outline when the panel itself scrolls; a quiet fill while one of its pills has focus.
+            detail.setBackground(newView == detail ? panelFocus : detail.hasFocus() ? panelActive : null);
+            showHint(newView);
+        });
         showTabs();
-        tabs["ar".equals(language) ? 0 : 1].requestFocus();
+        tabs[tabIndex()].requestFocus();
+        showKept();
+        startSpeech();
+    }
+
+    private SharedPreferences prefs() {
+        return getSharedPreferences(PREFS, MODE_PRIVATE);
+    }
+
+    private int tabIndex() {
+        return SAVED_TAB.equals(language) ? 2 : "ar".equals(language) ? 0 : 1;
+    }
+
+    /** The system voice, if the TV has one; the Listen pill shows only for a language it speaks. */
+    private void startSpeech() {
+        speech = new TextToSpeech(this, result -> {
+            if (result != TextToSpeech.SUCCESS || speech == null) return;
+            speechArabic = speaks(new Locale("ar"));
+            speechEnglish = speaks(Locale.ENGLISH);
+            speech.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+                @Override
+                public void onStart(String id) {
+                }
+
+                @Override
+                public void onDone(String id) {
+                    runOnUiThread(() -> showSpeaking(false));
+                }
+
+                @Override
+                public void onError(String id) {
+                    runOnUiThread(() -> showSpeaking(false));
+                }
+            });
+            showListen();
+        });
+    }
+
+    private boolean speaks(Locale locale) {
+        return speech.isLanguageAvailable(locale) >= TextToSpeech.LANG_AVAILABLE;
+    }
+
+    private boolean canSpeak(Feed.Story story) {
+        return story != null && ("ar".equals(story.language) ? speechArabic : speechEnglish);
+    }
+
+    private void showListen() {
+        if (listen != null) listen.setVisibility(canSpeak(shownStory) ? View.VISIBLE : View.GONE);
+    }
+
+    private void toggleSpeech() {
+        if (speaking) {
+            stopSpeech();
+            return;
+        }
+        Feed.Story story = shownStory;
+        if (!canSpeak(story)) return;
+        speech.setLanguage("ar".equals(story.language) ? new Locale("ar") : Locale.ENGLISH);
+        String words = story.summary.isEmpty() ? story.title : story.title + ". " + story.summary;
+        speech.speak(words, TextToSpeech.QUEUE_FLUSH, null, "story");
+        showSpeaking(true);
+    }
+
+    private void stopSpeech() {
+        if (speaking && speech != null) speech.stop();
+        showSpeaking(false);
+    }
+
+    private void showSpeaking(boolean on) {
+        speaking = on;
+        if (listen != null) listen.setText(on ? R.string.stop : R.string.listen);
+    }
+
+    /** The copy from the last good load, on screen at once while the feeds load, and when they cannot. */
+    private void showKept() {
+        File file = new File(getFilesDir(), KEPT);
+        File savedFile = new File(getFilesDir(), SAVED_FILE);
+        new Thread(() -> {
+            List<Feed.Story> kept = Feed.restore(read(file));
+            long at = file.lastModified();
+            Saved restored = Saved.restore(read(savedFile));
+            runOnUiThread(() -> {
+                if (isDestroyed()) return;
+                saved = restored;
+                savedReady = true;
+                if (SAVED_TAB.equals(language)) {
+                    showStories(true);
+                    return;
+                }
+                showSave();
+                // The feeds won the race, or there is no copy: nothing to show.
+                if (kept.isEmpty() || !stories.isEmpty()) return;
+                keptAt = at;
+                stories.addAll(kept);
+                showStories(true);
+            });
+        }).start();
+    }
+
+    private static String read(File file) {
+        if (!file.isFile() || file.length() > MAX_KEPT_BYTES) return null;
+        try {
+            return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** Written to a temporary file first, so a power cut leaves the old copy whole. */
+    private static void write(File file, String text) {
+        File temp = new File(file.getPath() + ".tmp");
+        try {
+            Files.write(temp.toPath(), text.getBytes(StandardCharsets.UTF_8));
+            if (!temp.renameTo(file)) temp.delete();
+        } catch (IOException e) {
+            temp.delete();
+        }
     }
 
     private LinearLayout.LayoutParams listParams() {
@@ -196,8 +361,16 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onStop() {
+        stopSpeech();
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         if (loader != null) loader.interrupt();
+        if (speech != null) speech.shutdown();
+        speech = null;
         super.onDestroy();
     }
 
@@ -213,7 +386,9 @@ public class MainActivity extends Activity {
     private void load() {
         int id = ++loadId;
         loading = true;
-        status.setText(R.string.loading);
+        setFeedStatus(getString(R.string.loading), false);
+        // Placeholder rows while nothing is on screen yet.
+        if (stories.isEmpty()) showStories(true);
         List<Feed> feeds = new ArrayList<>();
         for (String line : getResources().getStringArray(R.array.feeds)) {
             Feed feed = Feed.parse(line);
@@ -248,15 +423,46 @@ public class MainActivity extends Activity {
                     stories.clear();
                     stories.addAll(found);
                     loadedAt = SystemClock.elapsedRealtime();
-                    status.setText(getString(R.string.updated,
-                            DateFormat.getTimeFormat(this).format(System.currentTimeMillis())));
+                    keptAt = System.currentTimeMillis();
+                    setFeedStatus(getString(R.string.updated, DateFormat.getTimeFormat(this).format(keptAt)), false);
+                    File file = new File(getFilesDir(), KEPT);
+                    new Thread(() -> write(file, Feed.save(found))).start();
+                } else if (!stories.isEmpty() && keptAt > 0) {
+                    // The kept copy stays on screen as it is, with the focus where the viewer left it.
+                    setFeedStatus(getString(R.string.offline, DateUtils.formatDateTime(this, keptAt,
+                            DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_ABBREV_MONTH)), true);
+                    return;
                 } else {
-                    status.setText(R.string.failed);
+                    setFeedStatus(getString(R.string.failed), true);
                 }
+                // The saved tab does not change with the feeds; leave the viewer where they are.
+                if (SAVED_TAB.equals(language)) return;
                 showStories(false);
             });
         });
         loader.start();
+    }
+
+    private void setFeedStatus(CharSequence text, boolean retryShown) {
+        feedStatus = text;
+        feedRetry = retryShown;
+        showStatus();
+    }
+
+    /** The line under the title: the feeds' state, or on the saved tab what is kept there. */
+    private void showStatus() {
+        boolean savedTab = SAVED_TAB.equals(language);
+        if (savedTab) {
+            int count = saved.list().size();
+            status.setText(count == 0 ? getString(R.string.saved_status_empty)
+                    : getResources().getQuantityString(R.plurals.saved_status, count, count));
+        } else {
+            status.setText(feedStatus);
+        }
+        boolean showRetry = !savedTab && feedRetry;
+        // Focus leaves the pill before it hides, so it does not fall somewhere random.
+        if (!showRetry && retry.hasFocus()) tabs[tabIndex()].requestFocus();
+        retry.setVisibility(showRetry ? View.VISIBLE : View.GONE);
     }
 
     private TextView tab(String label, String code) {
@@ -277,12 +483,13 @@ public class MainActivity extends Activity {
         tab.setOnClickListener(v -> {
             if (code.equals(language)) return;
             language = code;
+            prefs().edit().putString(TAB_KEY, code).apply();
             showTabs();
             showStories(true);
         });
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        if (code.equals("en")) params.setMarginStart(dp(8));
+        if (!code.equals("ar")) params.setMarginStart(dp(8));
         tab.setLayoutParams(params);
         return tab;
     }
@@ -290,7 +497,7 @@ public class MainActivity extends Activity {
     /** The chosen tab is the white one; the focused one lifts. */
     private void showTabs() {
         for (TextView tab : tabs) {
-            if (tab != null) tab.setSelected(tab == tabs["ar".equals(language) ? 0 : 1]);
+            if (tab != null) tab.setSelected(tab == tabs[tabIndex()]);
         }
     }
 
@@ -298,26 +505,41 @@ public class MainActivity extends Activity {
         focusedRow = null;
         shownRow = null;
         list.removeAllViews();
-        boolean rtl = "ar".equals(language);
+        boolean savedTab = SAVED_TAB.equals(language);
+        // The saved tab mixes both languages: the page follows the TV, each row its own story.
+        boolean rtl = savedTab ? "ar".equals(Locale.getDefault().getLanguage()) : "ar".equals(language);
         body.setLayoutDirection(direction(rtl));
         hintBar.setLayoutDirection(direction(rtl));
         rtlPage = rtl;
         hintKind = -1;
+        showStatus();
         long now = System.currentTimeMillis();
         Feed.Story first = null;
-        for (Feed.Story story : stories) {
-            if (!story.language.equals(language)) continue;
+        for (Feed.Story story : savedTab ? saved.list() : stories) {
+            if (!savedTab && !story.language.equals(language)) continue;
             if (list.getChildCount() == MAX_SHOWN) break;
             if (first == null) first = story;
-            list.addView(row(story, rtl, now));
+            list.addView(row(story, "ar".equals(story.language), now));
         }
-        if (list.getChildCount() == 0 && loadedAt != 0) {
-            list.addView(directed(text(getString(R.string.empty), 18, TEXT_2), rtl));
+        if (list.getChildCount() == 0) {
+            if (savedTab) {
+                if (savedReady) list.addView(savedEmpty(rtl));
+            } else if (loading && loadedAt == 0) {
+                for (int i = 0; i < 3; i++) list.addView(skeleton());
+            } else if (loadedAt != 0) {
+                list.addView(directed(text(getString(R.string.empty), 18, TEXT_2), rtl));
+            }
         }
         listScroll.scrollTo(0, 0);
-        showDetail(first, rtl);
+        showDetail(first, first != null && "ar".equals(first.language));
         View firstRow = list.getChildAt(0);
-        if (!keepTabFocus && firstRow != null && firstRow.isFocusable()) firstRow.requestFocus();
+        // At launch, also with a restored tab, the first headline takes focus as soon as there is one.
+        if ((!keepTabFocus || firstRowPending) && firstRow != null && firstRow.isFocusable()) {
+            firstRowPending = false;
+            firstRow.requestFocus();
+        }
+        // The bar was cleared above; a focus that did not move would leave it empty.
+        showHint(getCurrentFocus());
     }
 
     private View row(Feed.Story story, boolean rtl, long now) {
@@ -383,8 +605,13 @@ public class MainActivity extends Activity {
 
     /** The story in the panel beside the list; an empty panel cannot take focus. */
     private void showDetail(Feed.Story story, boolean rtl) {
+        if (story != shownStory) stopSpeech();
+        shownStory = story;
+        listen = null;
+        saveButton = null;
         detail.removeAllViews();
         detail.setFocusable(story != null);
+        moreCue.setVisibility(View.GONE);
         if (story == null) return;
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
@@ -396,19 +623,109 @@ public class MainActivity extends Activity {
         if (rtl) title.setLineSpacing(0, 1.25f);
         page.addView(title);
         TextView byline = directed(text(byline(story, System.currentTimeMillis()), 15, TEXT_2), rtl);
-        byline.setPadding(0, 0, 0, dp(16));
+        byline.setPadding(0, 0, 0, dp(12));
         page.addView(byline);
+        // Save and Listen: what OK does in the panel. Down from them scrolls the story.
+        LinearLayout actions = new LinearLayout(this);
+        actions.setClipChildren(false);
+        actions.setClipToPadding(false);
+        actions.setPadding(0, dp(4), 0, dp(16));
+        saveButton = pill("");
+        saveButton.setOnClickListener(v -> toggleSaved());
+        actions.addView(saveButton);
+        listen = pill(getString(speaking ? R.string.stop : R.string.listen));
+        listen.setOnClickListener(v -> toggleSpeech());
+        LinearLayout.LayoutParams listenParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        listenParams.setMarginStart(dp(12));
+        actions.addView(listen, listenParams);
+        page.addView(actions);
+        showSave();
+        showListen();
         if (!story.summary.isEmpty()) {
             TextView summary = directed(text(story.summary, 18, Color.WHITE), rtl);
             summary.setLineSpacing(0, rtl ? 1.4f : 1.25f);
             page.addView(summary);
         }
-        // Room under the last line for the ⌄ cue.
-        page.setPadding(dp(20), dp(16), dp(20), dp(48));
+        // The scaled Save and Listen pills reach past their row and into this padding; clipping cut their outline.
+        page.setClipChildren(false);
+        page.setClipToPadding(false);
+        page.setPadding(dp(20), dp(16), dp(20), dp(16));
         detail.addView(page);
         detail.scrollTo(0, 0);
         moreCue.setVisibility(View.GONE);
         detail.post(this::updateMoreCue);
+    }
+
+    private void toggleSaved() {
+        if (!savedReady || shownStory == null) return;
+        saved.toggle(shownStory);
+        showSave();
+        showStatus();
+        File file = new File(getFilesDir(), SAVED_FILE);
+        String json = saved.save();
+        new Thread(() -> write(file, json)).start();
+    }
+
+    private void showSave() {
+        if (saveButton == null) return;
+        saveButton.setText(saved.contains(shownStory) ? R.string.saved : R.string.save);
+        saveButton.setVisibility(savedReady ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    /** A small focusable pill: a light fill, white with dark text when focused. */
+    private TextView pill(String label) {
+        TextView pill = text(label, 15, Color.WHITE);
+        pill.setTypeface(MEDIUM);
+        pill.setGravity(Gravity.CENTER);
+        pill.setMinHeight(dp(36));
+        pill.setPadding(dp(16), 0, dp(16), 0);
+        pill.setBackground(states(shape(PILL, 18), shape(PILL, 18), outlined(Color.WHITE, 18),
+                outlined(Color.WHITE, 18)));
+        pill.setTextColor(new ColorStateList(new int[][] {{android.R.attr.state_focused}, {}},
+                new int[] {ON_LIGHT, Color.WHITE}));
+        pill.setFocusable(true);
+        pill.setClickable(true);
+        lift(pill, TAB_SCALE, null);
+        return pill;
+    }
+
+    /** The saved tab with nothing in it: what it is for and how to fill it. */
+    private View savedEmpty(boolean rtl) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(24), dp(24), dp(24), dp(24));
+        box.setBackground(shape(SURFACE, 14));
+        TextView star = directed(text("\u2606", 34, TEXT_2), rtl);
+        box.addView(star);
+        TextView heading = directed(text(getString(R.string.saved_empty_title), 22, Color.WHITE), rtl);
+        heading.setTypeface(Typeface.DEFAULT_BOLD);
+        heading.setPadding(0, dp(8), 0, dp(8));
+        box.addView(heading);
+        box.addView(directed(text(getString(R.string.saved_empty), 16, TEXT_2), rtl));
+        return box;
+    }
+
+    /** A grey stand-in for a headline row while the first load runs. */
+    private View skeleton() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(dp(16), dp(14), dp(16), dp(14));
+        row.setBackground(shape(SURFACE, 14));
+        int[] widths = {120, 380, 260};
+        int[] heights = {12, 18, 18};
+        for (int i = 0; i < widths.length; i++) {
+            View bar = new View(this);
+            bar.setBackground(shape(TRACK, 6));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(widths[i]), dp(heights[i]));
+            params.topMargin = i == 0 ? 0 : dp(8);
+            row.addView(bar, params);
+        }
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, dp(4), 0, dp(4));
+        row.setLayoutParams(params);
+        return row;
     }
 
     private void updateMoreCue() {
@@ -418,14 +735,22 @@ public class MainActivity extends Activity {
     /** The remote hint bar: key chips and what they do where focus is now. */
     private void showHint(View focus) {
         if (focus == null) return;
-        int kind = focus == detail ? HINT_DETAIL : focus.getParent() == list ? HINT_ROW : HINT_TABS;
-        if (kind == hintKind) return;
+        int kind = focus == detail ? HINT_DETAIL : focus == retry ? HINT_RETRY
+                : detail.hasFocus() ? HINT_ACTION : focus.getParent() == list ? HINT_ROW : HINT_TABS;
+        // Moving between tabs keeps the kind but may change the words.
+        if (kind == hintKind && kind != HINT_TABS) return;
         hintKind = kind;
         hintBar.removeAllViews();
         if (kind == HINT_DETAIL) {
             addHint(R.string.key_back, R.string.hint_back_headlines);
+        } else if (kind == HINT_RETRY) {
+            addHint(R.string.key_ok, R.string.hint_retry);
+        } else if (kind == HINT_ACTION) {
+            addHint(R.string.key_ok, R.string.hint_select);
+            addHint(R.string.key_back, R.string.hint_back_headlines);
         } else {
-            addHint(R.string.key_ok, kind == HINT_ROW ? R.string.hint_read : R.string.hint_language);
+            addHint(R.string.key_ok, kind == HINT_ROW ? R.string.hint_read
+                    : focus == tabs[2] ? R.string.hint_saved_tab : R.string.hint_language);
         }
     }
 
@@ -434,7 +759,10 @@ public class MainActivity extends Activity {
         chip.setTypeface(Typeface.DEFAULT_BOLD);
         chip.setPadding(dp(6), dp(2), dp(6), dp(2));
         chip.setBackground(shape(PILL, 100));
-        hintBar.addView(chip);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        if (hintBar.getChildCount() > 0) params.setMarginStart(dp(24));
+        hintBar.addView(chip, params);
         TextView words = directed(text(getString(label), 14, TEXT_2), rtlPage);
         words.setPadding(dp(8), 0, 0, 0);
         hintBar.addView(words);

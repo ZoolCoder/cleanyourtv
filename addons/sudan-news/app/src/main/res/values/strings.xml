@@ -13,4 +13,21 @@
     <string name="hint_read">Read full story</string>
     <string name="hint_language">Show this language</string>
     <string name="hint_back_headlines">Return to headlines</string>
+    <string name="offline">Offline. Showing the news from %1$s.</string>
+    <string name="tab_saved">★ Saved</string>
+    <string name="save">☆ Save</string>
+    <string name="saved">★ Saved</string>
+    <string name="listen">▶ Listen</string>
+    <string name="stop">■ Stop</string>
+    <string name="retry">↻ Try again</string>
+    <string name="hint_retry">Try again</string>
+    <string name="hint_select">Select</string>
+    <string name="saved_empty_title" translatable="false">Nothing saved yet · لا شيء محفوظ بعد</string>
+    <string name="saved_empty">Press OK on Save in a story to keep it here, even offline.</string>
+    <string name="saved_status_empty">Stories you save stay on this TV.</string>
+    <plurals name="saved_status">
+        <item quantity="one">%1$d saved story, kept on this TV</item>
+        <item quantity="other">%1$d saved stories, kept on this TV</item>
+    </plurals>
+    <string name="hint_saved_tab">Show saved stories</string>
 </resources>

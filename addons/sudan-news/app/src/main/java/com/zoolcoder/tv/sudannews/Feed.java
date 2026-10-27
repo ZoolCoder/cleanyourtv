@@ -1,5 +1,8 @@
 package com.zoolcoder.tv.sudannews;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -38,6 +41,39 @@ final class Feed {
         }
     }
 
+    /** The stories as JSON, for the copy kept on the TV that is shown when the feeds cannot be reached. */
+    static String save(List<Story> stories) {
+        JSONArray out = new JSONArray();
+        try {
+            for (Story s : stories) {
+                out.put(new JSONObject().put("l", s.language).put("s", s.source).put("t", s.title)
+                        .put("b", s.summary).put("w", s.time));
+            }
+        } catch (JSONException e) {
+            return "[]";
+        }
+        return out.toString();
+    }
+
+    /** Stories from {@link #save}; an empty list when the copy is missing or damaged. */
+    static List<Story> restore(String json) {
+        List<Story> stories = new ArrayList<>();
+        if (json == null) return stories;
+        try {
+            JSONArray in = new JSONArray(json);
+            for (int i = 0; i < in.length() && i < MAX_KEPT; i++) {
+                JSONObject o = in.getJSONObject(i);
+                String title = o.optString("t", "");
+                if (title.isEmpty()) continue;
+                stories.add(new Story(o.optString("l", ""), o.optString("s", ""), limit(title, MAX_TITLE + 1),
+                        limit(o.optString("b", ""), MAX_SUMMARY + 1), o.optLong("w", 0)));
+            }
+        } catch (JSONException e) {
+            stories.clear();
+        }
+        return stories;
+    }
+
     private static final int TIMEOUT_MS = 10000;
     private static final long TOTAL_MS = 30000;
     private static final int MAX_REDIRECTS = 3;
@@ -46,6 +82,8 @@ final class Feed {
     private static final int MAX_RAW_TITLE = 2000, MAX_RAW_SUMMARY = 20000, MAX_TITLE = 300;
     private static final int MAX_STORIES = 20;
     private static final int MAX_SUMMARY = 900;
+    /** Stories kept on the TV for offline use: every feed's 20, a few feeds. */
+    private static final int MAX_KEPT = 200;
     /** WordPress closes every summary with "The post X appeared first on Y." */
     private static final Pattern WORDPRESS_FOOTER = Pattern.compile("(?is)<p>\\s*The post .*?</p>");
     private static final Pattern TAG = Pattern.compile("<[^<>]*>");

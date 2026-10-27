@@ -151,4 +151,27 @@ public class FeedTest {
         assertEquals("a b", Feed.plainText("a&#0;b"));
         assertEquals("a &#55357; b", Feed.plainText("a &#55357; b"));
     }
+
+    @Test
+    public void savedStoriesComeBackAsTheyWere() {
+        List<Feed.Story> saved = java.util.Arrays.asList(
+                new Feed.Story("ar", "Dabanga", "عنوان", "ملخص", 1761400000000L),
+                new Feed.Story("en", "UN News", "Headline", "", 0));
+        List<Feed.Story> back = Feed.restore(Feed.save(saved));
+        assertEquals(2, back.size());
+        assertEquals("ar", back.get(0).language);
+        assertEquals("Dabanga", back.get(0).source);
+        assertEquals("عنوان", back.get(0).title);
+        assertEquals("ملخص", back.get(0).summary);
+        assertEquals(1761400000000L, back.get(0).time);
+        assertEquals("", back.get(1).summary);
+    }
+
+    @Test
+    public void aDamagedOrMissingCopyGivesNoStories() {
+        assertTrue(Feed.restore(null).isEmpty());
+        assertTrue(Feed.restore("not json").isEmpty());
+        assertTrue(Feed.restore("[{\"t\":\"\"}]").isEmpty());
+        assertTrue(Feed.restore("[{\"t\":\"ok\"}, 5]").isEmpty());
+    }
 }

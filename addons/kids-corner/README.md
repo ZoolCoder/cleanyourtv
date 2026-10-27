@@ -21,16 +21,30 @@ launcher it declares a [module card](../../docs/modules.md), so once you answer 
   Android TV (`com.google.android.youtube.tv`) or SmartTube; without any of them the link goes to whatever app
   claims YouTube links, and a toast says so when nothing does. TV YouTube apps play `watch?v=` links only, which
   is why the rows list videos and not channels.
-- **When it reads:** when the app opens, and again when you come back to it after 15 minutes. A channel that
-  does not load shows a short note and the other rows stay. Thumbnails are small, shrunk to fit and kept in
-  memory only while the app is open.
+- **When it reads:** when the app opens, and again when you come back to it after 15 minutes. Thumbnails are
+  small, shrunk to fit and kept in memory only while the app is open.
+- **Offline.** The last videos that loaded for each channel are saved on the TV (one file, at most 256 KB,
+  written whole or not at all) and shown at once when the app opens, before the feeds answer. Rows still
+  loading show grey placeholders. A channel with nothing saved that gives no answer in 8 seconds shows
+  "Videos unavailable" and a **Try again** button that reloads that channel only; the other rows stay.
+- **Favourites.** On the channel list, Right (Left in Arabic) reaches the **☆ Favourite** pill of the channel
+  in view; OK on it marks the channel with ★ and moves it, with its row, to the top. Saved on the TV.
+- **Continue watching.** The first row holds the last 8 videos opened, newest first, each once. It is hidden
+  until a video has been opened, and kept across restarts.
+- **First run** shows one banner with the remote keys (OK plays, Up/Down changes channel, Back returns);
+  OK or Back closes it for good.
+- **Back from YouTube** lands on the same row and video you left from.
 - Arabic strings and right-to-left layout when the TV's language is Arabic, English otherwise.
 
 ## Permissions
 
 - `INTERNET`: HTTPS GETs of the uploads feeds listed in `config.xml` and of each video's thumbnail
-  (`i.ytimg.com`), only while the app is open. Nothing is sent but the requests, nothing is stored, and
-  nothing runs in the background.
+  (`i.ytimg.com`), only while the app is open. Nothing is sent but the requests, and nothing runs in the
+  background.
+
+Stored on the TV, in the app's own storage only: the saved feeds (video ids and titles), the favourite
+channels, the last 8 videos opened and whether the first-run banner was shown. Clearing the app's data
+removes them.
 
 No network state, no background service, no telemetry, no ads. Backups are off. The manifest declares the
 three YouTube packages in `<queries>` only so the app can see which one is installed.
@@ -51,7 +65,8 @@ Settings, then Module cards.
 The release build is signed with the debug key so it installs over ADB like the launcher. Sign your own
 builds with your own key if you hand them out; the launcher pins its Show answer to the signing key.
 
-`./gradlew testReleaseUnitTest` runs the feed-reading tests on the JVM.
+`./gradlew testReleaseUnitTest` runs the tests on the JVM: feed reading, the saved feeds, favourites order
+and the Continue watching list.
 
 ## Credits
 

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
@@ -52,7 +53,7 @@ final class Channel {
     /** A config.xml line, "Arabic name | English name | channel id", or null when it is not one. */
     static Channel parse(String line) {
         String[] parts = line.split("\\|", -1);
-        if (parts.length < 3 || !CHANNEL_ID.matcher(parts[2].trim()).matches()) return null;
+        if (parts.length < 3 || !isChannelId(parts[2].trim())) return null;
         return new Channel(parts[0].trim(), parts[1].trim(), parts[2].trim());
     }
 
@@ -67,6 +68,18 @@ final class Channel {
 
     static boolean isVideoId(String id) {
         return VIDEO_ID.matcher(id).matches();
+    }
+
+    static boolean isChannelId(String id) {
+        return CHANNEL_ID.matcher(id).matches();
+    }
+
+    /** Favourite channels first, each group in config.xml order. */
+    static List<Channel> favouritesFirst(List<Channel> channels, Set<String> favourites) {
+        List<Channel> ordered = new ArrayList<>();
+        for (Channel channel : channels) if (favourites.contains(channel.id)) ordered.add(channel);
+        for (Channel channel : channels) if (!favourites.contains(channel.id)) ordered.add(channel);
+        return ordered;
     }
 
     /** Up to 1 MB of the response, unzipped (also up to 1 MB) when the server sent gzip without being asked. */

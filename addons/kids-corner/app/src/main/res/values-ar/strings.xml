@@ -10,4 +10,13 @@
     <string name="failed">تعذّر تحميل الفيديوهات. تحقّق من اتصال التلفزيون بالإنترنت.</string>
     <string name="row_failed">تعذّر تحميل هذه القناة.</string>
     <string name="no_player">لا يوجد تطبيق يوتيوب على هذا التلفزيون.</string>
+    <string name="hint_favourite">إضافة إلى المفضلة</string>
+    <string name="hint_unfavourite">إزالة من المفضلة</string>
+    <string name="hint_retry">حاول مجددًا</string>
+    <string name="offline">بلا إنترنت: تُعرض الفيديوهات المحفوظة آخر مرة.</string>
+    <string name="banner_play">تشغيل</string>
+    <string name="banner_channel">تغيير القناة</string>
+    <string name="banner_return">رجوع</string>
+    <string name="banner_dismiss">اضغط OK لإخفاء هذا</string>
+    <string name="hint_help">مساعدة</string>
 </resources>

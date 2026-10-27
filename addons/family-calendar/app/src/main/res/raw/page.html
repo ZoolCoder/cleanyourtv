@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family Calendar</title>
+<style>
+  :root { color-scheme: dark; --accent: #e0409a; --bg: #0e0f1a; --surface: #1c1d2e; --line: #2c2d42; --dim: #b9b9c8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 32px; background: var(--bg); color: #fff;
+         font: 17px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic", sans-serif; }
+  main { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+  h1::before { content: ""; width: 4px; height: 24px; border-radius: 2px; background: var(--accent); }
+  .tabs { display: flex; gap: 8px; margin-bottom: 8px; }
+  .tabs button { flex: 1; margin: 0; padding: 12px 8px; border: 0; border-radius: 999px; background: var(--surface);
+                 color: #fff; font: inherit; font-size: 15px; font-weight: 600; }
+  .tabs button.on { background: #fff; color: var(--bg); }
+  label, .label { display: block; margin: 16px 0 6px; color: var(--dim); font-size: 15px; }
+  input[type=text], input[type=date], input[type=time], input[inputmode], select {
+    width: 100%; min-height: 50px; padding: 12px; border: 2px solid var(--surface); border-radius: 12px;
+    background: var(--surface); color: #fff; font: inherit; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  input:disabled { opacity: .4; }
+  .pair { display: flex; gap: 12px; }
+  .pair > div { flex: 1; }
+  .toggle { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 12px 14px;
+            border-radius: 12px; background: var(--surface); }
+  .toggle input { width: 26px; height: 26px; accent-color: var(--accent); }
+  .who { display: flex; flex-wrap: wrap; gap: 10px; }
+  .who button { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 64px; margin: 0; padding: 0;
+                border: 0; background: none; color: var(--dim); font: inherit; font-size: 13px; }
+  .who i { display: block; width: 44px; height: 44px; border-radius: 50%; border: 3px solid transparent; }
+  .who button.on { color: #fff; font-weight: 600; }
+  .who button.on i { border-color: #fff; }
+  .c0 { background: #4f8dff; } .c1 { background: #e5484d; } .c2 { background: #ff7eb6; }
+  .c3 { background: #2bb673; } .c4 { background: #a66bff; } .c5 { background: #f2994a; }
+  #other { margin-top: 10px; }
+  .go { width: 100%; min-height: 54px; margin-top: 24px; padding: 14px; border: 0; border-radius: 14px;
+        background: var(--accent); color: #fff; font: inherit; font-weight: 700; }
+  .go:disabled { opacity: .6; }
+  .msg { margin-top: 14px; min-height: 1.4em; font-weight: 600; }
+  .msg.ok { color: #4fd18b; } .msg.bad { color: #f2c94c; }
+  small { color: var(--dim); }
+  #pinok { color: #4fd18b; }
+  #list { list-style: none; margin: 16px 0 0; padding: 0; }
+  #list li { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 12px; border-radius: 12px;
+             background: var(--surface); }
+  #list li.day { display: block; margin: 18px 0 8px; padding: 0; background: none; color: var(--dim); font-size: 14px; font-weight: 600; }
+  #list b { display: block; width: 4px; align-self: stretch; border-radius: 2px; }
+  #list .when { width: 64px; flex: none; font-size: 14px; color: var(--dim); }
+  #list .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  #list .what span { display: block; font-size: 14px; color: var(--dim); }
+  #list button { flex: none; margin: 0; padding: 10px 12px; border: 0; border-radius: 10px; background: #3a2030;
+                 color: #ff9aa0; font: inherit; font-size: 14px; }
+  .refresh { width: 100%; min-height: 48px; margin-top: 16px; border: 0; border-radius: 12px; background: var(--surface);
+             color: #fff; font: inherit; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Family Calendar &middot; تقويم العائلة</h1>
+  <div class="tabs">
+    <button type="button" id="tadd" class="on">Add event &middot; إضافة حدث</button>
+    <button type="button" id="tlist">Events &middot; الأحداث</button>
+  </div>
+
+  <label for="pin">PIN shown on the TV &middot; الرمز الظاهر على التلفزيون</label>
+  <input id="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required>
+  <small id="pinok" hidden>Filled in from the TV's code. &middot; كُتب من رمز التلفزيون.</small>
+
+  <form id="f" autocomplete="off">
+    <label for="title">Title &middot; العنوان</label>
+    <input type="text" id="title" name="title" maxlength="60" required dir="auto">
+    <label for="date">Date &middot; التاريخ</label>
+    <input type="date" id="date" name="date" min="2000-01-01" max="2100-12-31" required>
+    <div class="toggle"><span>All day &middot; طوال اليوم</span><input type="checkbox" id="allday" name="allday" value="1"></div>
+    <div class="pair">
+      <div><label for="start">From &middot; من</label><input type="time" id="start" name="start" required></div>
+      <div><label for="end">To (optional) &middot; إلى</label><input type="time" id="end" name="end"></div>
+    </div>
+    <span class="label">Who &middot; لمن</span>
+    <div class="who" id="who">
+      <button type="button" data-c="0" data-en="Me" data-ar="أنا"><i class="c0"></i><span>Me</span></button>
+      <button type="button" data-c="3" data-en="Dad" data-ar="أبي"><i class="c3"></i><span>Dad</span></button>
+      <button type="button" data-c="2" data-en="Mom" data-ar="أمي"><i class="c2"></i><span>Mom</span></button>
+      <button type="button" data-c="5" data-en="Grandpa" data-ar="جدي"><i class="c5"></i><span>Grandpa</span></button>
+      <button type="button" data-c="4" data-en="Grandma" data-ar="جدتي"><i class="c4"></i><span>Grandma</span></button>
+      <button type="button" data-c="1" data-en="Kids" data-ar="الأطفال"><i class="c1"></i><span>Kids</span></button>
+    </div>
+    <input type="text" id="other" maxlength="24" dir="auto" placeholder="Or type a name · أو اكتب اسمًا">
+    <div class="pair">
+      <div>
+        <label for="repeat">Repeat &middot; التكرار</label>
+        <select id="repeat" name="repeat">
+          <option value="none">Never &middot; لا</option>
+          <option value="weekly">Every week &middot; كل أسبوع</option>
+          <option value="yearly">Every year &middot; كل سنة</option>
+        </select>
+      </div>
+      <div>
+        <label for="reminder">Reminder &middot; التذكير</label>
+        <select id="reminder" name="reminder">
+          <option value="none">None &middot; بدون</option>
+          <option value="at">At the time &middot; في الموعد</option>
+          <option value="10m" selected>10 min before &middot; قبل 10 دقائق</option>
+          <option value="1h">1 hour before &middot; قبل ساعة</option>
+          <option value="1d">1 day before &middot; قبل يوم</option>
+        </select>
+      </div>
+    </div>
+    <button class="go" id="go" type="submit">Save event &middot; حفظ الحدث</button>
+    <div class="msg" id="msg" role="status"></div>
+  </form>
+
+  <section id="events" hidden>
+    <ul id="list"></ul>
+    <div class="msg" id="lmsg" role="status"></div>
+    <button type="button" class="refresh" id="refresh">Refresh &middot; تحديث</button>
+  </section>
+</main>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  var form = $("f"), msg = $("msg"), lmsg = $("lmsg"), go = $("go"), pin = $("pin"), pinok = $("pinok"),
+      allday = $("allday"), start = $("start"), end = $("end"), other = $("other"), list = $("list"),
+      events = $("events"), tadd = $("tadd"), tlist = $("tlist");
+  var arabic = /^ar/i.test(navigator.language || "");
+  var chosen = null;
+  var answers = {
+    200: ["ok", "Saved. · تم الحفظ."],
+    400: ["bad", "Check the title, date and times. · تحقق من العنوان والتاريخ والوقت."],
+    403: ["bad", "Wrong PIN. · الرمز غير صحيح."],
+    404: ["bad", "Already gone. · حُذف من قبل."],
+    409: ["bad", "The calendar is full (500 events). · التقويم ممتلئ."],
+    413: ["bad", "Too long. · طويل جدًا."],
+    429: ["bad", "Too many wrong PINs. Try again in 5 minutes. · محاولات خاطئة كثيرة. حاول بعد 5 دقائق."],
+    500: ["bad", "The TV could not save it. Try again. · لم يحفظه التلفزيون. حاول مرة أخرى."],
+    503: ["bad", "The TV is busy. Try again. · التلفزيون مشغول. حاول مرة أخرى."]
+  };
+  // Fixed strings only; nothing the TV or a person typed is ever put on the page as HTML.
+  function show(el, status) {
+    var a = answers[status] || ["bad", "The TV did not answer. · لم يرد التلفزيون."];
+    el.className = "msg " + a[0];
+    el.textContent = a[1];
+  }
+  // The PIN lives only as long as this browser tab, so it does not stay on the phone for a later visitor.
+  function remember(key, value) {
+    try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch (e) {}
+  }
+  function post(path, fields) {
+    fields.pin = pin.value;
+    var r = fetch(path, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                          body: new URLSearchParams(fields).toString() });
+    return r.then(function (res) {
+      // A wrong PIN means the TV made a new one: forget the old one, so the next scan or typing replaces it.
+      if (res.status === 403) { remember("fc-pin", ""); pinok.hidden = true; }
+      return res;
+    });
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function todayIso() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+
+  try { localStorage.removeItem("fc-pin"); pin.value = sessionStorage.getItem("fc-pin") || ""; } catch (e) {}
+  // The TV's QR code carries the PIN after the #, which never leaves the phone. Take it, then drop it from the address bar.
+  var fromCode = /^#(\d{6})$/.exec(location.hash);
+  if (fromCode) {
+    pin.value = fromCode[1];
+    remember("fc-pin", pin.value);
+    history.replaceState(null, "", location.pathname);
+  }
+  pinok.hidden = !/^\d{6}$/.test(pin.value);
+  pin.addEventListener("input", function () { pinok.hidden = true; });
+  $("date").value = todayIso();
+
+  Array.prototype.forEach.call(document.querySelectorAll("#who button"), function (b) {
+    if (arabic) b.querySelector("span").textContent = b.getAttribute("data-ar");
+    b.addEventListener("click", function () {
+      var again = chosen === b;
+      if (chosen) chosen.classList.remove("on");
+      chosen = again ? null : b;
+      if (chosen) { chosen.classList.add("on"); other.value = ""; }
+    });
+  });
+  other.addEventListener("input", function () { if (chosen && other.value) { chosen.classList.remove("on"); chosen = null; } });
+  allday.addEventListener("change", function () {
+    start.disabled = end.disabled = allday.checked;
+    start.required = !allday.checked;
+  });
+
+  function tab(listing) {
+    form.hidden = listing;
+    events.hidden = !listing;
+    tadd.classList.toggle("on", !listing);
+    tlist.classList.toggle("on", listing);
+    if (listing) load();
+  }
+  tadd.addEventListener("click", function () { tab(false); });
+  tlist.addEventListener("click", function () { tab(true); });
+  $("refresh").addEventListener("click", load);
+
+  form.addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    if (!/^\d{6}$/.test(pin.value)) { show(msg, 403); pin.focus(); return; }
+    var fields = { title: $("title").value, date: $("date").value, repeat: $("repeat").value, reminder: $("reminder").value };
+    if (allday.checked) fields.allday = "1";
+    else { fields.start = start.value; if (end.value) fields.end = end.value; }
+    if (chosen) { fields.who = chosen.getAttribute(arabic ? "data-ar" : "data-en"); fields.color = chosen.getAttribute("data-c"); }
+    else if (other.value.trim()) fields.who = other.value.trim();
+    go.disabled = true;
+    post("/add", fields)
+      .then(function (r) {
+        show(msg, r.status);
+        if (r.status === 200) { $("title").value = ""; end.value = ""; remember("fc-pin", pin.value); }
+      })
+      .catch(function () { show(msg, 0); })
+      .then(function () { go.disabled = false; });
+  });
+
+  function row(tag, cls) { var el = document.createElement(tag); if (cls) el.className = cls; return el; }
+  function load() {
+    lmsg.textContent = "";
+    if (!/^\d{6}$/.test(pin.value)) { show(lmsg, 403); return; }
+    post("/list", {})
+      .then(function (r) {
+        if (r.status !== 200) { show(lmsg, r.status); return null; }
+        remember("fc-pin", pin.value);
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data) return;
+        list.textContent = "";
+        var day = null;
+        data.events.forEach(function (e) {
+          if (e.day !== day) {
+            day = e.day;
+            var head = row("li", "day");
+            head.textContent = new Date(day + "T12:00:00").toLocaleDateString(undefined,
+              { weekday: "long", day: "numeric", month: "long" });
+            list.appendChild(head);
+          }
+          var li = row("li"), bar = row("b", "c" + (e.color | 0)), when = row("div", "when"), what = row("div", "what");
+          when.textContent = e.start ? e.start + (e.end ? "–" + e.end : "") : "All day";
+          what.textContent = e.title;
+          if (e.who) { var who = row("span"); who.textContent = e.who; what.appendChild(who); }
+          var del = row("button");
+          del.type = "button";
+          del.textContent = "Delete · حذف";
+          del.addEventListener("click", function () {
+            if (!window.confirm(e.repeat === "none" ? "Delete this event? · حذف هذا الحدث؟"
+                : "Delete every repeat of this event? · حذف كل تكرارات هذا الحدث؟")) return;
+            post("/delete", { id: e.id }).then(function (r) { show(lmsg, r.status); load(); })
+              .catch(function () { show(lmsg, 0); });
+          });
+          li.appendChild(bar); li.appendChild(when); li.appendChild(what); li.appendChild(del);
+          list.appendChild(li);
+        });
+        if (!data.events.length) { var none = row("li", "day"); none.textContent = "Nothing in the next 14 days. · لا شيء خلال 14 يومًا."; list.appendChild(none); }
+      })
+      .catch(function () { show(lmsg, 0); });
+  }
+  (pin.value ? $("title") : pin).focus();
+})();
+</script>
+</body>
+</html>

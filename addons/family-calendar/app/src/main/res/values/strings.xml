@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Family Calendar · تقويم العائلة</string>
+    <string name="title_en" translatable="false">Family Calendar</string>
+    <string name="title_ar" translatable="false">تقويم العائلة</string>
+    <string name="tab_month" translatable="false">Month · الشهر</string>
+    <string name="tab_today" translatable="false">Today · اليوم</string>
+    <string name="tab_connect" translatable="false">Connect · ربط</string>
+    <string name="today">Today</string>
+    <string name="all_day">All day</string>
+    <string name="no_events">No events — add one from your phone</string>
+    <string name="no_events_week">Nothing in the next 8 days — add an event from your phone</string>
+    <string name="for_who">With %1$s</string>
+    <string name="repeat_weekly">Every week</string>
+    <string name="repeat_yearly">Every year</string>
+    <string name="reminder_none">No reminder</string>
+    <string name="reminder_at">Reminder at the start</string>
+    <string name="reminder_10m">Reminder 10 minutes before</string>
+    <string name="reminder_1h">Reminder 1 hour before</string>
+    <string name="reminder_1d">Reminder 1 day before</string>
+    <string name="delete">Delete</string>
+    <string name="close">Close</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm_title">Delete this event?</string>
+    <string name="confirm_body">It is removed from this TV and from every phone\'s list.</string>
+    <string name="confirm_body_repeat">It repeats, so every day it falls on is removed. This cannot be undone.</string>
+    <string name="switch_label">Receive events from phones</string>
+    <string name="state_off">Off. Nothing is listening and no reminders pop up.</string>
+    <string name="state_starting">Starting…</string>
+    <string name="state_running">On. Listening on the home network.</string>
+    <string name="state_port">The port is in use by another app. Change it in config.xml and rebuild.</string>
+    <string name="state_on">On</string>
+    <string name="state_off_short">Off</string>
+    <string name="connect_label">Connect a phone</string>
+    <string name="step_open">Open the page on your phone</string>
+    <string name="step_scan">Scan this QR code (same Wi-Fi)</string>
+    <string name="pin_label">Enter this PIN</string>
+    <string name="pin_hint">Five wrong PINs lock the page out for 5 minutes.</string>
+    <string name="new_pin">New PIN</string>
+    <string name="pin_changed">PIN changed</string>
+    <string name="address_label">Or type this address:</string>
+    <string name="address_off">Turn on the switch above to connect a phone.</string>
+    <string name="no_address">No home network address found. Connect the TV to Wi-Fi or Ethernet.</string>
+    <string name="overlay_label">Reminder pop-ups</string>
+    <string name="overlay_ok">Reminders pop up over the picture while the switch is on.</string>
+    <string name="overlay_missing">Pop-ups are not allowed yet, so reminders do not show. Allow them from a computer:\n%1$s</string>
+    <string name="channel_name">Family Calendar server</string>
+    <string name="notification_text">Listening for events and showing reminders</string>
+    <string name="card_heading">Upcoming event · حدث قادم</string>
+    <string name="card_open">Open Family Calendar to see it · افتح تقويم العائلة</string>
+    <string name="card_now">now</string>
+    <string name="card_in_minutes">in %1$d minutes</string>
+    <string name="card_in_hours">in %1$d h</string>
+    <string name="card_tomorrow">tomorrow</string>
+    <string name="key_ok">OK</string>
+    <string name="key_back">Back</string>
+    <string name="key_seek" translatable="false">« »</string>
+    <string name="key_up" translatable="false">▲</string>
+    <string name="hint_open_day">Open day</string>
+    <string name="hint_go_today">Go to Today</string>
+    <string name="hint_open_event">Open event</string>
+    <string name="hint_days">Days</string>
+    <string name="hint_month">Return to month</string>
+    <string name="hint_select">Select</string>
+    <string name="hint_home">Return to home</string>
+    <string name="hint_switch_month">Change month</string>
+    <string name="hint_tabs">Tabs</string>
+    <string name="tab_away" translatable="false">Away · الخارج</string>
+    <!-- The Family away relay this TV polls, like https://relay.example.com. Empty: no Away tab, no network. -->
+    <string name="relay_url" translatable="false"></string>
+    <string name="from_abroad" translatable="false">✈ from abroad · من الخارج</string>
+    <string name="away_switch">Events from family abroad</string>
+    <string name="away_off">Off. The TV does not contact the relay.</string>
+    <string name="away_needs_server">Turn on Receive events from phones on the Connect tab first.</string>
+    <string name="away_setting_up">Setting up…</string>
+    <string name="away_just_now">On. Last contact just now</string>
+    <string name="away_minutes">On. Last contact %1$d min ago</string>
+    <string name="away_offline">Can\'t reach the relay. Trying again.</string>
+    <string name="away_revoked">Link revoked. Delete the box and turn it on again.</string>
+    <string name="away_invite">Invite a relative</string>
+    <string name="away_invite_hint">Send this link on WhatsApp. Whoever has it can add events.</string>
+    <string name="away_new_link">New link</string>
+    <string name="away_new_link_title">Make a new link?</string>
+    <string name="away_new_link_body">The old link stops working. Send the new one to everyone again.</string>
+    <string name="away_link_changed">New link made</string>
+    <string name="away_delete">Delete box</string>
+    <string name="away_delete_title">Delete the box on the relay?</string>
+    <string name="away_delete_body">Events already on the TV stay. The link stops working.</string>
+</resources>

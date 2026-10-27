@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Edit before you build.
+     port: the TCP port the phone connects to (1024 to 65535; the default is used otherwise).
+           Family Notes uses 8765, so both can run at once.
+     popup_seconds: how long a reminder stays on screen (3 or more). -->
+<resources>
+    <integer name="port">8766</integer>
+    <integer name="popup_seconds">30</integer>
+</resources>

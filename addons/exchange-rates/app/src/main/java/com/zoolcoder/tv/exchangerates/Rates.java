@@ -1,8 +1,13 @@
 package com.zoolcoder.tv.exchangerates;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,6 +97,26 @@ final class Rates {
         return (int) Math.max(0, (nowMs - updatedMs) / CLOCK_SKEW_MS);
     }
 
+    /** Whether a fresh answer is a newer update than the saved one, so the saved one becomes "the previous update". */
+    static boolean isNewer(Snapshot saved, Snapshot fresh) {
+        return saved != null && fresh != null && fresh.updatedMs > saved.updatedMs;
+    }
+
+    /** SDG per one unit now minus the same a snapshot earlier, or NaN when either rate is unknown. */
+    static double change(Snapshot now, Snapshot before, String code) {
+        if (now == null || before == null) return Double.NaN;
+        double a = now.sdgPer(code), b = before.sdgPer(code);
+        return Double.isNaN(a) || Double.isNaN(b) ? Double.NaN : a - b;
+    }
+
+    /** The pinned currencies first, then the rest, each group in config.xml order. */
+    static List<Currency> ordered(List<Currency> all, Set<String> pinned) {
+        List<Currency> result = new ArrayList<>(all.size());
+        for (Currency currency : all) if (pinned.contains(currency.code)) result.add(currency);
+        for (Currency currency : all) if (!pinned.contains(currency.code)) result.add(currency);
+        return result;
+    }
+
     /** The number format of the tiles, built once: "458.6" or "1,480.3" for a big rate, "12.41" for a small one. */
     static final class Formatter {
         private final NumberFormat big, small;
@@ -112,6 +137,30 @@ final class Rates {
         String format(double value) {
             if (Double.isNaN(value) || Double.isInfinite(value) || value <= 0) return "—";
             return (value >= 100 ? big : small).format(value);
+        }
+
+        /**
+         * "▲ 1.2" or "▼ 0.04" for a change of the rate {@code now}, at the rate's own precision; empty when
+         * there is nothing to say (unknown, or too small to show at that precision).
+         */
+        String change(double diff, double now) {
+            if (Double.isNaN(diff) || Double.isInfinite(diff) || Double.isNaN(now) || now <= 0) return "";
+            NumberFormat format = now >= 100 ? big : small;
+            String shown = format.format(Math.abs(diff));
+            if (format.format(0).equals(shown)) return "";
+            return (diff > 0 ? "\u25B2 " : "\u25BC ") + shown;
+        }
+
+        /** How much of the currency one SDG buys, given SDG per unit: two significant digits, "0.0022". */
+        String inverse(double sdgPer) {
+            if (Double.isNaN(sdgPer) || Double.isInfinite(sdgPer) || sdgPer <= 0) return "—";
+            double value = 1 / sdgPer;
+            if (value >= 1) return format(value);
+            BigDecimal rounded = new BigDecimal(value).round(new MathContext(2));
+            NumberFormat format = (NumberFormat) small.clone();
+            format.setMinimumFractionDigits(Math.max(2, rounded.scale()));
+            format.setMaximumFractionDigits(Math.max(2, rounded.scale()));
+            return format.format(rounded);
         }
     }
 }

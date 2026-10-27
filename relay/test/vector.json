@@ -1,0 +1,8 @@
+{
+  "about": "AES-256-GCM, 12-byte IV, AAD = UTF-8 bytes of boxId, wire = base64url(iv || ciphertext || tag), no padding",
+  "boxId": "EBESExQVFhcYGRobHB0eHw",
+  "key": "QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl8",
+  "iv": "oKGio6Slpqeoqaqr",
+  "plaintext": "{\"v\":1,\"kind\":\"note\",\"from\":\"آمنة\",\"text\":\"Salam from Riyadh · سلام من الرياض\",\"ts\":1761500000000}",
+  "wire": "oKGio6SlpqeoqaqrrK1wHdjasA8SBi-aq4YSmIBjkOXATeNfjbHMoMsa3CHfTvSbaXIIg5w_0Op81gWagyBmC8ufYH-3UM-MCL-x-KdbDTDGRTgd7pj365fG0jInOmHj09maiil0WfayL8at2sAw7Ehm_531FiJU_G5mfmlCt0vw4CaIzd2FSpNWBTbaRbk"
+}

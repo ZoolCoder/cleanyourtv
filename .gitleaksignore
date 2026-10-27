@@ -1,0 +1,2 @@
+# relay/test/vector.json: a fixed public AES-GCM test vector (key bytes 0x40..0x5f), not a secret
+relay/test/vector.json:generic-api-key:4

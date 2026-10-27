@@ -1,0 +1,18 @@
+// Family away relay: phones outside the home leave end-to-end encrypted notes and events here,
+// and the TV add-ons collect them. Spec: design/family-away-spec.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "family-away-relay",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-01",
+  "observability": { "enabled": false },
+  "durable_objects": {
+    "bindings": [
+      { "name": "BOX", "class_name": "Box" },
+      { "name": "LIMITER", "class_name": "Limiter" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Box", "Limiter"] }
+  ]
+}

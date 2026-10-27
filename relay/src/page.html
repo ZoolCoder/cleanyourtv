@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<title>Family away</title>
+<style>
+  :root { --bg: #101418; --surface: #1b2128; --raised: #242c35; --line: #2f3944; --dim: #aab4bf;
+          --note: #2bb673; --event: #e0409a; --accent: var(--note); --warn: #f2c94c; --bad: #ff8a8f; }
+  body.event { --accent: var(--event); }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; min-height: 100vh; background: var(--bg); color: #fff;
+         font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic", "Noto Sans Arabic", sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom)); }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+  h1 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 22px; }
+  h1::before { content: ""; width: 4px; height: 26px; border-radius: 2px; background: var(--accent); }
+  .sub { margin: -10px 0 18px; color: var(--dim); font-size: 15px; }
+  .chip { flex: none; min-height: 44px; padding: 8px 14px; border: 0; border-radius: 999px; background: var(--surface);
+          color: #fff; font: inherit; font-size: 15px; }
+  .seg { display: flex; gap: 6px; padding: 6px; border-radius: 16px; background: var(--surface); }
+  .seg button { flex: 1; min-height: 52px; margin: 0; border: 0; border-radius: 12px; background: none; color: var(--dim);
+                font: inherit; font-weight: 700; }
+  .seg button[aria-pressed=true] { background: #fff; color: var(--bg); }
+  .seg.small button { min-height: 44px; font-weight: 600; font-size: 15px; }
+  label, .label { display: block; margin: 18px 0 6px; color: var(--dim); font-size: 15px; }
+  input[type=text], input[type=date], input[type=time], textarea {
+    width: 100%; min-height: 54px; padding: 13px 14px; border: 2px solid var(--surface); border-radius: 14px;
+    background: var(--surface); color: #fff; font: inherit; }
+  textarea { min-height: 132px; resize: vertical; }
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  input:disabled { opacity: .4; }
+  .count { margin-top: 4px; color: var(--dim); font-size: 13px; text-align: end; }
+  .pair { display: flex; gap: 12px; }
+  .pair > div { flex: 1; min-width: 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 58px; margin-top: 14px;
+         padding: 10px 14px; border-radius: 14px; background: var(--surface); }
+  .row input { width: 28px; height: 28px; margin: 0; accent-color: var(--accent); }
+  .go { width: 100%; min-height: 58px; margin-top: 26px; padding: 14px; border: 0; border-radius: 16px;
+        background: var(--accent); color: #fff; font: inherit; font-size: 18px; font-weight: 800; }
+  .go:disabled { opacity: .55; }
+  .link { margin: 0; padding: 12px 0; border: 0; background: none; color: var(--dim); font: inherit; font-size: 15px;
+          text-decoration: underline; }
+  .status { display: flex; gap: 12px; align-items: flex-start; margin-top: 16px; padding: 14px; border-radius: 14px;
+            background: var(--raised); font-weight: 600; }
+  .status::before { flex: none; width: 10px; height: 10px; margin-top: 7px; border-radius: 50%; content: ""; background: var(--dim); }
+  .status.ok::before { background: var(--note); }
+  .status.warn::before { background: var(--warn); }
+  .status.bad::before { background: var(--bad); }
+  .status span { display: block; color: var(--dim); font-weight: 400; font-size: 15px; }
+  .card { padding: 18px; border-radius: 16px; background: var(--surface); }
+  .card p { margin: 0 0 10px; }
+  .lock { margin-top: 22px; color: var(--dim); font-size: 13px; text-align: center; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="title"></h1>
+    <button type="button" class="chip" id="lang" lang="ar"></button>
+  </header>
+
+  <section id="nolink" hidden>
+    <div class="card"><p id="nolinkText"></p><p class="sub" id="nolinkHint"></p></div>
+  </section>
+
+  <section id="setup" hidden>
+    <p class="sub" id="setupHint"></p>
+    <form id="nameForm" autocomplete="off">
+      <label for="name" id="nameLabel"></label>
+      <input type="text" id="name" maxlength="24" required dir="auto" autocomplete="given-name">
+      <button class="go" id="nameGo" type="submit"></button>
+    </form>
+  </section>
+
+  <section id="send" hidden>
+    <p class="sub" id="fromLine"></p>
+    <div class="seg" id="modes" role="group">
+      <button type="button" id="mNote" aria-pressed="true"></button>
+      <button type="button" id="mEvent" aria-pressed="false"></button>
+    </div>
+
+    <form id="noteForm" autocomplete="off">
+      <label for="text" id="textLabel"></label>
+      <textarea id="text" maxlength="280" required dir="auto"></textarea>
+      <div class="count" id="textCount">0 / 280</div>
+      <button class="go" type="submit" id="noteGo"></button>
+    </form>
+
+    <form id="eventForm" autocomplete="off" hidden>
+      <label for="etitle" id="etitleLabel"></label>
+      <input type="text" id="etitle" maxlength="60" required dir="auto">
+      <div class="pair">
+        <div><label for="date" id="dateLabel"></label><input type="date" id="date" min="2000-01-01" max="2100-12-31" required></div>
+        <div><label for="time" id="timeLabel"></label><input type="time" id="time" required></div>
+      </div>
+      <div class="row"><span id="alldayLabel"></span><input type="checkbox" id="allday"></div>
+      <span class="label" id="repeatLabel"></span>
+      <div class="seg small" id="repeat" role="group">
+        <button type="button" data-v="none" aria-pressed="true"></button>
+        <button type="button" data-v="weekly" aria-pressed="false"></button>
+        <button type="button" data-v="yearly" aria-pressed="false"></button>
+      </div>
+      <div class="row"><span id="remindLabel"></span><input type="checkbox" id="remind" checked></div>
+      <button class="go" type="submit" id="eventGo"></button>
+    </form>
+
+    <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+    <button type="button" class="link" id="rename"></button>
+    <p class="lock" id="lock"></p>
+  </section>
+</main>
+<script>
+"use strict";
+(function () {
+  var T = {
+    en: {
+      title: "Family away", other: "العربية",
+      nolink: "Open the invite link from the TV.", nolinkHint: "Ask the family at home to share it from Family Notes or Family Calendar.",
+      setup: "Say who you are once. The TV shows it with every message.", name: "Your name", start: "Continue",
+      from: "Sending as {n}", note: "Note", event: "Event", text: "Your note", sendNote: "Send note",
+      etitle: "What is it?", date: "Date", time: "Time", allday: "All day", repeat: "Repeat",
+      none: "Once", weekly: "Every week", yearly: "Every year", remind: "Remind on the TV", sendEvent: "Add to calendar",
+      sending: "Sending…", sent: "Sent to the TV at home", sentHint: "The TV picks it up within a few minutes.",
+      offline: "You are offline", offlineHint: "It sends by itself when you are back online.",
+      failed: "Not sent", failedHint: "Try again in a moment.",
+      busy: "Too many messages for now", busyHint: "Wait an hour, then try again.",
+      revoked: "This link no longer works", revokedHint: "Ask the family at home for the new link.",
+      rename: "Change my name", lock: "End-to-end encrypted. Only the TV at home can read it."
+    },
+    ar: {
+      title: "العائلة في الخارج", other: "English",
+      nolink: "افتح رابط الدعوة من التلفزيون.", nolinkHint: "اطلب من العائلة في البيت مشاركته من ملاحظات العائلة أو تقويم العائلة.",
+      setup: "اكتب اسمك مرة واحدة. يظهر مع كل رسالة على التلفزيون.", name: "اسمك", start: "متابعة",
+      from: "ترسل باسم {n}", note: "ملاحظة", event: "موعد", text: "ملاحظتك", sendNote: "أرسل الملاحظة",
+      etitle: "ما المناسبة؟", date: "التاريخ", time: "الوقت", allday: "طوال اليوم", repeat: "التكرار",
+      none: "مرة واحدة", weekly: "كل أسبوع", yearly: "كل سنة", remind: "تذكير على التلفزيون", sendEvent: "أضف إلى التقويم",
+      sending: "جارٍ الإرسال…", sent: "وصلت إلى تلفزيون البيت", sentHint: "يستلمها التلفزيون خلال دقائق.",
+      offline: "لا يوجد اتصال", offlineHint: "ستُرسل تلقائيًا عند عودة الاتصال.",
+      failed: "لم تُرسل", failedHint: "حاول مرة أخرى بعد قليل.",
+      busy: "رسائل كثيرة الآن", busyHint: "انتظر ساعة ثم حاول مرة أخرى.",
+      revoked: "هذا الرابط لم يعد يعمل", revokedHint: "اطلب الرابط الجديد من العائلة في البيت.",
+      rename: "غيّر اسمي", lock: "مشفّرة من طرف إلى طرف. لا يقرؤها إلا تلفزيون البيت."
+    }
+  };
+  var KEY = "familyAway.v1";
+  var B64 = /^[A-Za-z0-9_-]+$/;
+  var $ = function (id) { return document.getElementById(id); };
+
+  function load() {
+    try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && typeof s === "object" && s.boxes) return s; } catch (e) {}
+    return { boxes: {}, name: "", lang: "" };
+  }
+  var state = load();
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  // Invite: #<boxId>.<sendToken>.<key>.<lang>[.<note|event>]. Read once, then gone from the address bar.
+  (function readFragment() {
+    var h = location.hash.slice(1);
+    if (!h) return;
+    history.replaceState(null, "", location.pathname);
+    var p = h.split(".");
+    if (p.length < 4 || p.length > 5) return;
+    if (p[0].length !== 22 || p[1].length !== 43 || p[2].length !== 43) return;
+    if (!B64.test(p[0]) || !B64.test(p[1]) || !B64.test(p[2])) return;
+    var kind = p[4] === "note" || p[4] === "event" ? p[4] : "any";
+    if (kind === "any") state.boxes = {};
+    else delete state.boxes.any;
+    state.boxes[kind] = { id: p[0], token: p[1], key: p[2], revoked: false };
+    if (!state.lang && (p[3] === "ar" || p[3] === "en")) state.lang = p[3];
+    save();
+  })();
+
+  var lang = state.lang || (/^ar\b/i.test(navigator.language || "") ? "ar" : "en");
+  var mode = "note";
+  var repeat = "none";
+  var pending = null;
+
+  function t(k) { return T[lang][k]; }
+  function boxFor(kind) { return state.boxes[kind] || state.boxes.any || null; }
+  function hasAny() { return !!(state.boxes.any || state.boxes.note || state.boxes.event); }
+
+  function render() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = t("title");
+    $("title").textContent = t("title");
+    $("lang").textContent = t("other");
+    $("lang").lang = lang === "ar" ? "en" : "ar";
+    $("nolinkText").textContent = t("nolink");
+    $("nolinkHint").textContent = t("nolinkHint");
+    $("setupHint").textContent = t("setup");
+    $("nameLabel").textContent = t("name");
+    $("nameGo").textContent = t("start");
+    $("fromLine").textContent = t("from").replace("{n}", state.name);
+    $("mNote").textContent = t("note");
+    $("mEvent").textContent = t("event");
+    $("textLabel").textContent = t("text");
+    $("noteGo").textContent = t("sendNote");
+    $("etitleLabel").textContent = t("etitle");
+    $("dateLabel").textContent = t("date");
+    $("timeLabel").textContent = t("time");
+    $("alldayLabel").textContent = t("allday");
+    $("repeatLabel").textContent = t("repeat");
+    $("remindLabel").textContent = t("remind");
+    $("eventGo").textContent = t("sendEvent");
+    $("rename").textContent = t("rename");
+    $("lock").textContent = t("lock");
+    var rb = $("repeat").children;
+    for (var i = 0; i < rb.length; i++) {
+      rb[i].textContent = t(rb[i].getAttribute("data-v"));
+      rb[i].setAttribute("aria-pressed", String(rb[i].getAttribute("data-v") === repeat));
+    }
+
+    var linked = hasAny();
+    $("nolink").hidden = linked;
+    $("setup").hidden = !linked || !!state.name;
+    $("send").hidden = !linked || !state.name;
+    if (!linked || !state.name) return;
+
+    var canNote = !!boxFor("note"), canEvent = !!boxFor("event");
+    if (mode === "note" && !canNote) mode = "event";
+    if (mode === "event" && !canEvent) mode = "note";
+    $("modes").hidden = !(canNote && canEvent);
+    $("mNote").setAttribute("aria-pressed", String(mode === "note"));
+    $("mEvent").setAttribute("aria-pressed", String(mode === "event"));
+    $("noteForm").hidden = mode !== "note";
+    $("eventForm").hidden = mode !== "event";
+    document.body.className = mode;
+    var box = boxFor(mode);
+    if (box && box.revoked) show("bad", "revoked");
+  }
+
+  function show(kind, key) {
+    var el = $("status");
+    el.className = "status " + kind;
+    el.textContent = "";
+    el.appendChild(document.createTextNode(t(key)));
+    var hint = T[lang][key + "Hint"];
+    if (hint) { var s = document.createElement("span"); s.textContent = hint; el.appendChild(s); }
+    el.hidden = false;
+  }
+  function hide() { $("status").hidden = true; }
+
+  function b64urlToBytes(s) {
+    var b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
+    var out = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
+    return out;
+  }
+  function bytesToB64url(bytes) {
+    var s = "";
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  // AES-256-GCM, 12-byte random IV, AAD = the box id; wire = base64url(iv || ciphertext || tag).
+  function seal(box, payload) {
+    var enc = new TextEncoder();
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.importKey("raw", b64urlToBytes(box.key), { name: "AES-GCM" }, false, ["encrypt"])
+      .then(function (key) {
+        return crypto.subtle.encrypt({ name: "AES-GCM", iv: iv, additionalData: enc.encode(box.id), tagLength: 128 },
+          key, enc.encode(JSON.stringify(payload)));
+      })
+      .then(function (ct) {
+        var c = new Uint8Array(ct), wire = new Uint8Array(12 + c.length);
+        wire.set(iv, 0); wire.set(c, 12);
+        return bytesToB64url(wire);
+      });
+  }
+
+  function deliver(job) {
+    var box = boxFor(job.kind);
+    if (!box) return Promise.resolve();
+    if (box.revoked) { show("bad", "revoked"); return Promise.resolve(); }
+    if (!navigator.onLine) { pending = job; show("warn", "offline"); return Promise.resolve(); }
+    setBusy(true);
+    show("warn", "sending");
+    return seal(box, job.payload)
+      .then(function (c) {
+        return fetch("/v1/box/" + box.id + "/msg", {
+          method: "POST", credentials: "omit", cache: "no-store", referrerPolicy: "no-referrer",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + box.token },
+          body: JSON.stringify({ c: c })
+        });
+      })
+      .then(function (r) {
+        if (r.ok) { pending = null; job.done(); show("ok", "sent"); return; }
+        if (r.status === 401) { box.revoked = true; save(); pending = null; show("bad", "revoked"); return; }
+        if (r.status === 429) { pending = null; show("warn", "busy"); return; }
+        pending = job; show("bad", "failed");
+      }, function () {
+        pending = job;
+        show(navigator.onLine ? "bad" : "warn", navigator.onLine ? "failed" : "offline");
+      })
+      .then(function () { setBusy(false); });
+  }
+
+  function setBusy(on) { $("noteGo").disabled = on; $("eventGo").disabled = on; }
+
+  function clean(s, max) { return s.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, max); }
+
+  $("lang").addEventListener("click", function () {
+    lang = lang === "ar" ? "en" : "ar";
+    state.lang = lang; save(); hide(); render();
+  });
+  $("nameForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var n = clean($("name").value, 24);
+    if (!n) return;
+    state.name = n; save(); render();
+  });
+  $("rename").addEventListener("click", function () {
+    $("name").value = state.name;
+    state.name = ""; save(); hide(); render();
+    $("name").focus();
+  });
+  $("mNote").addEventListener("click", function () { mode = "note"; hide(); render(); });
+  $("mEvent").addEventListener("click", function () { mode = "event"; hide(); render(); });
+  $("text").addEventListener("input", function () { $("textCount").textContent = $("text").value.length + " / 280"; });
+  $("allday").addEventListener("change", function () {
+    $("time").disabled = $("allday").checked;
+    $("time").required = !$("allday").checked;
+  });
+  $("repeat").addEventListener("click", function (e) {
+    var v = e.target && e.target.getAttribute && e.target.getAttribute("data-v");
+    if (v) { repeat = v; render(); }
+  });
+
+  $("noteForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = clean($("text").value, 280);
+    if (!text) return;
+    deliver({
+      kind: "note",
+      payload: { v: 1, kind: "note", from: state.name, text: text, ts: Date.now() },
+      done: function () { $("text").value = ""; $("textCount").textContent = "0 / 280"; }
+    });
+  });
+  $("eventForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var title = clean($("etitle").value, 60), date = $("date").value, allday = $("allday").checked;
+    var time = allday ? "" : $("time").value;
+    if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (!allday && !/^\d{2}:\d{2}$/.test(time))) return;
+    deliver({
+      kind: "event",
+      payload: { v: 1, kind: "event", from: state.name, title: title, date: date, time: time, who: state.name,
+                 repeat: repeat, remind: $("remind").checked, ts: Date.now() },
+      done: function () { $("etitle").value = ""; }
+    });
+  });
+  window.addEventListener("online", function () { if (pending) deliver(pending); });
+
+  render();
+})();
+</script>
+</body>
+</html>

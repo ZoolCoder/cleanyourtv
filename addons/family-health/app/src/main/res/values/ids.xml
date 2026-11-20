@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tags: what OK does on a view (for the hint bar), and which member a tab filters by. -->
+    <item name="hint" type="id" />
+    <item name="member" type="id" />
+</resources>

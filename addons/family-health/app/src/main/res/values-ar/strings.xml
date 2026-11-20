@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="all">الجميع</string>
+    <string name="later">لاحقًا ١٥ د</string>
+    <string name="reminds_at">تذكير مجددًا %1$s</string>
+    <string name="taken">تم أخذه</string>
+    <string name="ok">حسنًا</string>
+    <string name="taken_at">أُخذ الساعة %1$s</string>
+    <string name="missed_at">فات الساعة %1$s</string>
+    <string name="nothing_now">لا شيء مستحق الآن.</string>
+    <string name="nothing_later">لا شيء آخر اليوم.</string>
+    <string name="nothing_done">لم يُؤخذ شيء بعد اليوم.</string>
+    <string name="no_medicines">لا أدوية.</string>
+    <string name="no_visits">لا مواعيد قادمة.</string>
+    <plurals name="days_left">
+        <item quantity="zero">لم يبق شيء</item>
+        <item quantity="one">بقي يوم واحد</item>
+        <item quantity="two">بقي يومان</item>
+        <item quantity="few">بقيت %d أيام</item>
+        <item quantity="many">بقي %d يومًا</item>
+        <item quantity="other">بقي %d يوم</item>
+    </plurals>
+
+    <string name="empty_title">الأدوية ومواعيد الطبيب للعائلة</string>
+    <string name="empty_body">تظهر التذكيرات فوق أي شيء يُعرض، وزر موافق يسجل أخذ الجرعة. جرّبه أولًا بعائلة مُتخيلة.</string>
+    <string name="show_example">اعرض مثالًا</string>
+    <string name="remove_example">احذف المثال</string>
+    <string name="overlay_off">التذكيرات فوق التطبيقات الأخرى متوقفة</string>
+
+    <string name="banner_now">%1$s الآن</string>
+    <string name="banner_today">اليوم الساعة %1$s</string>
+    <string name="banner_tomorrow">غدًا الساعة %1$s</string>
+
+    <string name="key_ok">موافق</string>
+    <string name="key_hold_ok">اضغط مطولًا</string>
+    <string name="key_back">رجوع</string>
+    <string name="hint_take">تسجيل الأخذ</string>
+    <string name="hint_undo">إلغاء الأخذ</string>
+    <string name="hint_open">فتح</string>
+    <string name="hint_example">املأ بعائلة مُتخيلة</string>
+    <string name="hint_select">اختيار</string>
+    <string name="hint_exit">خروج</string>
+    <string name="hint_today">اليوم</string>
+    <string name="hint_change_member">تغيير الشخص</string>
+
+    <string name="channel_name">تذكيرات الأدوية</string>
+    <string name="notification_text">يعرض تذكيرات الأدوية والمواعيد</string>
+
+    <string name="example_grandma">الجدة</string>
+    <string name="example_dad">أبي</string>
+    <string name="example_sara">سارة</string>
+    <string name="example_omar">عمر</string>
+    <string name="example_metformin">ميتفورمين</string>
+    <string name="example_amlodipine">أملوديبين</string>
+    <string name="example_vitamin_d">فيتامين د</string>
+    <string name="example_omeprazole">أوميبرازول</string>
+    <string name="example_antibiotic">مضاد حيوي</string>
+    <string name="example_after_meal">بعد الأكل</string>
+    <string name="example_before_meal">قبل الأكل</string>
+    <string name="example_one_tablet">قرص واحد</string>
+    <string name="example_one_capsule">كبسولة واحدة</string>
+    <string name="example_doctor_1">د. حسن</string>
+    <string name="example_doctor_2">د. أمل</string>
+    <string name="example_dentist">طبيب أسنان</string>
+    <string name="example_cardiologist">طبيب قلب</string>
+    <string name="example_clinic_1">عيادة الابتسامة للأسنان</string>
+    <string name="example_clinic_2">مركز القلب</string>
+</resources>

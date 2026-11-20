@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Family Health · صحة العائلة</string>
+    <string name="title_en" translatable="false">Family Health</string>
+    <string name="title_ar" translatable="false">صحة العائلة</string>
+
+    <!-- Headings carry both languages on every TV, like the header. -->
+    <string name="heading_now" translatable="false">Now · الآن</string>
+    <string name="heading_later" translatable="false">Later today · لاحقًا اليوم</string>
+    <string name="heading_done" translatable="false">Done · تم</string>
+    <string name="heading_week" translatable="false">This week · هذا الأسبوع</string>
+    <string name="heading_medicines" translatable="false">Medicines · الأدوية</string>
+    <string name="heading_visits" translatable="false">Appointments · المواعيد</string>
+
+    <string name="all">Everyone</string>
+    <string name="later">Later 15 min</string>
+    <string name="reminds_at">Reminds again at %1$s</string>
+    <string name="taken">Taken</string>
+    <string name="ok">OK</string>
+    <string name="taken_at">Taken at %1$s</string>
+    <string name="missed_at">Missed at %1$s</string>
+    <string name="nothing_now">Nothing due right now.</string>
+    <string name="nothing_later">Nothing else today.</string>
+    <string name="nothing_done">Nothing taken yet today.</string>
+    <string name="no_medicines">No medicines.</string>
+    <string name="no_visits">No appointments coming.</string>
+    <plurals name="days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+
+    <string name="empty_title">Medicines and doctor visits for the family</string>
+    <string name="empty_body">Reminders show over whatever is playing, and OK marks a dose taken. Try it with an invented family first.</string>
+    <string name="show_example">Show an example</string>
+    <string name="remove_example">Remove the example</string>
+    <string name="overlay_off">Reminders over other apps are off</string>
+
+    <!-- The reminder over what is playing. -->
+    <string name="banner_now">%1$s now</string>
+    <string name="banner_today">today at %1$s</string>
+    <string name="banner_tomorrow">tomorrow at %1$s</string>
+
+    <string name="key_ok">OK</string>
+    <string name="key_hold_ok">Hold OK</string>
+    <string name="key_back">Back</string>
+    <string name="key_sides" translatable="false">◀ ▶</string>
+    <string name="hint_take">Mark as taken</string>
+    <string name="hint_undo">Undo taken</string>
+    <string name="hint_open">Open</string>
+    <string name="hint_example">Fill in an invented family</string>
+    <string name="hint_select">Select</string>
+    <string name="hint_exit">Exit</string>
+    <string name="hint_today">Today</string>
+    <string name="hint_change_member">Change member</string>
+
+    <string name="channel_name">Medicine reminders</string>
+    <string name="notification_text">Shows medicine and appointment reminders</string>
+
+    <!-- The invented family behind "Show an example". -->
+    <string name="example_grandma">Grandma</string>
+    <string name="example_dad">Dad</string>
+    <string name="example_sara">Sara</string>
+    <string name="example_omar">Omar</string>
+    <string name="example_metformin">Metformin</string>
+    <string name="example_amlodipine">Amlodipine</string>
+    <string name="example_vitamin_d">Vitamin D</string>
+    <string name="example_omeprazole">Omeprazole</string>
+    <string name="example_antibiotic">Antibiotic</string>
+    <string name="example_after_meal">After a meal</string>
+    <string name="example_before_meal">Before a meal</string>
+    <string name="example_one_tablet">1 tablet</string>
+    <string name="example_one_capsule">1 capsule</string>
+    <string name="example_doctor_1">Dr. Hassan</string>
+    <string name="example_doctor_2">Dr. Amal</string>
+    <string name="example_dentist">Dentist</string>
+    <string name="example_cardiologist">Cardiologist</string>
+    <string name="example_clinic_1">Smile Dental Clinic</string>
+    <string name="example_clinic_2">City Heart Centre</string>
+</resources>

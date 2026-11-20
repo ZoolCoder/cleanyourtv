@@ -112,3 +112,20 @@ export function sameHash(a: string, b: string): boolean {
   if (!HASH.test(a) || !HASH.test(b)) return false;
   return crypto.subtle.timingSafeEqual(hexBytes(a), hexBytes(b));
 }
+
+/**
+ * The keys an address is rate-limited by: the part one subscriber controls (a whole IPv4 address, or the
+ * /64 of an IPv6 one, since a home or server is handed a whole /64), then its network (the IPv4 /24 or the
+ * IPv6 /48), since one can be handed a /48 and so pick from 65,536 /64s.
+ */
+export function rateKeys(ip: string): [caller: string, network: string] {
+  const v4 = ip.slice(ip.lastIndexOf(":") + 1);
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(v4)) return [v4, v4.slice(0, v4.lastIndexOf(".")) + ".0/24"];
+  if (!ip.includes(":")) return [ip, ip];
+  const [head, tail] = ip.toLowerCase().split("::", 2);
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const zeros = tail === undefined ? [] : Array(Math.max(0, 8 - left.length - right.length)).fill("0");
+  const groups = [...left, ...zeros, ...right].slice(0, 4).map((g) => (parseInt(g, 16) || 0).toString(16));
+  return [groups.join(":") + "::/64", groups.slice(0, 3).join(":") + "::/48"];
+}

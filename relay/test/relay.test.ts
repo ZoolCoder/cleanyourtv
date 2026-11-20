@@ -1,7 +1,8 @@
 import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
 import { env, exports } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
-import { CREATES_PER_HOUR, DAY, MESSAGE_TTL, IDLE_TTL, SENDS_PER_HOUR, type Box } from "../src/box";
+import { CREATES_PER_HOUR, CREATES_PER_NETWORK_PER_HOUR, DAY, MESSAGE_TTL, IDLE_TTL, SENDS_PER_HOUR, type Box } from "../src/box";
+import { rateKeys } from "../src/http";
 import vector from "./vector.json";
 
 const BASE = "https://relay.example";
@@ -17,8 +18,8 @@ async function sha256Hex(text: string): Promise<string> {
 }
 
 let ipCounter = 0;
-/** Each test calls from its own address, so the per-address create limit does not leak between tests. */
-const freshIp = () => `198.51.100.${++ipCounter}`;
+/** Each test calls from its own network, so the create limits do not leak between tests. */
+const freshIp = () => `10.0.${++ipCounter}.1`;
 
 interface Family {
   boxId: string;
@@ -88,6 +89,41 @@ describe("box creation", () => {
     expect(res.status).toBe(429);
     // Another address is not affected.
     await createFamily();
+  });
+
+  it("counts every address in one IPv6 /64 as one caller", async () => {
+    for (let i = 0; i < CREATES_PER_HOUR; i++) await createFamily(`2001:db8:5:7::${i + 1}`);
+    const res = await call("POST", "/v1/box", {
+      body: { boxId: random(16), readHash: await sha256Hex(random(32)), sendHash: await sha256Hex(random(32)) },
+      headers: { "CF-Connecting-IP": "2001:db8:5:7:ffff:1:2:3" },
+    });
+    expect(res.status).toBe(429);
+    await createFamily("2001:db8:5:8::1");
+  });
+
+  it(`stops at ${CREATES_PER_NETWORK_PER_HOUR} boxes an hour from one IPv6 /48 or IPv4 /24`, async () => {
+    for (let i = 0; i < CREATES_PER_NETWORK_PER_HOUR; i++) await createFamily(`2001:db8:9:${i}::1`);
+    const res = await call("POST", "/v1/box", {
+      body: { boxId: random(16), readHash: await sha256Hex(random(32)), sendHash: await sha256Hex(random(32)) },
+      headers: { "CF-Connecting-IP": "2001:db8:9:ffff::1" },
+    });
+    expect(res.status).toBe(429);
+    // The next /48 is not affected.
+    await createFamily("2001:db8:a:0::1");
+  });
+});
+
+describe("rate key", () => {
+  it("keeps an IPv4 address whole with its /24, and cuts IPv6 to its /64 and /48", () => {
+    expect(rateKeys("198.51.100.7")).toEqual(["198.51.100.7", "198.51.100.0/24"]);
+    expect(rateKeys("2001:db8:5:7:ffff:1:2:3")).toEqual(["2001:db8:5:7::/64", "2001:db8:5::/48"]);
+    expect(rateKeys("2001:DB8:0005:0007::1")).toEqual(["2001:db8:5:7::/64", "2001:db8:5::/48"]);
+    expect(rateKeys("2001:db8::1")).toEqual(["2001:db8:0:0::/64", "2001:db8:0::/48"]);
+    expect(rateKeys("::1")).toEqual(["0:0:0:0::/64", "0:0:0::/48"]);
+  });
+
+  it("reads an IPv4-mapped IPv6 address as the IPv4 address", () => {
+    expect(rateKeys("::ffff:198.51.100.7")).toEqual(["198.51.100.7", "198.51.100.0/24"]);
   });
 });
 

@@ -8,6 +8,8 @@ export const IDLE_TTL = 90 * DAY;
 export const SENDS_PER_HOUR = 30;
 // The main module may export only handlers and classes, so the router's limit lives here too.
 export const CREATES_PER_HOUR = 5;
+// One network (an IPv4 /24 or IPv6 /48) together: a home or server can pick from many /64s.
+export const CREATES_PER_NETWORK_PER_HOUR = 20;
 export const MAX_QUEUED = 200;
 export const PAGE = 50;
 
@@ -144,11 +146,12 @@ export class Limiter extends DurableObject {
   constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
-    this.sql.exec("CREATE TABLE IF NOT EXISTS hits (at INTEGER NOT NULL)");
   }
 
   /** True and counted when fewer than limit hits fall in the last window. */
   async take(limit: number, window: number): Promise<boolean> {
+    // Made here, not in the constructor: the alarm's deleteAll drops it while the object stays alive.
+    this.sql.exec("CREATE TABLE IF NOT EXISTS hits (at INTEGER NOT NULL)");
     const now = Date.now();
     this.sql.exec("DELETE FROM hits WHERE at <= ?", now - window);
     const n = this.sql.exec<{ n: number }>("SELECT COUNT(*) AS n FROM hits").one().n;

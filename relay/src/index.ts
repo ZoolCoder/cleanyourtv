@@ -1,5 +1,5 @@
-import { Box, CREATES_PER_HOUR, Limiter, HOUR, type Result } from "./box";
-import { BOX_ID, HASH, HttpError, WIRE, bearer, error, html, json, onlyKeys, readJson, redirect, sha256Hex } from "./http";
+import { Box, CREATES_PER_HOUR, CREATES_PER_NETWORK_PER_HOUR, Limiter, HOUR, type Result } from "./box";
+import { BOX_ID, HASH, HttpError, WIRE, bearer, error, html, json, onlyKeys, rateKeys, readJson, redirect, sha256Hex } from "./http";
 import { page } from "./page";
 
 export { Box, Limiter };
@@ -88,9 +88,11 @@ async function createBox(request: Request, env: Env): Promise<Response> {
   if (readHash === sendHash) return error(400, "bad_fields");
 
   // Keyed by a hash of the address: the limiter never stores the address itself.
-  const ip = request.headers.get("CF-Connecting-IP") ?? "local";
-  const limiter = env.LIMITER.get(env.LIMITER.idFromName(await sha256Hex("create:" + ip)));
+  const [caller, network] = rateKeys(request.headers.get("CF-Connecting-IP") ?? "local");
+  const limiter = env.LIMITER.get(env.LIMITER.idFromName(await sha256Hex("create:" + caller)));
   if (!(await limiter.take(CREATES_PER_HOUR, HOUR))) return error(429, "rate_limited");
+  const neighbours = env.LIMITER.get(env.LIMITER.idFromName(await sha256Hex("create-net:" + network)));
+  if (!(await neighbours.take(CREATES_PER_NETWORK_PER_HOUR, HOUR))) return error(429, "rate_limited");
 
   const box = env.BOX.get(env.BOX.idFromName(body.boxId));
   return reply(await box.create(readHash, sendHash));

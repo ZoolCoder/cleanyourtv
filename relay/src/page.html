@@ -131,7 +131,8 @@
       failed: "Not sent", failedHint: "Try again in a moment.",
       busy: "Too many messages for now", busyHint: "Wait an hour, then try again.",
       revoked: "This link no longer works", revokedHint: "Ask the family at home for the new link.",
-      rename: "Change my name", lock: "End-to-end encrypted. Only the TV at home can read it."
+      rename: "Change my name", lock: "End-to-end encrypted. Only the TV at home can read it.",
+      replace: "This link is for a different family box than the one saved here. Use the new one from now on?"
     },
     ar: {
       title: "العائلة في الخارج", other: "English",
@@ -145,7 +146,8 @@
       failed: "لم تُرسل", failedHint: "حاول مرة أخرى بعد قليل.",
       busy: "رسائل كثيرة الآن", busyHint: "انتظر ساعة ثم حاول مرة أخرى.",
       revoked: "هذا الرابط لم يعد يعمل", revokedHint: "اطلب الرابط الجديد من العائلة في البيت.",
-      rename: "غيّر اسمي", lock: "مشفّرة من طرف إلى طرف. لا يقرؤها إلا تلفزيون البيت."
+      rename: "غيّر اسمي", lock: "مشفّرة من طرف إلى طرف. لا يقرؤها إلا تلفزيون البيت.",
+      replace: "هذا الرابط لصندوق عائلة غير المحفوظ هنا. هل تستخدم الجديد من الآن؟"
     }
   };
   var KEY = "familyAway.v1";
@@ -169,6 +171,15 @@
     if (p[0].length !== 22 || p[1].length !== 43 || p[2].length !== 43) return;
     if (!B64.test(p[0]) || !B64.test(p[1]) || !B64.test(p[2])) return;
     var kind = p[4] === "note" || p[4] === "event" ? p[4] : "any";
+    // A link to another box, or with another key, would quietly send everything there: ask first. Also a
+    // link that only fills an empty slot, since the phone then sends that kind to it. A new link from the
+    // same TV keeps its box and key, so it goes through without a question.
+    var other = Object.keys(state.boxes).some(function (k) {
+      var b = state.boxes[k];
+      return b && (b.id !== p[0] || b.key !== p[2]);
+    });
+    var l = state.lang || (p[3] === "ar" ? "ar" : "en");
+    if (other && !window.confirm(T[l].replace)) return;
     if (kind === "any") state.boxes = {};
     else delete state.boxes.any;
     state.boxes[kind] = { id: p[0], token: p[1], key: p[2], revoked: false };

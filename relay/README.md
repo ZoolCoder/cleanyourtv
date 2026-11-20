@@ -31,7 +31,8 @@ address itself.
 
 - Bodies over 4 KB are refused before parsing (413). Only `application/json` is accepted (415).
 - 30 messages an hour per box, at most 200 waiting at once (429).
-- 5 new boxes an hour per address (429).
+- 5 new boxes an hour per address, an IPv6 address counted by its /64, and 20 an hour per network, an
+  IPv4 /24 or IPv6 /48 (429).
 - Messages expire after 14 days whether or not the TV fetched them.
 - A box nobody has read for 90 days deletes itself.
 - Requests from other websites are refused (403), and no CORS headers are ever sent.

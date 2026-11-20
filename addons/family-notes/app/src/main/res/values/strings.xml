@@ -38,6 +38,8 @@
     <string name="overlay_heading" translatable="false">Family note · ملاحظة عائلية</string>
     <string name="overlay_from" translatable="false">From: %1$s · من: %1$s</string>
     <string name="away_tag" translatable="false">✈ from abroad · من الخارج</string>
+    <string name="reminder_tag" translatable="false">⏰ reminder · تذكير</string>
+    <string name="reminder_from" translatable="false">Calendar · التقويم</string>
     <string name="quiet_label" translatable="false">Quiet hours · ساعات الهدوء</string>
     <string name="quiet_hint">Notes are kept, but nothing pops up</string>
     <plurals name="locked_for">

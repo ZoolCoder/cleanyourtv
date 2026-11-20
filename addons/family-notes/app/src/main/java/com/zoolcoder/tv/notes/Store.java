@@ -143,7 +143,7 @@ final class Store {
                 String name = Sanitizer.name(o.optString("n", null));
                 String text = Sanitizer.text(o.optString("t", null));
                 long time = o.optLong("w", -1);
-                if (name != null && text != null && time >= 0) list.add(new Note(name, text, time, o.optBoolean("a")));
+                if (name != null && text != null && time >= 0) list.add(new Note(name, text, time, o.optBoolean("a"), o.optBoolean("r")));
             }
         } catch (JSONException e) {
             list.clear();
@@ -162,6 +162,7 @@ final class Store {
                     Note n = list.get(i);
                     JSONObject o = new JSONObject().put("n", n.name).put("t", n.text).put("w", n.time);
                     if (n.away) o.put("a", true);
+                    if (n.reminder) o.put("r", true);
                     array.put(o);
                 }
             } catch (JSONException e) {

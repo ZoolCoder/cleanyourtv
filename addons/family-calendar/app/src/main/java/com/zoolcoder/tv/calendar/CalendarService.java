@@ -42,6 +42,8 @@ public class CalendarService extends Service {
     private Store store;
     private EventStore events;
     private ReminderCard card;
+    private static final String NOTES = "com.zoolcoder.tv.notes", NOTES_REMINDER = NOTES + ".REMINDER",
+            FAMILY = "com.zoolcoder.tv.permission.FAMILY";
     private CalendarServer server;
     private AwayPoller away;
     private ScheduledFuture<?> nextPoll;
@@ -155,14 +157,28 @@ public class CalendarService extends Service {
         if (!due.isEmpty()) {
             List<String> keys = new ArrayList<>();
             int seconds = Math.max(3, getResources().getInteger(R.integer.popup_seconds));
+            Dates dates = new Dates(this);
             for (Occurrence o : due) {
                 keys.add(o.event.key(o.day));
                 card.show(o, seconds);
+                handOver(o, dates);
             }
             events.markFired(keys, now.toLocalDate());
         }
         long intoMinute = System.currentTimeMillis() % 60_000L;
         main.postDelayed(tick, 60_000L - intoMinute + 1000L);
+    }
+
+    /**
+     * Lists the reminder in Family Notes too, when that is installed and signed with this app's key. Also when
+     * Notes was never opened or was force-stopped: its receiver only adds the line to its list.
+     */
+    private void handOver(Occurrence o, Dates dates) {
+        String when = o.event.allDay() ? dates.shortDay(o.day) : dates.shortDay(o.day) + " " + dates.time(o.event.start);
+        Intent intent = new Intent(NOTES_REMINDER).setClassName(NOTES, NOTES + ".ReminderReceiver")
+                .putExtra("title", o.event.title).putExtra("who", o.event.who).putExtra("when", when)
+                .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        sendBroadcast(intent, FAMILY);
     }
 
     private String readPage() {

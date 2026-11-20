@@ -73,6 +73,12 @@ dropped.
 - `SYSTEM_ALERT_WINDOW`: draws the pop-up over other apps. Many TVs hide this setting, so grant it over ADB
   (see below). Without it the app says so and keeps the notes on its own screen only.
 - `RECEIVE_BOOT_COMPLETED`: starts the server again when the TV starts up, only if the switch was on.
+- `com.zoolcoder.tv.permission.FAMILY`: a signature permission, held only by apps signed with the same key.
+  [Family Calendar](../family-calendar/) uses it to hand over each reminder as it pops up; the list shows it
+  under "Calendar" with the tag **⏰ reminder · تذكير**, without a second pop-up, also while the switch is
+  off. Reminders share the list's 10 places with notes. No other app can add to the list. Sign both add-ons
+  with the same key: with different keys the second one fails to install with
+  `INSTALL_FAILED_DUPLICATE_PERMISSION`.
 
 No telemetry, no ads, no accounts. Backups and device-to-device transfer are off. The server only receives text; it exposes nothing from
 the TV.

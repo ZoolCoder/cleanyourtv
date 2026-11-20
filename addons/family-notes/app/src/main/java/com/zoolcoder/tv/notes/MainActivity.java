@@ -663,8 +663,8 @@ public class MainActivity extends Activity {
         sender.setSingleLine(true);
         sender.setEllipsize(TextUtils.TruncateAt.END);
         meta.addView(sender, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        if (note.away) {
-            TextView tag = text(getString(R.string.away_tag), 13, Look.ACCENT);
+        if (note.away || note.reminder) {
+            TextView tag = text(getString(note.away ? R.string.away_tag : R.string.reminder_tag), 13, Look.ACCENT);
             tag.setSingleLine(true);
             tag.setPaddingRelative(dp(12), 0, 0, 0);
             meta.addView(tag);

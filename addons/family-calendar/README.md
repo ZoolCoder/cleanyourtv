@@ -56,6 +56,11 @@ Three tabs at the top: **Month**, **Today** and **Connect**, and a fourth, **Awa
 - `SYSTEM_ALERT_WINDOW`: draws the reminder over other apps. Many TVs hide this setting, so grant it over
   ADB (see below). Without it the app says so and the events stay on its own screen.
 - `RECEIVE_BOOT_COMPLETED`: starts the service again when the TV starts up, only if the switch was on.
+- `com.zoolcoder.tv.permission.FAMILY`: a signature permission, held only by apps signed with the same key.
+  When a reminder pops up, the calendar also hands it to [Family Notes](../family-notes/) if that is
+  installed, and Notes lists it with the tag **⏰ reminder · تذكير**. Nothing leaves the TV. Sign both
+  add-ons with the same key: with different keys the second one fails to install with
+  `INSTALL_FAILED_DUPLICATE_PERMISSION`.
 
 No telemetry, no ads, no accounts. Backups are off. Events are kept in one file in the app's own storage.
 

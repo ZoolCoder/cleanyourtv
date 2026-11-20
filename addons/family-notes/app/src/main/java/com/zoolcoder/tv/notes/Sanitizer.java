@@ -14,6 +14,11 @@ final class Sanitizer {
         return clean(raw, MAX_NAME, 1, true);
     }
 
+    /** One line, at most maxChars after cleaning; null when empty or too long. */
+    static String line(String raw, int maxChars) {
+        return clean(raw, maxChars, 1, true);
+    }
+
     /** At most 280 chars and 4 lines after cleaning; null when empty or too long. */
     static String text(String raw) {
         return clean(raw, MAX_TEXT, MAX_LINES, false);

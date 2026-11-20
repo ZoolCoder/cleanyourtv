@@ -14,6 +14,14 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Start the server again when the TV starts up, if it was switched on. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Hands each reminder to the Family Notes list. Signature only: just apps signed with this app's key hold
+         it. Declared in both apps, so either can be installed first. -->
+    <permission android:name="com.zoolcoder.tv.permission.FAMILY" android:protectionLevel="signature" />
+    <uses-permission android:name="com.zoolcoder.tv.permission.FAMILY" />
+
+    <queries>
+        <package android:name="com.zoolcoder.tv.notes" />
+    </queries>
 
     <application
         android:label="@string/app_name"

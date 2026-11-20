@@ -34,6 +34,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -57,10 +58,11 @@ import java.util.concurrent.Future;
  * panel, drawn with shapes and text only, on the other, in the Apple TV look: glow background, lifted focus.
  */
 public class MainActivity extends Activity {
-    private static final int BACKGROUND = 0xFF0B1A12, GLOW = 0x26FFC342, SURFACE = 0x9916281D,
-            SURFACE_FOCUSED = 0xFF2C4838, TEXT = 0xFFFFFFFF, TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF,
-            PILL = 0x29FFFFFF, TRACK = 0x1FFFFFFF, TRACK_LINE = 0x33FFFFFF, ON_LIGHT = 0xFF0B1A12,
-            ACCENT = 0xFFFFC342, ACCENT_TINT = 0x26FFC342, FOCUS_STROKE = 0xFFFFFFFF;
+    private static final int BACKGROUND = 0xFF0B1422, GLOW = 0x4DFFB347, SURFACE = 0x17FFFFFF,
+            SURFACE_FOCUSED = 0xFF2E3A4E, TEXT = 0xFFFFFFFF, TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF,
+            PILL = 0x29FFFFFF, TRACK = 0x1FFFFFFF, TRACK_LINE = 0x33FFFFFF, ON_LIGHT = 0xFF0B1422,
+            ACCENT = 0xFFFFB347, ACCENT_TINT = 0x26FFB347, MOSQUE = 0x2EFFB347,
+            RIM = 0x2EFFFFFF, FOCUS_RIM = 0xFFFFFFFF, DEPTH = 0x335E5CE6;
     private static final float ROW_SCALE = 1.02f, TILE_SCALE = 1.04f;
     private static final int RADIO = 0, RECITERS = 1;
     private static final int IDLE = 0, LOADING = 1, LOADED = 2, FAILED = 3;
@@ -77,6 +79,7 @@ public class MainActivity extends Activity {
     private View focusedView;
     private Drawable pillPlaying, pillNeutral;
     private PlayButton playButton;
+    private Wave wave;
     private LinearLayout progress;
     private View progressFill, progressRest;
     private LinearLayout list;
@@ -132,14 +135,14 @@ public class MainActivity extends Activity {
         page.setPadding(dp(48), dp(28), dp(48), dp(24));
         page.setClipChildren(false);
         page.setClipToPadding(false);
-        page.setBackground(glow());
+        page.setBackground(glow(arabic));
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setClipChildren(false);
-        View marker = new View(this);
-        marker.setBackground(shape(ACCENT, 2));
-        header.addView(marker, new LinearLayout.LayoutParams(dp(4), dp(26)));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(40), dp(40));
+        iconParams.setMarginEnd(dp(2));
+        header.addView(appIcon(), iconParams);
         TextView title = directed(text(getString(R.string.title), 30, TEXT));
         title.setTypeface(null, Typeface.BOLD);
         title.setPadding(dp(12), 0, dp(12), 0);
@@ -1087,6 +1090,11 @@ public class MainActivity extends Activity {
         panelSurah.setTypeface(MEDIUM);
         panelSurah.setPadding(0, dp(8), 0, 0);
         panel.addView(panelSurah);
+        wave = new Wave(this, ACCENT);
+        LinearLayout.LayoutParams waveParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(40));
+        waveParams.topMargin = dp(16);
+        panel.addView(wave, waveParams);
 
         // Favourite, play and sleep on one row: a focusable pill each side, as long-press is unreliable on remotes.
         LinearLayout controls = new LinearLayout(this);
@@ -1143,6 +1151,7 @@ public class MainActivity extends Activity {
         panelSurah.setText(playingSurah);
         panelSurah.setVisibility(surah ? View.VISIBLE : View.GONE);
         playButton.setState(ready && !paused, (active && ready) || failed);
+        wave.setAlpha(active && ready && !paused ? 1f : 0.3f);
         // Before 500 ms the pill keeps its place but says nothing, so a quick start never flashes "Connecting…".
         int pillVisibility = View.GONE;
         if (failed) {
@@ -1254,11 +1263,42 @@ public class MainActivity extends Activity {
         view.setElevation(focused ? dp(8) : 0);
     }
 
+    // Liquid Glass without blur: a translucent fill is brighter at the top, as if lit from above, with a hairline
+    // rim catching the light. Opaque fills, nearly clear ones and thin bars stay flat.
     private GradientDrawable shape(int fill, int radius) {
         GradientDrawable shape = new GradientDrawable();
-        shape.setColor(fill);
         shape.setCornerRadius(dp(radius));
+        int alpha = fill >>> 24;
+        if (alpha == 0xFF || alpha < 0x10 || radius < 8) {
+            shape.setColor(fill);
+            return shape;
+        }
+        shape.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+        shape.setColors(new int[] {brighter(fill), fill});
+        shape.setStroke(dp(1), RIM);
         return shape;
+    }
+
+    // The focused fill: lit at the top with a bright rim; an opaque one also casts the lift's shadow.
+    private GradientDrawable lit(int fill, int radius) {
+        int top = fill >>> 24 == 0xFF ? lighten(fill, 0.14f) : brighter(fill);
+        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] {top, fill});
+        shape.setCornerRadius(dp(radius));
+        shape.setStroke(dp(2), FOCUS_RIM);
+        return shape;
+    }
+
+    private static int brighter(int fill) {
+        return (Math.min(0xFF, (fill >>> 24) * 2) << 24) | (fill & 0xFFFFFF);
+    }
+
+    // colour with white laid over it by amount (0 to 1), opaque.
+    private static int lighten(int colour, float amount) {
+        int r = (colour >> 16) & 0xFF, g = (colour >> 8) & 0xFF, b = colour & 0xFF;
+        r += Math.round((0xFF - r) * amount);
+        g += Math.round((0xFF - g) * amount);
+        b += Math.round((0xFF - b) * amount);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     private GradientDrawable oval(int fill) {
@@ -1269,23 +1309,21 @@ public class MainActivity extends Activity {
     }
 
     private GradientDrawable outlined(int fill, int radius) {
-        GradientDrawable shape = shape(fill, radius);
-        shape.setStroke(dp(2), FOCUS_STROKE);
-        return shape;
+        return lit(fill, radius);
     }
 
-    /** List row: focused = lighter fill + white outline; playing (activated) = accent tint; both when both. */
+    /** List row: clear glass; focused = lit fill + white rim; playing (activated) = accent-tinted glass; both when both. */
     private Drawable rowBackground() {
         StateListDrawable states = new StateListDrawable();
         states.addState(new int[] {android.R.attr.state_focused, android.R.attr.state_activated},
                 outlined(blend(SURFACE_FOCUSED, ACCENT_TINT), 14));
         states.addState(new int[] {android.R.attr.state_focused}, outlined(SURFACE_FOCUSED, 14));
-        states.addState(new int[] {android.R.attr.state_activated}, shape(blend(SURFACE, ACCENT_TINT), 14));
+        states.addState(new int[] {android.R.attr.state_activated}, shape(ACCENT_TINT, 14));
         states.addState(new int[0], shape(SURFACE, 14));
         return states;
     }
 
-    /** Tab: chosen = white fill; focused adds the outline and a faint fill when not chosen. */
+    /** Tab: chosen = white fill; focused adds the rim and a faint fill when not chosen. */
     private Drawable tabBackground() {
         StateListDrawable states = new StateListDrawable();
         states.addState(new int[] {android.R.attr.state_focused, android.R.attr.state_selected},
@@ -1306,14 +1344,38 @@ public class MainActivity extends Activity {
                 Math.round(Color.blue(over) * a + Color.blue(base) * (1 - a)));
     }
 
-    /** The window base, lit by an accent glow from the top-start corner. */
-    private Drawable glow() {
+    /** The app's own icon for the header, clipped to a glass tile's corners. */
+    private ImageView appIcon() {
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.icon);
+        icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        int radius = dp(10);
+        icon.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            }
+        });
+        icon.setClipToOutline(true);
+        return icon;
+    }
+
+    // The window base with two pools of light for the glass to sit over: the accent from the top-start corner
+    // and a deep indigo from the bottom-end one. No blur: the TVs this runs on cannot afford it.
+    private Drawable glow(boolean arabic) {
+        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND),
+                light(GLOW, arabic ? 1f : 0f, 0f, dp(720)),
+                light(DEPTH, arabic ? 0f : 1f, 1f, dp(720) * 0.8f),
+                new Mosque(MOSQUE, dp(340), dp(250), arabic)});
+    }
+
+    private static Drawable light(int colour, float x, float y, float radius) {
         GradientDrawable light = new GradientDrawable();
         light.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        light.setGradientCenter(arabic ? 1f : 0f, 0f);
-        light.setGradientRadius(dp(672));
-        light.setColors(new int[] {GLOW, GLOW & 0x00FFFFFF});
-        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND), light});
+        light.setGradientCenter(x, y);
+        light.setGradientRadius(radius);
+        light.setColors(new int[] {colour, colour & 0x00FFFFFF});
+        return light;
     }
 
     /** A radio mast with a wave on each side, in the accent. */
@@ -1382,7 +1444,7 @@ public class MainActivity extends Activity {
                 float ring = 3 * getWidth() / 72f;
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(ring);
-                paint.setColor(FOCUS_STROKE);
+                paint.setColor(TEXT);
                 canvas.drawCircle(c, c, c - ring / 2, paint);
                 paint.setStyle(Paint.Style.FILL);
             }

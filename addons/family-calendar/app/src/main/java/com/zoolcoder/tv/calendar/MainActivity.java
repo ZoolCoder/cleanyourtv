@@ -100,14 +100,15 @@ public class MainActivity extends Activity {
     private View header() {
         LinearLayout header = Ui.row(this);
         header.setClipChildren(false);
-        View marker = new View(this);
-        marker.setBackground(Look.shape(this, Look.ACCENT, 2));
-        header.addView(marker, new LinearLayout.LayoutParams(dp(4), dp(26)));
+        header.addView(Look.appIcon(this), new LinearLayout.LayoutParams(dp(36), dp(36)));
         // Each script in its own view, so the Arabic gets its own size on the same line.
-        TextView en = Ui.bold(Ui.text(this, getString(R.string.title_en) + " · ", 26, Look.TEXT));
+        TextView en = Ui.bold(Ui.text(this, getString(R.string.title_en) + " · ", 24, Look.TEXT));
         en.setPaddingRelative(dp(12), 0, 0, 0);
         header.addView(en);
-        TextView ar = Ui.bold(Ui.text(this, getString(R.string.title_ar), 25, Look.TEXT));
+        TextView ar = Ui.bold(Ui.text(this, getString(R.string.title_ar), 23, Look.TEXT));
+        // One line: with four tabs the space left can be narrow, and a wrapped title pushed the month down.
+        ar.setSingleLine(true);
+        ar.setEllipsize(android.text.TextUtils.TruncateAt.END);
         // Beside the English, not pushed to the far end of its stretched view by its RTL alignment.
         ar.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         header.addView(ar, Ui.fill(1f));

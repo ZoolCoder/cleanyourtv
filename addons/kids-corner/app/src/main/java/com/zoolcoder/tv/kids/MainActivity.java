@@ -65,10 +65,11 @@ public class MainActivity extends Activity {
     /** YouTube apps in order of preference; the first one installed gets the link. */
     private static final String[] PLAYERS = {"com.amazon.firetv.youtube", "com.google.android.youtube.tv",
             "com.teamsmart.videomanager.tv"};
-    private static final int BACKGROUND = 0xFF0B1A12, SURFACE = 0x9916281D, SURFACE_FOCUSED = 0xFF2C4838;
+    private static final int BACKGROUND = 0xFF120A24, SURFACE = 0x17FFFFFF, SURFACE_FOCUSED = 0xFF3A2F5C;
+    private static final int RIM = 0x2EFFFFFF, FOCUS_RIM = 0xFFFFFFFF, DEPTH = 0x335E5CE6;
     private static final int TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF;
-    private static final int ACCENT = 0xFFB65CFF, GLOW = 0x26B65CFF, DARK_TEXT = 0xFF0B1A12;
-    private static final int SELECTED_FILL = 0x40B65CFF, FOCUS_STROKE = 0xFFFFFFFF, CHIP_FILL = 0x29FFFFFF;
+    private static final int ACCENT = 0xFF9B5CFF, GLOW = 0x599B5CFF, DARK_TEXT = 0xFF120A24;
+    private static final int SELECTED_FILL = 0x409B5CFF, CHIP_FILL = 0x29FFFFFF;
     private static final int PLACEHOLDER = 0x33FFFFFF;
     /** Flat circle colours for the channel letters, one per row in turn; all bright enough for dark text. */
     private static final int[] BADGES = {0xFFFF8FB1, 0xFF5CC8FF, 0xFFFFC542, 0xFF7CE0A0, 0xFFB65CFF, 0xFFFF9B6B,
@@ -160,17 +161,15 @@ public class MainActivity extends Activity {
         page.setPaddingRelative(dp(48), dp(28), dp(48), dp(24));
         page.setClipChildren(false);
         page.setClipToPadding(false);
-        page.setBackground(background());
+        page.setBackground(background(arabic));
 
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setClipChildren(false);
-        View marker = new View(this);
-        marker.setBackground(rounded(ACCENT, 2));
-        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(dp(4), dp(26));
-        markerParams.setMarginEnd(dp(12));
-        header.addView(marker, markerParams);
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(40), dp(40));
+        iconParams.setMarginEnd(dp(14));
+        header.addView(appIcon(), iconParams);
         header.addView(bold(directed(text(getString(R.string.title), 30, Color.WHITE))));
         page.addView(header);
         status = directed(text(getString(R.string.loading), 15, TEXT_2));
@@ -602,8 +601,7 @@ public class MainActivity extends Activity {
     private TextView favouritePill(Shelf shelf) {
         TextView pill = bold(text("", 13, Color.WHITE));
         pill.setPadding(dp(10), dp(2), dp(10), dp(2));
-        GradientDrawable focused = rounded(SURFACE_FOCUSED, 20);
-        focused.setStroke(dp(2), FOCUS_STROKE);
+        GradientDrawable focused = lit(SURFACE_FOCUSED, 20);
         StateListDrawable states = new StateListDrawable();
         states.addState(new int[]{android.R.attr.state_focused}, focused);
         states.addState(new int[0], rounded(CHIP_FILL, 20));
@@ -684,7 +682,7 @@ public class MainActivity extends Activity {
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPaddingRelative(dp(16), dp(10), dp(20), dp(10));
         GradientDrawable fill = rounded(SELECTED_FILL, 18);
-        fill.setStroke(dp(1), 0x66B65CFF);
+        fill.setStroke(dp(1), 0x669B5CFF);
         bar.setBackground(fill);
         bar.addView(text("👋", 18, Color.WHITE));
         addKey(bar, getString(R.string.key_ok), R.string.banner_play, true);
@@ -733,10 +731,9 @@ public class MainActivity extends Activity {
         view.setElevation(focused ? dp(8) : 0);
     }
 
-    /** Rail background, built once per entry: plain, tinted when selected, outlined when focused. */
+    /** Rail background, built once per entry: clear glass, tinted when selected, lit when focused. */
     private Drawable railBackground() {
-        GradientDrawable focused = rounded(SURFACE_FOCUSED, RADIUS_DP);
-        focused.setStroke(dp(2), FOCUS_STROKE);
+        GradientDrawable focused = lit(SURFACE_FOCUSED, RADIUS_DP);
         StateListDrawable states = new StateListDrawable();
         states.addState(new int[]{android.R.attr.state_focused}, focused);
         states.addState(new int[]{android.R.attr.state_selected}, rounded(SELECTED_FILL, RADIUS_DP));
@@ -823,8 +820,7 @@ public class MainActivity extends Activity {
         TextView retry = bold(text(getString(R.string.try_again), 15, Color.WHITE));
         retry.setGravity(Gravity.CENTER);
         retry.setPadding(dp(18), dp(8), dp(18), dp(8));
-        GradientDrawable focused = rounded(SURFACE_FOCUSED, 20);
-        focused.setStroke(dp(2), FOCUS_STROKE);
+        GradientDrawable focused = lit(SURFACE_FOCUSED, 20);
         StateListDrawable states = new StateListDrawable();
         states.addState(new int[]{android.R.attr.state_focused}, focused);
         states.addState(new int[0], rounded(CHIP_FILL, 20));
@@ -964,10 +960,10 @@ public class MainActivity extends Activity {
         return card;
     }
 
-    /** The white 2 dp outline on the focused thumbnail; nothing otherwise. Built once, shared by every card. */
+    /** The white 2 dp rim on the focused thumbnail; nothing otherwise. Built once, shared by every card. */
     private StateListDrawable ring() {
         GradientDrawable outline = rounded(Color.TRANSPARENT, RADIUS_DP);
-        outline.setStroke(dp(2), FOCUS_STROKE);
+        outline.setStroke(dp(2), FOCUS_RIM);
         StateListDrawable states = new StateListDrawable();
         states.addState(new int[]{android.R.attr.state_focused}, outline);
         states.addState(new int[0], new GradientDrawable());
@@ -987,21 +983,75 @@ public class MainActivity extends Activity {
         else if (right > visibleRight) holder.smoothScrollTo(right - holder.getWidth(), 0);
     }
 
-    /** The window base with a soft accent glow from the top-start corner. */
-    private Drawable background() {
-        GradientDrawable glow = new GradientDrawable();
-        glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        glow.setGradientCenter(arabic ? 1f : 0f, 0f);
-        glow.setGradientRadius(getResources().getDisplayMetrics().widthPixels * 0.7f);
-        glow.setColors(new int[]{GLOW, GLOW & 0x00FFFFFF});
-        return new LayerDrawable(new Drawable[]{new ColorDrawable(BACKGROUND), glow});
+    // The window base with two pools of light for the glass to sit over: the accent from the top-start corner
+    // and a deep indigo from the bottom-end one. No blur: the TVs this runs on cannot afford it.
+    private Drawable background(boolean arabic) {
+        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND),
+                light(GLOW, arabic ? 1f : 0f, 0f, getResources().getDisplayMetrics().widthPixels * 0.75f),
+                light(DEPTH, arabic ? 0f : 1f, 1f, getResources().getDisplayMetrics().widthPixels * 0.75f * 0.8f)});
     }
 
-    private GradientDrawable rounded(int color, int radiusDp) {
+    private static Drawable light(int colour, float x, float y, float radius) {
+        GradientDrawable light = new GradientDrawable();
+        light.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        light.setGradientCenter(x, y);
+        light.setGradientRadius(radius);
+        light.setColors(new int[] {colour, colour & 0x00FFFFFF});
+        return light;
+    }
+
+    /** The app's own icon for the header, clipped to a glass tile's corners. */
+    private ImageView appIcon() {
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.icon);
+        icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        int radius = dp(10);
+        icon.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            }
+        });
+        icon.setClipToOutline(true);
+        return icon;
+    }
+
+    // Liquid Glass without blur: a translucent fill is brighter at the top, as if lit from above, with a hairline
+    // rim catching the light. Opaque fills, nearly clear ones and thin bars stay flat.
+    private GradientDrawable rounded(int fill, int radiusDp) {
         GradientDrawable shape = new GradientDrawable();
-        shape.setColor(color);
         shape.setCornerRadius(dp(radiusDp));
+        int alpha = fill >>> 24;
+        if (alpha == 0xFF || alpha < 0x10 || radiusDp < 8) {
+            shape.setColor(fill);
+            return shape;
+        }
+        shape.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+        shape.setColors(new int[] {brighter(fill), fill});
+        shape.setStroke(dp(1), RIM);
         return shape;
+    }
+
+    // The focused fill: lit at the top with a bright rim; an opaque one also casts the lift's shadow.
+    private GradientDrawable lit(int fill, int radiusDp) {
+        int top = fill >>> 24 == 0xFF ? lighten(fill, 0.14f) : brighter(fill);
+        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] {top, fill});
+        shape.setCornerRadius(dp(radiusDp));
+        shape.setStroke(dp(2), FOCUS_RIM);
+        return shape;
+    }
+
+    private static int brighter(int fill) {
+        return (Math.min(0xFF, (fill >>> 24) * 2) << 24) | (fill & 0xFFFFFF);
+    }
+
+    // colour with white laid over it by amount (0 to 1), opaque.
+    private static int lighten(int colour, float amount) {
+        int r = (colour >> 16) & 0xFF, g = (colour >> 8) & 0xFF, b = colour & 0xFF;
+        r += Math.round((0xFF - r) * amount);
+        g += Math.round((0xFF - g) * amount);
+        b += Math.round((0xFF - b) * amount);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     private static TextView bold(TextView view) {

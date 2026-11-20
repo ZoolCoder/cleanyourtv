@@ -3,6 +3,7 @@ package com.zoolcoder.tv.exchangerates;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Outline;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -20,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.text.TextUtils;
@@ -49,11 +51,12 @@ import java.util.Set;
  * OK on a tile opens its large view, where the currency can be pinned to the front. Nothing runs in the background.
  */
 public class MainActivity extends Activity {
-    // Look: design/appletv-spec.md and design/tv-family-spec.md. Focus is a white 2 dp outline, a lighter fill and a small lift.
-    private static final int BACKGROUND = 0xFF0B1A12, GLOW = 0x2629B6F6;
-    private static final int SURFACE = 0x9916281D, SURFACE_FOCUSED = 0xFF2C4838, FOCUS_STROKE = 0xFFFFFFFF;
+    // Look: design/appletv-spec.md and design/tv-family-spec.md. Liquid Glass: clear panels with a rim; focus is a lit fill, a white rim and a small lift.
+    private static final int BACKGROUND = 0xFF0A1424, GLOW = 0x592E95FF;
+    private static final int SURFACE = 0x17FFFFFF, SURFACE_FOCUSED = 0xFF1E3E66;
+    private static final int RIM = 0x2EFFFFFF, FOCUS_RIM = 0xFFFFFFFF, DEPTH = 0x335E5CE6;
     private static final int TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF, ACCENT = 0xFF29B6F6;
-    private static final int WARNING = 0xFFF2C94C, WARNING_FILL = 0x26F2C94C, ON_LIGHT = 0xFF0B1A12;
+    private static final int WARNING = 0xFFF2C94C, WARNING_FILL = 0x26F2C94C, ON_LIGHT = 0xFF0A1424;
     private static final int CHIP = 0x29FFFFFF;
     private static final int COLUMNS = 4;
     private static final String URL = "https://open.er-api.com/v6/latest/USD";
@@ -111,11 +114,7 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setClipChildren(false);
-        View marker = new View(this);
-        marker.setBackground(rounded(ACCENT, 2));
-        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(dp(4), dp(26));
-        markerParams.setMarginEnd(dp(12));
-        header.addView(marker, markerParams);
+        header.addView(appIcon(), appIconParams());
         TextView title = text(getString(R.string.title), 30, Color.WHITE);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         header.addView(title);
@@ -457,12 +456,19 @@ public class MainActivity extends Activity {
         return holder;
     }
 
-    // The badge for a currency: a disc in a colour taken from its code, with the code's first two letters.
+    // The badge for a currency: its flag in a disc, or, for a code without one, a disc in a colour taken
+    // from the code with its first two letters.
     private View disc(String code) {
         return disc(code, 12);
     }
 
     private View disc(String code, int sp) {
+        Flag flag = Flag.of(code);
+        if (flag != null) {
+            View badge = new View(this);
+            badge.setBackground(flag);
+            return badge;
+        }
         TextView badge = text(code.length() > 2 ? code.substring(0, 2) : code, sp, Color.WHITE);
         badge.setTypeface(Typeface.DEFAULT_BOLD);
         badge.setGravity(Gravity.CENTER);
@@ -473,6 +479,27 @@ public class MainActivity extends Activity {
         shape.setColor(Color.HSVToColor(new float[] {hue, 0.55f, 0.55f}));
         badge.setBackground(shape);
         return badge;
+    }
+
+    // The app's own icon beside the title, clipped to the glass tile's corners.
+    private View appIcon() {
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.icon);
+        icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        icon.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), dp(10));
+            }
+        });
+        icon.setClipToOutline(true);
+        return icon;
+    }
+
+    private LinearLayout.LayoutParams appIconParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(40), dp(40));
+        params.setMarginEnd(dp(14));
+        return params;
     }
 
     private LinearLayout.LayoutParams tileParams(int column) {
@@ -488,11 +515,10 @@ public class MainActivity extends Activity {
         return view;
     }
 
-    // Focus: white outline, lighter fill, a small lift and an 8 dp shadow only while focused.
+    // Focus: lit fill, white rim, a small lift and an 8 dp shadow only while focused.
     // The two fills are built once and swapped by the view's state, never in the focus listener.
     private void focusable(View view, int radiusDp, float scale) {
-        GradientDrawable focused = rounded(SURFACE_FOCUSED, radiusDp);
-        focused.setStroke(dp(2), FOCUS_STROKE);
+        GradientDrawable focused = lit(SURFACE_FOCUSED, radiusDp);
         StateListDrawable background = new StateListDrawable();
         background.addState(new int[] {android.R.attr.state_focused}, focused);
         background.addState(new int[0], rounded(SURFACE, radiusDp));
@@ -578,25 +604,63 @@ public class MainActivity extends Activity {
         return params;
     }
 
-    // The window base with the accent glow in the top-start corner, about 70 % of the width wide.
+    // The window base with two pools of light for the glass to sit over: the accent from the top-start corner
+    // and a deep indigo from the bottom-end one. No blur: the TVs this runs on cannot afford it.
     private Drawable glow(boolean arabic) {
+        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND),
+                light(GLOW, arabic ? 1f : 0f, 0f, dp(720)),
+                light(DEPTH, arabic ? 0f : 1f, 1f, dp(720) * 0.8f)});
+    }
+
+    private static Drawable light(int colour, float x, float y, float radius) {
         GradientDrawable light = new GradientDrawable();
         light.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        light.setColors(new int[] {GLOW, 0x0029B6F6});
-        light.setGradientRadius(dp(672));
-        light.setGradientCenter(arabic ? 1f : 0f, 0f);
-        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND), light});
+        light.setGradientCenter(x, y);
+        light.setGradientRadius(radius);
+        light.setColors(new int[] {colour, colour & 0x00FFFFFF});
+        return light;
     }
 
     private static Typeface medium() {
         return Typeface.create("sans-serif-medium", Typeface.NORMAL);
     }
 
+    // Liquid Glass without blur: a translucent fill is brighter at the top, as if lit from above, with a hairline
+    // rim catching the light. Opaque fills, nearly clear ones and thin bars stay flat.
     private GradientDrawable rounded(int fill, int radiusDp) {
         GradientDrawable shape = new GradientDrawable();
-        shape.setColor(fill);
         shape.setCornerRadius(dp(radiusDp));
+        int alpha = fill >>> 24;
+        if (alpha == 0xFF || alpha < 0x10 || radiusDp < 8) {
+            shape.setColor(fill);
+            return shape;
+        }
+        shape.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+        shape.setColors(new int[] {brighter(fill), fill});
+        shape.setStroke(dp(1), RIM);
         return shape;
+    }
+
+    // The focused fill: lit at the top with a bright rim; an opaque one also casts the lift's shadow.
+    private GradientDrawable lit(int fill, int radiusDp) {
+        int top = fill >>> 24 == 0xFF ? lighten(fill, 0.14f) : brighter(fill);
+        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] {top, fill});
+        shape.setCornerRadius(dp(radiusDp));
+        shape.setStroke(dp(2), FOCUS_RIM);
+        return shape;
+    }
+
+    private static int brighter(int fill) {
+        return (Math.min(0xFF, (fill >>> 24) * 2) << 24) | (fill & 0xFFFFFF);
+    }
+
+    // colour with white laid over it by amount (0 to 1), opaque.
+    private static int lighten(int colour, float amount) {
+        int r = (colour >> 16) & 0xFF, g = (colour >> 8) & 0xFF, b = colour & 0xFF;
+        r += Math.round((0xFF - r) * amount);
+        g += Math.round((0xFF - g) * amount);
+        b += Math.round((0xFF - b) * amount);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     private TextView text(String value, int sp, int color) {

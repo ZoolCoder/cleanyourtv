@@ -8,7 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 /**
- * One event in a list: the time column, a bar in the who colour, the title with who under it, and a chevron.
+ * One event in a list: the time column, a tile in the who colour, the title with who under it, and a chevron.
  * With {@code withDay}, the time column names the day first ("Tue 27 Oct" over "10:00 AM"). An event sent from
  * abroad says so under the title.
  */
@@ -34,12 +34,14 @@ final class EventRow {
         row.addView(when, new LinearLayout.LayoutParams(Look.dp(c, withDay ? 88 : 72),
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        View bar = new View(c);
-        bar.setBackground(Look.shape(c, Look.WHO[e.color], 2));
-        LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(Look.dp(c, 4), Look.dp(c, 40));
-        barParams.setMarginStart(Look.dp(c, 8));
-        barParams.setMarginEnd(Look.dp(c, 14));
-        row.addView(bar, barParams);
+        // A glass tile tinted in the who colour, with a picture guessed from the title.
+        TextView icon = Ui.text(c, EventIcon.of(e.title), 20, Look.TEXT);
+        icon.setGravity(Gravity.CENTER);
+        icon.setBackground(Look.tile(c, Look.WHO[e.color], 12));
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(Look.dp(c, 44), Look.dp(c, 44));
+        iconParams.setMarginStart(Look.dp(c, 8));
+        iconParams.setMarginEnd(Look.dp(c, 14));
+        row.addView(icon, iconParams);
 
         LinearLayout words = Ui.column(c);
         TextView title = Look.directed(Look.medium(Ui.text(c, e.title, 18, Look.TEXT)));

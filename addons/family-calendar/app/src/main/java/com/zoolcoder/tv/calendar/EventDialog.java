@@ -105,7 +105,7 @@ final class EventDialog {
         box.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
         int p = Look.dp(activity, 24);
         box.setPadding(p, p, p, p);
-        Look.panel(activity, box, 0xFF1C1D2E, 18);
+        Look.panel(activity, box, 0xF21C1D2E, 18);
         return box;
     }
 

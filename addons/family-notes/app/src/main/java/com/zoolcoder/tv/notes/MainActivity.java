@@ -98,11 +98,9 @@ public class MainActivity extends Activity {
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setClipChildren(false);
-        View marker = new View(this);
-        marker.setBackground(Look.shape(this, Look.ACCENT, 2));
-        header.addView(marker, new LinearLayout.LayoutParams(dp(4), dp(26)));
+        header.addView(Look.appIcon(this), new LinearLayout.LayoutParams(dp(40), dp(40)));
         TextView title = bold(text(getString(R.string.title), 30, Look.TEXT));
-        title.setPaddingRelative(dp(12), 0, 0, 0);
+        title.setPaddingRelative(dp(14), 0, 0, 0);
         header.addView(title);
         return header;
     }
@@ -396,7 +394,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(24), dp(24), dp(24), dp(24));
         box.setClipChildren(false);
-        Look.panel(this, box, 0xFF16281D, 18);
+        Look.panel(this, box, 0xF216281D, 18);
         box.addView(medium(text(getString(title), 22, Look.TEXT)));
         TextView body = text(getString(message), 16, Look.TEXT_2);
         body.setPadding(0, dp(8), 0, dp(24));

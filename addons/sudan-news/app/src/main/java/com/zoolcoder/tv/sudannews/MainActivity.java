@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Outline;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -22,6 +23,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewOutlineProvider;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -48,10 +50,10 @@ import java.util.concurrent.TimeUnit;
  * an hour; nothing runs in the background.
  */
 public class MainActivity extends Activity {
-    // The tvOS look of design/appletv-spec.md.
-    private static final int BACKGROUND = 0xFF0B1A12, SURFACE = 0x9916281D, SURFACE_FOCUSED = 0xFF2C4838,
-            TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF, PILL = 0x29FFFFFF, TRACK = 0x1FFFFFFF, SHEEN = 0x2EFFFFFF,
-            ON_LIGHT = 0xFF0B1A12, ACCENT = 0xFFD9364F, GLOW = 0x26D9364F, SCRIM = 0xCC0B1A12;
+    // The tvOS look of design/appletv-spec.md, in Liquid Glass: clear panels with a rim, a lit focus.
+    private static final int BACKGROUND = 0xFF0E1220, SURFACE = 0x17FFFFFF, SURFACE_FOCUSED = 0xFF2E3446,
+            TEXT_2 = 0xC7FFFFFF, TEXT_3 = 0x99FFFFFF, PILL = 0x29FFFFFF, TRACK = 0x1FFFFFFF, RIM = 0x2EFFFFFF, FOCUS_RIM = 0xFFFFFFFF, DEPTH = 0x335E5CE6,
+            ON_LIGHT = 0xFF0E1220, ACCENT = 0xFFFF4D4D, GLOW = 0x4DFF4D4D, SCRIM = 0xCC0E1220;
     private static final float ROW_SCALE = 1.02f, TAB_SCALE = 1.04f;
     // What the remote hint bar describes: where focus is.
     private static final int HINT_TABS = 0, HINT_ROW = 1, HINT_DETAIL = 2, HINT_RETRY = 3, HINT_ACTION = 4;
@@ -110,17 +112,15 @@ public class MainActivity extends Activity {
         page.setClipToPadding(false);
         page.setPadding(dp(48), dp(28), dp(48), dp(24));
 
-        // Header: accent marker, title and update line on the start side, the language tabs on the other.
+        // Header: app icon, title and update line on the start side, the language tabs on the other.
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
         header.setClipChildren(false);
-        View marker = new View(this);
-        marker.setBackground(shape(ACCENT, 2));
-        LinearLayout.LayoutParams markerParams = new LinearLayout.LayoutParams(dp(4), dp(26));
-        markerParams.setMarginEnd(dp(14));
-        markerParams.gravity = Gravity.TOP;
-        markerParams.topMargin = dp(8);
-        header.addView(marker, markerParams);
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(40), dp(40));
+        iconParams.setMarginEnd(dp(14));
+        iconParams.gravity = Gravity.TOP;
+        iconParams.topMargin = dp(2);
+        header.addView(appIcon(), iconParams);
 
         LinearLayout heading = new LinearLayout(this);
         heading.setOrientation(LinearLayout.VERTICAL);
@@ -801,36 +801,85 @@ public class MainActivity extends Activity {
         });
     }
 
-    private Drawable shape(int fill, int radius) {
+    // Liquid Glass without blur: a translucent fill is brighter at the top, as if lit from above, with a hairline
+    // rim catching the light. Opaque fills, nearly clear ones and thin bars stay flat.
+    private GradientDrawable shape(int fill, int radius) {
         GradientDrawable shape = new GradientDrawable();
-        shape.setColor(fill);
         shape.setCornerRadius(dp(radius));
+        int alpha = fill >>> 24;
+        if (alpha == 0xFF || alpha < 0x10 || radius < 8) {
+            shape.setColor(fill);
+            return shape;
+        }
+        shape.setOrientation(GradientDrawable.Orientation.TOP_BOTTOM);
+        shape.setColors(new int[] {brighter(fill), fill});
+        shape.setStroke(dp(1), RIM);
         return shape;
     }
 
-    /** A shape with the 2 dp white focus outline. */
+    // The focused fill: lit at the top with a bright rim; an opaque one also casts the lift's shadow.
+    private GradientDrawable lit(int fill, int radius) {
+        int top = fill >>> 24 == 0xFF ? lighten(fill, 0.14f) : brighter(fill);
+        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] {top, fill});
+        shape.setCornerRadius(dp(radius));
+        shape.setStroke(dp(2), FOCUS_RIM);
+        return shape;
+    }
+
+    private static int brighter(int fill) {
+        return (Math.min(0xFF, (fill >>> 24) * 2) << 24) | (fill & 0xFFFFFF);
+    }
+
+    // colour with white laid over it by amount (0 to 1), opaque.
+    private static int lighten(int colour, float amount) {
+        int r = (colour >> 16) & 0xFF, g = (colour >> 8) & 0xFF, b = colour & 0xFF;
+        r += Math.round((0xFF - r) * amount);
+        g += Math.round((0xFF - g) * amount);
+        b += Math.round((0xFF - b) * amount);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    /** A focused shape: lit, with the 2 dp white rim. */
     private Drawable outlined(int fill, int radius) {
-        GradientDrawable shape = (GradientDrawable) shape(fill, radius);
-        shape.setStroke(dp(2), Color.WHITE);
-        return shape;
+        return lit(fill, radius);
     }
 
-    /** The accent glow from the top-start corner, over the page colour. */
+    /** The app's own icon for the header, clipped to a glass tile's corners. */
+    private ImageView appIcon() {
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(R.drawable.icon);
+        icon.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        int radius = dp(10);
+        icon.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            }
+        });
+        icon.setClipToOutline(true);
+        return icon;
+    }
+
+    // The window base with two pools of light for the glass to sit over: the accent from the top-start corner
+    // and a deep indigo from the bottom-end one. No blur: the TVs this runs on cannot afford it.
     private Drawable glow(boolean rtl) {
-        GradientDrawable glow = new GradientDrawable();
-        glow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        glow.setGradientCenter(rtl ? 1f : 0f, 0f);
-        glow.setGradientRadius(getResources().getDisplayMetrics().widthPixels * 0.7f);
-        glow.setColors(new int[] {GLOW, ACCENT & 0x00FFFFFF});
-        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND), glow});
+        return new LayerDrawable(new Drawable[] {new ColorDrawable(BACKGROUND),
+                light(GLOW, rtl ? 1f : 0f, 0f, getResources().getDisplayMetrics().widthPixels * 0.75f),
+                light(DEPTH, rtl ? 0f : 1f, 1f, getResources().getDisplayMetrics().widthPixels * 0.75f * 0.8f)});
     }
 
-    /** The lifted fill: a brighter surface with a faint sheen over its top half. */
+    private static Drawable light(int colour, float x, float y, float radius) {
+        GradientDrawable light = new GradientDrawable();
+        light.setGradientType(GradientDrawable.RADIAL_GRADIENT);
+        light.setGradientCenter(x, y);
+        light.setGradientRadius(radius);
+        light.setColors(new int[] {colour, colour & 0x00FFFFFF});
+        return light;
+    }
+
+    /** The lifted fill: a brighter surface, lit at the top, with the white rim. */
     private Drawable focusedFill(int radius) {
-        GradientDrawable sheen = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {SHEEN, 0, 0});
-        sheen.setCornerRadius(dp(radius));
-        return new LayerDrawable(new Drawable[] {outlined(SURFACE_FOCUSED, radius), sheen});
+        return lit(SURFACE_FOCUSED, radius);
     }
 
     private static StateListDrawable states(Drawable normal, Drawable selected, Drawable focused,

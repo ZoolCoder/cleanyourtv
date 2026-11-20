@@ -96,7 +96,58 @@ public class PinGuardTest {
         assertEquals(1, trips.get());
         assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
         now.addAndGet(PinGuard.LOCKOUT_MS);
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        now.addAndGet(PinGuard.WINDOW_MS - PinGuard.LOCKOUT_MS - 1);
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        now.addAndGet(1);
         assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "123456", "123456"));
+        // A wrong PIN afterwards opens a fresh hour instead of locking everyone out again.
+        assertEquals(PinGuard.Result.WRONG, guard.check("10.0.0.201", "000000", "123456"));
+        assertEquals(1, trips.get());
+    }
+
+    @Test
+    public void aClockSetBackPastTheHourStartsTheCountAfresh() {
+        AtomicInteger trips = new AtomicInteger();
+        PinGuard guard = new PinGuard(now::get, null, trips::incrementAndGet);
+        long start = now.get();
+        spray(guard, PinGuard.MAX_WRONG_ALL);
+        // Set back by an hour and a minute, the lockout is clamped to end a minute before the old hour began.
+        now.addAndGet(-PinGuard.WINDOW_MS - 60_000);
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        // Nobody tried in that minute; the next wrong PIN falls inside the old hour again.
+        now.set(start + 60_000);
+        assertEquals(PinGuard.Result.WRONG, guard.check("10.0.0.201", "000000", "123456"));
+        assertEquals(1, trips.get());
+    }
+
+    @Test
+    public void theEveryoneLockoutLastsTheRestOfTheHour() {
+        AtomicInteger trips = new AtomicInteger();
+        PinGuard guard = new PinGuard(now::get, null, trips::incrementAndGet);
+        spray(guard, PinGuard.MAX_WRONG_ALL - 1);
+        now.addAndGet(PinGuard.WINDOW_MS - 2 * 60_000);
+        spray(guard, 1);
+        assertEquals(1, trips.get());
+        // Two minutes were left of the hour: the lockout still lasts its five.
+        now.addAndGet(PinGuard.LOCKOUT_MS - 1);
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        now.addAndGet(1);
+        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "123456", "123456"));
+    }
+
+    @Test
+    public void manyAddressesGetFiftyGuessesAnHourNotEveryFiveMinutes() {
+        AtomicInteger trips = new AtomicInteger();
+        PinGuard guard = new PinGuard(now::get, null, trips::incrementAndGet);
+        int wrong = 0;
+        for (int minute = 0; minute < 60; minute++, now.addAndGet(60_000)) {
+            for (int i = 0; i < 20; i++) {
+                if (guard.check("10." + minute + ".0." + i, "000000", "123456") == PinGuard.Result.WRONG) wrong++;
+            }
+        }
+        assertEquals(PinGuard.MAX_WRONG_ALL, wrong);
+        assertEquals(1, trips.get());
     }
 
     @Test
@@ -132,7 +183,7 @@ public class PinGuardTest {
         spray(new PinGuard(now::get, mem, null), PinGuard.MAX_WRONG_ALL);
         PinGuard restarted = new PinGuard(now::get, mem, null);
         assertEquals(PinGuard.Result.LOCKED, restarted.check("10.0.0.200", "123456", "123456"));
-        now.addAndGet(PinGuard.LOCKOUT_MS);
+        now.addAndGet(PinGuard.WINDOW_MS);
         assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("10.0.0.200", "123456", "123456"));
     }
 
@@ -149,10 +200,10 @@ public class PinGuardTest {
     @Test
     public void storedLockoutBeyondItsLengthIsClamped() {
         Mem mem = new Mem();
-        mem.saved = new long[] {0, 0, now.get() + 10 * PinGuard.LOCKOUT_MS};
+        mem.saved = new long[] {0, 0, now.get() + 10 * PinGuard.WINDOW_MS};
         PinGuard guard = new PinGuard(now::get, mem, null);
         assertEquals(PinGuard.Result.LOCKED, guard.check("123456", "123456"));
-        now.addAndGet(PinGuard.LOCKOUT_MS);
+        now.addAndGet(PinGuard.WINDOW_MS);
         assertEquals(PinGuard.Result.OK, guard.check("123456", "123456"));
     }
 

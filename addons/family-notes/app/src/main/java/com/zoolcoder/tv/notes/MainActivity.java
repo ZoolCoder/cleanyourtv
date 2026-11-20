@@ -542,8 +542,8 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * While wrong PINs lock everyone out, how long is left, counted down each minute; after a lockout made a new
-     * PIN, that for 10 minutes; otherwise the rule.
+     * While wrong PINs lock everyone out, how long is left, counted down each minute; after a lockout that made a
+     * new PIN ends, that for 10 minutes; otherwise the rule.
      */
     private void showLockout() {
         lockout.removeCallbacks(lockoutTick);
@@ -561,7 +561,7 @@ public class MainActivity extends Activity {
         lockout.setText(getResources().getQuantityString(R.plurals.locked_for, minutes, minutes));
         lockout.setTextColor(Look.WARN);
         // Next tick when the shown number changes, so the line never says one minute too many.
-        long untilChange = (Math.min(lockedUntil - now, PinGuard.LOCKOUT_MS) - 1) % 60_000 + 1;
+        long untilChange = (Math.min(lockedUntil - now, PinGuard.GLOBAL_WINDOW_MS) - 1) % 60_000 + 1;
         lockout.postDelayed(lockoutTick, untilChange);
     }
 

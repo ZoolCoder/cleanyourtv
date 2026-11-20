@@ -11,7 +11,7 @@
     <string name="address_off">Turn on the switch above to connect a phone.</string>
     <string name="no_address">No home network address found. Connect the TV to Wi-Fi or Ethernet.</string>
     <string name="pin_label">Enter this PIN</string>
-    <string name="pin_hint">Five wrong PINs lock a phone out and change the PIN.</string>
+    <string name="pin_hint">Five wrong PINs lock a phone out for 5 minutes.</string>
     <string name="pin_rotated">Too many wrong PINs, so the PIN changed</string>
     <string name="new_pin">New PIN</string>
     <string name="overlay_ok">Pop-ups over the picture are allowed.</string>

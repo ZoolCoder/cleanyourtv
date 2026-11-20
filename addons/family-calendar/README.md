@@ -105,8 +105,8 @@ sniffing your Wi-Fi. These are the guards:
 - **PIN on every request.** Adding, listing and deleting all need the PIN: six random digits
   (`SecureRandom`), made on first run, compared in constant time. After 5 wrong PINs in a row, that phone
   (its address) is refused for 5 minutes (answer 429), even with the right PIN; the other phones go on
-  working. 50 wrong PINs within an hour from all addresses together lock everyone out for 5 minutes, also
-  across a restart, and make a new PIN, so the phones must scan the QR code again. **New PIN** replaces it by
+  working. 50 wrong PINs within an hour from all addresses together lock everyone out until that hour is
+  over (at least 5 minutes), also across a restart, and make a new PIN, so the phones must scan the QR code again. **New PIN** replaces it by
   hand. The QR code carries the PIN after the `#`, which the browser never sends; the page takes it, drops
   it from the address bar and keeps it only for that browser tab.
 - **Local addresses only.** Connections from anything but this TV, a 10.x, 172.16-31.x or 192.168.x address

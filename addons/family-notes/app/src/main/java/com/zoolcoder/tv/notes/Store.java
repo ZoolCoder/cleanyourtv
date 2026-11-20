@@ -57,13 +57,13 @@ final class Store {
     }
 
     /** A lockout tripped: whoever was guessing loses all progress, and the screen says the PIN changed. */
-    void rotatePinAfterLockout(long now) {
+    void rotatePinAfterLockout(long lockoutEnds) {
         synchronized (LOCK) {
-            prefs.edit().putString(PIN, PinGuard.newPin(new SecureRandom())).putLong(PIN_ROTATED, now).commit();
+            prefs.edit().putString(PIN, PinGuard.newPin(new SecureRandom())).putLong(PIN_ROTATED, lockoutEnds).commit();
         }
     }
 
-    /** When a lockout last made a new PIN (wall time), or 0 since the owner chose one. */
+    /** When the lockout that last made a new PIN ends (wall time), or 0 since the owner chose one. */
     long pinRotated() {
         try {
             return prefs.getLong(PIN_ROTATED, 0);

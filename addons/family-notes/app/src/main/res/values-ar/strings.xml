@@ -10,7 +10,7 @@
     <string name="address_off">شغّل المفتاح أعلاه لربط هاتف.</string>
     <string name="no_address">لا يوجد عنوان في شبكة المنزل. صِل التلفزيون بشبكة Wi-Fi أو بالكابل.</string>
     <string name="pin_label">أدخل هذا الرمز السري</string>
-    <string name="pin_hint">خمس محاولات خاطئة توقف الهاتف وتغيّر الرمز.</string>
+    <string name="pin_hint">خمس محاولات خاطئة توقف الهاتف خمس دقائق.</string>
     <string name="pin_rotated">محاولات خاطئة كثيرة، فتغيّر الرمز</string>
     <string name="new_pin">رمز جديد</string>
     <string name="overlay_ok">الإشعارات فوق الصورة مسموحة.</string>

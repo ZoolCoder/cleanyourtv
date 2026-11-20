@@ -23,9 +23,9 @@ are allowed.
 - **Quiet hours.** OK on the **Quiet hours** row steps through Off, 22:00–07:00, 23:00–08:00 and 21:00–06:00
   (the TV's own clock). Inside the window notes still arrive and are listed, but nothing pops up over the
   picture. The choice is kept on the TV.
-- **Locked out.** After 5 wrong PINs from one phone, that phone waits 5 minutes and the TV makes a new PIN;
-  the screen says so for 10 minutes. If phones together send 50 wrong PINs within an hour, everyone waits,
-  and the screen counts the minutes down.
+- **Locked out.** After 5 wrong PINs from one phone, that phone waits 5 minutes. If phones together send 50
+  wrong PINs within an hour, everyone waits until that hour is over and the screen counts the minutes down;
+  the TV makes a new PIN and, once the wait is over, the screen says so for 10 minutes.
 
 - A note is at most 280 characters and 4 lines, a name at most 24 characters. Control characters are
   removed. Notes are shown as plain text, never as HTML or links.
@@ -90,8 +90,9 @@ sniffing your Wi-Fi. These are the guards:
 
 - **PIN.** Six random digits (`SecureRandom`), made on first run, compared in constant time. Wrong PINs are
   counted per phone: after 5 in a row that phone is refused for 5 minutes (answer 429), even with the right
-  PIN, and the TV makes a new PIN, so one phone cannot lock the family out or keep guessing. 50 wrong PINs
-  within an hour from all phones together refuse everyone for 5 minutes, also after a restart. **New PIN** on
+  PIN, so one phone cannot lock the family out or keep guessing. 50 wrong PINs within an hour from all phones
+  together refuse everyone until that hour is over (at least 5 minutes), also after a restart, and make a new
+  PIN; a lockout does not reset the count, so many phones still get 50 guesses an hour. **New PIN** on
   the screen replaces it by hand. The page keeps the PIN for the browser tab only, not on the phone.
 - **Local addresses only.** Connections from anything but this TV, a 10.x, 172.16-31.x or 192.168.x address
   or a link-local address are closed at once.

@@ -12,7 +12,9 @@ import java.util.function.LongSupplier;
  * The PIN check and the lockouts. Wrong PINs are counted per phone (peer address): five in a row lock that
  * phone out for five minutes, right PIN or not, so one device on the Wi-Fi cannot lock the family out. A
  * right PIN before that resets its count. As a backstop, 50 wrong PINs within an hour from all phones together
- * lock everyone out for five minutes. Every lockout calls the trip listener, which makes a new PIN. The
+ * lock everyone out until that hour is over, at least five minutes, so many phones get 50 guesses an hour, not
+ * 50 every five minutes. Only that lockout calls the trip listener, which makes a new PIN: one phone locking
+ * itself out must not change the family's PIN. The
  * clock is injected so the lockouts can be tested.
  */
 final class PinGuard {
@@ -59,7 +61,7 @@ final class PinGuard {
         if (memory != null) restore(memory.load());
     }
 
-    /** Runs on the connection thread each time a phone or everyone gets locked out. */
+    /** Runs on the connection thread each time wrong PINs from all phones lock everyone out. */
     synchronized void setOnTrip(Runnable onTrip) {
         this.onTrip = onTrip;
     }
@@ -67,13 +69,13 @@ final class PinGuard {
     private void restore(long[] saved) {
         long now = clock.getAsLong();
         globalWrong = (int) Math.max(0, Math.min(saved[0], GLOBAL_MAX_WRONG));
-        lockedUntil = clamp(saved[1], now);
+        lockedUntil = clamp(saved[1], now, GLOBAL_WINDOW_MS);
         if (lockedUntil == 0 && globalWrong >= GLOBAL_MAX_WRONG) globalWrong = 0;
     }
 
-    /** A clock set back must not stretch a lockout past its length; one already over is 0. */
-    private static long clamp(long until, long now) {
-        return until > now ? Math.min(until, now + LOCKOUT_MS) : 0;
+    /** A clock set back must not stretch a lockout past max; one already over is 0. */
+    private static long clamp(long until, long now, long max) {
+        return until > now ? Math.min(until, now + max) : 0;
     }
 
     private void remember() {
@@ -86,10 +88,10 @@ final class PinGuard {
         return pin.toString();
     }
 
-    /** Whole minutes left in a lockout ending at lockedUntil, rounded up; 0 when none runs. Never above the length. */
+    /** Whole minutes left in a lockout ending at lockedUntil, rounded up; 0 when none runs. Never above an hour. */
     static int minutesLeft(long lockedUntil, long now) {
         if (lockedUntil <= now) return 0;
-        long left = Math.min(lockedUntil - now, LOCKOUT_MS);
+        long left = Math.min(lockedUntil - now, GLOBAL_WINDOW_MS);
         return (int) ((left + 59_999) / 60_000);
     }
 
@@ -123,14 +125,14 @@ final class PinGuard {
             }
         }
         if (lockedUntil != 0) {
-            lockedUntil = clamp(lockedUntil, now);
+            lockedUntil = clamp(lockedUntil, now, GLOBAL_WINDOW_MS);
             if (lockedUntil != 0) return Result.LOCKED;
             globalWrong = 0;
             remember();
         }
         Peer state = peers.get(address);
         if (state != null && state.lockedUntil != 0) {
-            state.lockedUntil = clamp(state.lockedUntil, now);
+            state.lockedUntil = clamp(state.lockedUntil, now, LOCKOUT_MS);
             if (state.lockedUntil != 0) return Result.LOCKED;
             state.wrong = 0;
         }
@@ -145,12 +147,9 @@ final class PinGuard {
             trim(now);
         }
         // The try that starts a lockout still hears "wrong"; only later tries hear "locked".
-        if (++state.wrong >= MAX_WRONG) {
-            state.lockedUntil = now + LOCKOUT_MS;
-            tripped = true;
-        }
+        if (++state.wrong >= MAX_WRONG) state.lockedUntil = now + LOCKOUT_MS;
         if (++globalWrong >= GLOBAL_MAX_WRONG) {
-            lockedUntil = now + LOCKOUT_MS;
+            lockedUntil = Math.max(now + LOCKOUT_MS, windowStart + GLOBAL_WINDOW_MS);
             tripped = true;
         }
         remember();
@@ -161,7 +160,7 @@ final class PinGuard {
     private void trim(long now) {
         if (peers.size() <= MAX_PEERS) return;
         for (Iterator<Peer> it = peers.values().iterator(); it.hasNext() && peers.size() > MAX_PEERS; ) {
-            if (clamp(it.next().lockedUntil, now) == 0) it.remove();
+            if (clamp(it.next().lockedUntil, now, LOCKOUT_MS) == 0) it.remove();
         }
         for (Iterator<Peer> it = peers.values().iterator(); it.hasNext() && peers.size() > MAX_PEERS; ) {
             it.next();
@@ -171,6 +170,6 @@ final class PinGuard {
 
     /** When the everyone-lockout ends, or 0. */
     synchronized long lockedUntil() {
-        return clamp(lockedUntil, clock.getAsLong());
+        return clamp(lockedUntil, clock.getAsLong(), GLOBAL_WINDOW_MS);
     }
 }

@@ -122,7 +122,8 @@ public class NoteService extends Service {
         int port = getResources().getInteger(R.integer.port);
         if (port < 1024 || port > 65535) port = 8765;
         PinGuard guard = new PinGuard(System::currentTimeMillis, store.lockoutMemory());
-        guard.setOnTrip(() -> store.rotatePinAfterLockout(System.currentTimeMillis()));
+        // Stamped with the lockout's end: the new PIN is news once phones may try again, not while all wait.
+        guard.setOnTrip(() -> store.rotatePinAfterLockout(guard.lockedUntil()));
         NoteEndpoint endpoint = new NoteEndpoint(readPage(), store::pin, guard, System::currentTimeMillis, this::onNote);
         NoteServer candidate = new NoteServer(port, endpoint);
         try {

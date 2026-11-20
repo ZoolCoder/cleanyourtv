@@ -12,8 +12,9 @@ import java.util.function.LongSupplier;
  * The PIN check and the lockouts. Five wrong PINs in a row from one address lock that address out for five
  * minutes, right PIN or not; a right PIN before that resets its count. So one device on the Wi-Fi cannot lock
  * the whole family out. As a backstop, 50 wrong PINs within an hour from all addresses together lock everyone
- * out for five minutes and call {@code onTrip}, which makes a new PIN: someone is guessing in earnest. The
- * clock is injected so the lockouts can be tested.
+ * out until that hour is over, at least five minutes, and call {@code onTrip}, which makes a new PIN: someone is
+ * guessing in earnest. The count is not reset by the lockout, so many addresses get 50 guesses an hour, not 50
+ * every five minutes. The clock is injected so the lockouts can be tested.
  */
 final class PinGuard {
     enum Result { OK, WRONG, LOCKED }
@@ -64,12 +65,12 @@ final class PinGuard {
         if (saved == null || saved.length < 3) return;
         windowStart = saved[1] > now || saved[1] <= now - WINDOW_MS ? 0 : saved[1];
         wrongAll = windowStart == 0 ? 0 : (int) Math.max(0, Math.min(saved[0], MAX_WRONG_ALL));
-        lockedUntilAll = clamp(saved[2], now);
+        lockedUntilAll = clamp(saved[2], now, WINDOW_MS);
     }
 
-    /** A lockout end no later than one lockout from now, so a clock set back cannot stretch it. */
-    private static long clamp(long lockedUntil, long now) {
-        return lockedUntil != 0 && lockedUntil > now ? Math.min(lockedUntil, now + LOCKOUT_MS) : 0;
+    /** A lockout end no later than max from now, so a clock set back cannot stretch it. */
+    private static long clamp(long lockedUntil, long now, long max) {
+        return lockedUntil != 0 && lockedUntil > now ? Math.min(lockedUntil, now + max) : 0;
     }
 
     private void remember() {
@@ -88,11 +89,17 @@ final class PinGuard {
 
     synchronized Result check(String peerAddress, String given, String pin) {
         long now = clock.getAsLong();
-        lockedUntilAll = clamp(lockedUntilAll, now);
-        if (lockedUntilAll != 0) return Result.LOCKED;
+        if (lockedUntilAll != 0) {
+            lockedUntilAll = clamp(lockedUntilAll, now, WINDOW_MS);
+            if (lockedUntilAll != 0) return Result.LOCKED;
+            // Over: count afresh, also when the clock went back past the window it was counting.
+            wrongAll = 0;
+            windowStart = 0;
+            remember();
+        }
         Peer peer = peers.get(peerAddress);
         if (peer != null) {
-            peer.lockedUntil = clamp(peer.lockedUntil, now);
+            peer.lockedUntil = clamp(peer.lockedUntil, now, LOCKOUT_MS);
             if (peer.lockedUntil != 0) return Result.LOCKED;
             if (peer.wrong >= MAX_WRONG) peer.wrong = 0;
         }
@@ -124,9 +131,7 @@ final class PinGuard {
             wrongAll = 0;
         }
         if (++wrongAll >= MAX_WRONG_ALL) {
-            lockedUntilAll = now + LOCKOUT_MS;
-            wrongAll = 0;
-            windowStart = 0;
+            lockedUntilAll = Math.max(now + LOCKOUT_MS, windowStart + WINDOW_MS);
             peers.clear();
             if (onTrip != null) onTrip.run();
         }

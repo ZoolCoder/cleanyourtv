@@ -9,7 +9,7 @@ export interface Env {
   LIMITER: DurableObjectNamespace<Limiter>;
 }
 
-const BOX_PATH = /^\/v1\/box\/([^/]+)(\/send|\/msg)?$/;
+const BOX_PATH = /^\/v1\/box\/([^/]+)(\/send|\/msg|\/seen)?$/;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -72,6 +72,7 @@ async function route(request: Request, env: Env): Promise<Response> {
     const hash = await tokenHash(request);
     return reply(await box.list(hash, seqParam(url, "after")));
   }
+  if (tail === "/seen" && method === "GET") return reply(await box.seen(await tokenHash(request)));
   if (tail === "/msg" && method === "DELETE") {
     const hash = await tokenHash(request);
     return reply(await box.ack(hash, seqParam(url, "upto")));

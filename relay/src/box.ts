@@ -113,7 +113,17 @@ export class Box extends DurableObject {
   async ack(readHash: string, upto: number): Promise<Result> {
     if (!this.reader(readHash)) return UNAUTHORIZED;
     this.sql.exec("DELETE FROM msgs WHERE seq <= ?", upto);
+    // Kept for the senders: everything up to here is on the TV. Never past what was sent, never back.
+    const acked = Math.max(Number(this.get("acked") ?? 0), Math.min(upto, Number(this.get("seq"))));
+    this.put("acked", acked);
     return ok({ ok: true });
+  }
+
+  /** For a sender: the last message the TV has saved, so the phone can say a note arrived. */
+  async seen(sendHash: string): Promise<Result> {
+    const stored = this.get("send");
+    if (stored === null || !sameHash(stored, sendHash)) return UNAUTHORIZED;
+    return ok({ acked: Number(this.get("acked") ?? 0) });
   }
 
   async destroy(readHash: string): Promise<Result> {

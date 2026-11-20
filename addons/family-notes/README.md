@@ -45,6 +45,9 @@ Without one, the app has no Family away panel and makes no outgoing connection.
    **Notes from family abroad** row. The TV sets up a box on the relay ("Setting up…").
 3. Scan the QR code with your phone's camera, copy the link and send it on WhatsApp. The relative opens it
    once; their phone remembers the box, and they type their name and the note.
+   Below the form the page lists the last 10 things sent from that phone, each marked **✓ On the TV** once
+   the TV has picked it up, or **Waiting for the TV** until then. So anyone holding the link can also see
+   when the TV last picked messages up; **New link** cuts off old holders.
 
 The TV asks the relay every 2 minutes, at once when you open the app, and less often (up to every 15
 minutes) while the relay cannot be reached. The status line says when it last got through. **New link**

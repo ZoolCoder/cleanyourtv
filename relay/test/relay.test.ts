@@ -196,6 +196,24 @@ describe("messages", () => {
     expect((await call("POST", `/v1/box/${f.boxId}/msg`, { token: f.send, body: { c: wire() } })).status).toBe(401);
   });
 
+  it("tells a sender how far the TV has saved, never past what was sent and never back", async () => {
+    const f = await createFamily();
+    const seen = async (token: string) => call("GET", `/v1/box/${f.boxId}/seen`, { token });
+    expect(await (await seen(f.send)).json()).toEqual({ acked: 0 });
+    for (let i = 0; i < 3; i++) await call("POST", `/v1/box/${f.boxId}/msg`, { token: f.send, body: { c: wire() } });
+
+    await call("DELETE", `/v1/box/${f.boxId}/msg?upto=2`, { token: f.read });
+    expect(await (await seen(f.send)).json()).toEqual({ acked: 2 });
+    await call("DELETE", `/v1/box/${f.boxId}/msg?upto=1`, { token: f.read });
+    expect(await (await seen(f.send)).json()).toEqual({ acked: 2 });
+    await call("DELETE", `/v1/box/${f.boxId}/msg?upto=999`, { token: f.read });
+    expect(await (await seen(f.send)).json()).toEqual({ acked: 3 });
+
+    expect((await seen(f.read)).status).toBe(401);
+    expect((await seen(random(32))).status).toBe(401);
+    expect((await call("POST", `/v1/box/${f.boxId}/seen`, { token: f.send })).status).toBe(405);
+  });
+
   it("lets the same box id be created again after deletion", async () => {
     const f = await createFamily();
     await call("DELETE", `/v1/box/${f.boxId}`, { token: f.read });

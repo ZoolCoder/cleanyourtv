@@ -81,6 +81,7 @@ base64url without padding.
 | `POST /v1/box/<id>/msg` | send token | `{"c":"<base64url iv‖ciphertext‖tag>"}` | 200 `{"seq":n}` |
 | `GET /v1/box/<id>/msg?after=<seq>` | read token | | 200 `{"msgs":[{"seq","c","at"}],"next":seq}`, 50 per page |
 | `DELETE /v1/box/<id>/msg?upto=<seq>` | read token | | 200, deletes messages up to `seq` |
+| `GET /v1/box/<id>/seen` | send token | | 200 `{"acked":seq}`, the highest `seq` the TV has deleted, so the page can mark a note as on the TV. Anyone holding the link can see when the TV last picked messages up; a new link cuts old holders off |
 | `PUT /v1/box/<id>/send` | read token | `{"sendHash"}` | 200, the old send token stops working |
 | `DELETE /v1/box/<id>` | read token | | 200, the box and its messages are gone |
 | `GET /f/` | none | invite in the fragment | the phone page |

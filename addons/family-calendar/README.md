@@ -76,7 +76,9 @@ It is off in the build here: with `relay_url` empty in `app/src/main/res/values/
 - **Away tab.** The **Events from family abroad** switch (off until you turn it on), how the relay is doing
   (Setting up, Last contact N minutes ago, Can't reach the relay, Link revoked), and an invite: a QR code and
   the link `<relay>/f/#box.sendToken.key.lang.event`. Send the link; a relative opens it, fills in an event
-  and sends it. **New link** (it asks first) makes a new send token, so links shared before stop working.
+  and sends it. The page lists the last 10 things that phone sent, each marked **✓ On the TV** once the TV
+  has saved it, so anyone holding the link can also see when the TV last picked messages up. **New link**
+  (it asks first) makes a new send token, so links shared before stop working.
   **Delete box** (it asks first) deletes the box on the relay and its keys on the TV.
 - **The relay never reads an event.** The key rides in the link's `#` part, which the browser never sends.
   The phone seals each event with AES-256-GCM before it leaves, and the TV opens it. The relay keeps sealed

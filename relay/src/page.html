@@ -54,6 +54,12 @@
   .status span { display: block; color: var(--dim); font-weight: 400; font-size: 15px; }
   .card { padding: 18px; border-radius: 16px; background: var(--surface); }
   .card p { margin: 0 0 10px; }
+  .sent { margin: 22px 0 0; padding: 0; list-style: none; }
+  .sent h2 { margin: 0 0 6px; color: var(--dim); font-size: 13px; font-weight: 700; text-transform: uppercase; }
+  .sent li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--raised); }
+  .sent li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sent li b { flex: none; color: var(--dim); font-size: 14px; font-weight: 600; }
+  .sent li b.on { color: var(--note); }
   .lock { margin-top: 22px; color: var(--dim); font-size: 13px; text-align: center; }
   [hidden] { display: none !important; }
 </style>
@@ -111,6 +117,7 @@
     </form>
 
     <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+    <ul class="sent" id="sent" hidden></ul>
     <button type="button" class="link" id="rename"></button>
     <p class="lock" id="lock"></p>
   </section>
@@ -127,6 +134,7 @@
       etitle: "What is it?", date: "Date", time: "Time", allday: "All day", repeat: "Repeat",
       none: "Once", weekly: "Every week", yearly: "Every year", remind: "Remind on the TV", sendEvent: "Add to calendar",
       sending: "Sending…", sent: "Sent to the TV at home", sentHint: "The TV picks it up within a few minutes.",
+      recent: "Sent from this phone", onTv: "✓ On the TV", waiting: "Waiting for the TV",
       offline: "You are offline", offlineHint: "It sends by itself when you are back online.",
       failed: "Not sent", failedHint: "Try again in a moment.",
       busy: "Too many messages for now", busyHint: "Wait an hour, then try again.",
@@ -142,6 +150,7 @@
       etitle: "ما المناسبة؟", date: "التاريخ", time: "الوقت", allday: "طوال اليوم", repeat: "التكرار",
       none: "مرة واحدة", weekly: "كل أسبوع", yearly: "كل سنة", remind: "تذكير على التلفزيون", sendEvent: "أضف إلى التقويم",
       sending: "جارٍ الإرسال…", sent: "وصلت إلى تلفزيون البيت", sentHint: "يستلمها التلفزيون خلال دقائق.",
+      recent: "أُرسلت من هذا الهاتف", onTv: "✓ على التلفزيون", waiting: "بانتظار التلفزيون",
       offline: "لا يوجد اتصال", offlineHint: "ستُرسل تلقائيًا عند عودة الاتصال.",
       failed: "لم تُرسل", failedHint: "حاول مرة أخرى بعد قليل.",
       busy: "رسائل كثيرة الآن", busyHint: "انتظر ساعة ثم حاول مرة أخرى.",
@@ -156,7 +165,7 @@
 
   function load() {
     try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && typeof s === "object" && s.boxes) return s; } catch (e) {}
-    return { boxes: {}, name: "", lang: "" };
+    return { boxes: {}, name: "", lang: "", sent: [] };
   }
   var state = load();
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
@@ -245,7 +254,76 @@
     document.body.className = mode;
     var box = boxFor(mode);
     if (box && box.revoked) show("bad", "revoked");
+    renderSent();
   }
+
+  // What this phone sent, newest first, and whether the TV has saved it yet. The relay keeps a message at
+  // most 14 days, so one older than that will not arrive and is forgotten.
+  var SENT_MAX = 10, SENT_TTL = 14 * 24 * 3600 * 1000;
+  // An entry belongs to a box by id and key: a box deleted and made again under the same id has a new key,
+  // and its numbers start over, so an old entry must not be marked by them.
+  function boxById(id, key) {
+    var ks = Object.keys(state.boxes);
+    for (var i = 0; i < ks.length; i++) {
+      var b = state.boxes[ks[i]];
+      if (b.id === id && b.key.slice(0, 8) === key) return b;
+    }
+    return null;
+  }
+  function liveSent() {
+    var now = Date.now();
+    return (Array.isArray(state.sent) ? state.sent : []).filter(function (m) {
+      return m && typeof m.seq === "number" && now - m.at < SENT_TTL && boxById(m.box, m.key);
+    });
+  }
+  function renderSent() {
+    var list = liveSent(), el = $("sent");
+    el.textContent = "";
+    el.hidden = !list.length;
+    if (!list.length) return;
+    var h = document.createElement("h2");
+    h.textContent = t("recent");
+    el.appendChild(h);
+    list.forEach(function (m) {
+      var li = document.createElement("li"), label = document.createElement("span"), mark = document.createElement("b");
+      label.textContent = m.label;
+      label.dir = "auto";
+      mark.textContent = t(m.on ? "onTv" : "waiting");
+      if (m.on) mark.className = "on";
+      li.appendChild(label); li.appendChild(mark);
+      el.appendChild(li);
+    });
+  }
+  function remember(box, seq, label) {
+    state.sent = [{ box: box.id, key: box.key.slice(0, 8), seq: seq, label: label.slice(0, 60), at: Date.now(), on: false }].concat(liveSent()).slice(0, SENT_MAX);
+    save();
+  }
+
+  // Ask the relay how far each box's TV has got, only while something is still on its way.
+  var seenTimer = null;
+  function checkSeen() {
+    clearTimeout(seenTimer);
+    var waiting = liveSent().filter(function (m) { return !m.on && !boxById(m.box, m.key).revoked; });
+    if (!waiting.length || document.hidden || !navigator.onLine) return;
+    var boxes = waiting.map(function (m) { return boxById(m.box, m.key); }).filter(function (b, i, a) { return a.indexOf(b) === i; });
+    Promise.all(boxes.map(function (box) {
+      return fetch("/v1/box/" + box.id + "/seen", {
+        credentials: "omit", cache: "no-store", referrerPolicy: "no-referrer",
+        headers: { "Authorization": "Bearer " + box.token }
+      }).then(function (r) {
+        if (r.status === 401) { box.revoked = true; return; }
+        if (!r.ok) return;
+        return r.json().then(function (j) {
+          if (typeof j.acked !== "number") return;
+          state.sent.forEach(function (m) { if (m && boxById(m.box, m.key) === box && m.seq <= j.acked) m.on = true; });
+        });
+      }).catch(function () {});
+    })).then(function () {
+      save(); renderSent();
+      seenTimer = setTimeout(checkSeen, 30000);
+    });
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) checkSeen(); });
 
   function show(kind, key) {
     var el = $("status");
@@ -302,7 +380,12 @@
         });
       })
       .then(function (r) {
-        if (r.ok) { pending = null; job.done(); show("ok", "sent"); return; }
+        if (r.ok) {
+          pending = null; job.done(); show("ok", "sent");
+          return r.json().then(function (j) {
+            if (typeof j.seq === "number") { remember(box, j.seq, job.label); renderSent(); checkSeen(); }
+          }, function () {});
+        }
         if (r.status === 401) { box.revoked = true; save(); pending = null; show("bad", "revoked"); return; }
         if (r.status === 429) { pending = null; show("warn", "busy"); return; }
         pending = job; show("bad", "failed");
@@ -350,6 +433,7 @@
     if (!text) return;
     deliver({
       kind: "note",
+      label: text,
       payload: { v: 1, kind: "note", from: state.name, text: text, ts: Date.now() },
       done: function () { $("text").value = ""; $("textCount").textContent = "0 / 280"; }
     });
@@ -361,6 +445,7 @@
     if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (!allday && !/^\d{2}:\d{2}$/.test(time))) return;
     deliver({
       kind: "event",
+      label: title,
       payload: { v: 1, kind: "event", from: state.name, title: title, date: date, time: time, who: state.name,
                  repeat: repeat, remind: $("remind").checked, ts: Date.now() },
       done: function () { $("etitle").value = ""; }
@@ -368,7 +453,11 @@
   });
   window.addEventListener("online", function () { if (pending) deliver(pending); });
 
+  // Keep in storage only what can still be shown: nothing from a box this phone no longer holds.
+  state.sent = liveSent();
+  save();
   render();
+  checkSeen();
 })();
 </script>
 </body>

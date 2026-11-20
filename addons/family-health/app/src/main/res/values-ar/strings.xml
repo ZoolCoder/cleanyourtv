@@ -22,7 +22,7 @@
     </plurals>
 
     <string name="empty_title">الأدوية ومواعيد الطبيب للعائلة</string>
-    <string name="empty_body">تظهر التذكيرات فوق أي شيء يُعرض، وزر موافق يسجل أخذ الجرعة. جرّبه أولًا بعائلة مُتخيلة.</string>
+    <string name="empty_body">تظهر التذكيرات فوق أي شيء يُعرض، وزر موافق يسجل أخذ الجرعة. أضف عائلتك من هاتف، أو جرّبه أولًا بعائلة مُتخيلة.</string>
     <string name="show_example">اعرض مثالًا</string>
     <string name="remove_example">احذف المثال</string>
     <string name="overlay_off">التذكيرات فوق التطبيقات الأخرى متوقفة</string>
@@ -65,4 +65,31 @@
     <string name="example_cardiologist">طبيب قلب</string>
     <string name="example_clinic_1">عيادة الابتسامة للأسنان</string>
     <string name="example_clinic_2">مركز القلب</string>
+
+    <!-- الإضافة من الهاتف -->
+    <string name="add_from_phone">أضف من الهاتف</string>
+    <string name="hint_phone">أضف الأشخاص والأدوية والمواعيد من هاتف</string>
+    <string name="phone_switch">صفحة الهاتف</string>
+    <string name="phone_can">من صفحة الهاتف يمكنك</string>
+    <string name="phone_can_people">إضافة أفراد عائلتك</string>
+    <string name="phone_can_medicines">إضافة كل دواء: الجرعة والأوقات والأيام والعلبة</string>
+    <string name="phone_can_visits">إضافة مواعيد الطبيب</string>
+    <string name="phone_home_only">لا تصل إليها إلا هواتف شبكة المنزل، وبالرمز فقط. أوقفها بعد أن ينتهي الجميع.</string>
+    <string name="state_off">متوقفة. لا شيء يستمع.</string>
+    <string name="state_starting">جارٍ التشغيل…</string>
+    <string name="state_running">تعمل. تستمع على شبكة المنزل.</string>
+    <string name="state_port">المنفذ يستخدمه تطبيق آخر. غيّره في config.xml وأعد البناء.</string>
+    <string name="state_on">تعمل</string>
+    <string name="state_off_short">متوقفة</string>
+    <string name="connect_label">ربط هاتف</string>
+    <string name="step_open">افتح الكاميرا على هاتفك</string>
+    <string name="step_scan">امسح رمز QR هذا (نفس الواي فاي)</string>
+    <string name="pin_label">الرمز، إن طلبته الصفحة</string>
+    <string name="pin_hint">خمسة رموز خاطئة تقفل الصفحة ٥ دقائق.</string>
+    <string name="new_pin">رمز جديد</string>
+    <string name="pin_changed">تغيّر الرمز</string>
+    <string name="address_label">أو اكتب هذا العنوان:</string>
+    <string name="address_off">شغّل صفحة الهاتف لربط هاتف.</string>
+    <string name="address_wait">يظهر رمز QR حين تبدأ الصفحة بالاستماع.</string>
+    <string name="no_address">لا يوجد عنوان على شبكة المنزل. صِل التلفاز بالواي فاي أو الكابل.</string>
 </resources>

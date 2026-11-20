@@ -22,15 +22,18 @@ import java.util.List;
  */
 final class Store {
     private static final String TAG = "FamilyHealth";
+    private static final String BAD = "health.json.bad";
     private static Store instance;
 
     final Records records;
     private final AtomicFile file;
     private final List<Runnable> listeners = new ArrayList<>();
+    /** True when an unreadable file could not be kept aside: then nothing writes over it. */
+    private boolean keepOff;
 
     private Store(Context context) {
         file = new AtomicFile(new File(context.getFilesDir(), "health.json"));
-        records = load(file);
+        records = load();
         records.prune(LocalDate.now(), System.currentTimeMillis());
     }
 
@@ -39,32 +42,48 @@ final class Store {
         return instance;
     }
 
-    private static Records load(AtomicFile file) {
+    private Records load() {
+        byte[] bytes;
         try {
-            return Records.fromJson(new JSONObject(new String(file.readFully(), StandardCharsets.UTF_8)));
+            bytes = file.readFully();
         } catch (IOException e) {
             return new Records();
+        }
+        try {
+            return Records.fromJson(new JSONObject(new String(bytes, StandardCharsets.UTF_8)));
         } catch (JSONException e) {
-            Log.w(TAG, "unreadable records, starting empty");
+            // Kept aside, so the first save does not write over records someone may still recover.
+            Log.w(TAG, "unreadable records, kept as " + BAD + ", starting empty");
+            try (FileOutputStream bad = new FileOutputStream(new File(file.getBaseFile().getParentFile(), BAD))) {
+                bad.write(bytes);
+            } catch (IOException e2) {
+                Log.w(TAG, "could not keep the unreadable records aside, not saving over them");
+                keepOff = true;
+            }
             return new Records();
         }
     }
 
-    void changed() {
-        save();
+    /** Saves the records and tells the listeners. False when the file could not be written. */
+    boolean changed() {
+        boolean saved = save();
         for (Runnable listener : new ArrayList<>(listeners)) listener.run();
+        return saved;
     }
 
-    private void save() {
+    private boolean save() {
+        if (keepOff) return false;
         FileOutputStream out = null;
         try {
             byte[] bytes = records.toJson().toString().getBytes(StandardCharsets.UTF_8);
             out = file.startWrite();
             out.write(bytes);
             file.finishWrite(out);
+            return true;
         } catch (IOException | JSONException e) {
             if (out != null) file.failWrite(out);
             Log.w(TAG, "records not saved: " + e.getMessage());
+            return false;
         }
     }
 

@@ -4,7 +4,9 @@
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
-    <!-- No INTERNET: the records stay on the TV. One foreground service shows the reminders on time. -->
+    <!-- INTERNET only to listen on the home network for the phone page while it is switched on; the app never
+         connects out. One foreground service shows the reminders on time and runs that server. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- The reminder over what is playing. Granted over ADB (see the README). -->
@@ -41,7 +43,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Shows medicine and doctor appointment reminders over the picture at their time" />
+                android:value="Shows medicine and doctor appointment reminders over the picture at their time, and receives new ones from a phone on the home network" />
         </service>
 
         <!-- Not exported: the system still delivers its own boot and update broadcasts to it. -->

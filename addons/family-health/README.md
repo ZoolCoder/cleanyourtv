@@ -3,15 +3,14 @@
 Medicines and doctor visits for the whole family, on the TV. Today's doses for everyone, who has taken what,
 how many days each pack still lasts, and the coming appointments, in large glass cards a grandparent can read
 from the sofa. When a dose falls due, a reminder slides up over whatever is playing with **Taken** and
-**Later**, so nobody has to open the app to be reminded. Everything stays on the TV: no network permission,
-no accounts. For the [Clean Your TV](../../README.md) launcher it declares a
+**Later**, so nobody has to open the app to be reminded. Everything stays on the TV: the family, their medicines
+and appointments are added from a phone on the home network, and nothing goes out; no accounts. For the [Clean Your TV](../../README.md) launcher it declares a
 [module card](../../docs/modules.md), so once you answer **Show card** its tile reads "Family Health" with a
 teal glow; on any other Android TV home it is an ordinary app. Labels are in English and Arabic, and the
 screen mirrors in Arabic.
 
-This first version offers an invented example family (Grandma, Dad, Sara and Omar) to try it with: the
-empty screen has a **Show an example** button. Adding your own medicines and appointments from a phone
-comes next.
+To try it first, the empty screen has a **Show an example** button that fills in an invented family
+(Grandma, Dad, Sara and Omar). Adding your first own person removes it.
 
 ## On the TV
 
@@ -26,6 +25,28 @@ comes next.
   fewer), and their coming appointments with the doctor, specialty, place, day and time. Left and Right
   past the edge move to the next member; Back returns to Today, on that member's tab.
 - **Remove the example** in the header clears the invented family. It shows only while the example is there.
+- **Add from a phone** in the header (and on the empty screen) opens the phone page's switch, QR code and
+  PIN. Back returns to Today.
+
+## From a phone
+
+1. On the TV, open **Add from a phone** and turn on **Phone page**.
+2. On a phone on the **same Wi-Fi**, scan the QR code. It opens the page with the PIN filled in. Or type the
+   address the screen shows, like `http://192.168.1.50:8767`, and the PIN.
+3. Three tabs, in English and Arabic:
+   - **People**: a name (at most 24 characters) and one of six colours. Up to 12 people. **Delete** removes a
+     person with their medicines and appointments.
+   - **Medicines**: who it is for, the name, the dose, how to take it, one to eight times a day, the first
+     day, how many days (blank: ongoing, at most 365), units a dose (1 to 20) and units in the pack (blank:
+     not counted). Up to 40. **Refill** sets the pack after buying more; **Delete** removes one.
+   - **Visits**: who, the doctor, the specialty, the day (today up to two years ahead), the time, the place
+     and a note. Up to 60. The list shows those not yet over.
+4. The TV updates at once. Turn the switch off when everyone is set up: the reminders go on without it.
+
+- Text is one line; control characters and direction overrides are removed, and everything is shown as
+  plain text on the phone and the TV.
+- The port (default 8767; Family Notes uses 8765 and Family Calendar 8766) is in
+  `app/src/main/res/values/config.xml`. Edit it before you build.
 
 ## Reminders
 
@@ -42,17 +63,47 @@ comes next.
 
 ## Permissions
 
+- `INTERNET`: needed to listen on a port while **Phone page** is on. The app answers phones on the home
+  network and makes **no outgoing connection**.
 - `SYSTEM_ALERT_WINDOW`: draws the reminder over other apps. Many TVs hide this setting, so grant it over
   ADB (see below). Without it the app says **Reminders over other apps are off** in its header, and the
   doses stay on its own screen.
-- `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_SPECIAL_USE`: the reminder check runs as a foreground
-  service (type `specialUse`, with a notification) while there is anything to remind about, and stops
-  itself when the records are empty.
+- `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_SPECIAL_USE`: the reminder check and the phone page run as
+  a foreground service (type `specialUse`, with a notification) while there is anything to remind about or
+  the phone page is on, and it stops itself otherwise.
 - `RECEIVE_BOOT_COMPLETED`: starts the reminders again when the TV starts up or the app is updated, only
   when there is something to remind about.
 
-No `INTERNET`, no telemetry, no ads, no accounts. Backups are off. The records are one file in the app's own
-storage (`health.json`); doses older than 60 days are dropped from it.
+No telemetry, no ads, no accounts. Backups are off. The records are one file in the app's own storage
+(`health.json`); doses older than 60 days are dropped from it. A file the app cannot read is kept as
+`health.json.bad`, never written over.
+
+## Security
+
+Read this before you turn the phone page on. It works like [Family Calendar](../family-calendar/README.md#security)'s.
+
+**It is plain HTTP on your home network.** Anyone on the same Wi-Fi can open the page, and the PIN travels
+unencrypted, so someone who can watch your network can read it: the PIN stops casual misuse, not someone
+sniffing your Wi-Fi. The phone page is **off** until you turn it on. These are the guards:
+
+- **PIN on every request.** Listing, adding, refilling and deleting all need the PIN: six random digits
+  (`SecureRandom`), new each time the page is switched on, compared in constant time. After 5 wrong PINs in
+  a row, that phone (its address) is refused for 5 minutes (answer 429). 50 wrong PINs within an hour from
+  all addresses together make a new PIN and switch the page off, until you switch it on again. **New PIN**
+  replaces it by hand. The QR code carries the PIN after the `#`, which the browser never sends; the page takes it,
+  drops it from the address bar and keeps it only for that browser tab.
+- **Local addresses only.** Connections from anything but this TV, a 10.x, 172.16-31.x or 192.168.x address
+  or a link-local address are closed at once.
+- **No other sites.** The `Host` must be an IP address (a name means DNS rebinding), and a browser request
+  that says it is cross-site, or whose `Origin` is not the TV, is refused. Only form data is accepted.
+- **Small and short.** Request line and headers up to 8 KB, body up to 2 KB, with time limits and at most
+  8 connections, one per address.
+- **Saved means saved.** The phone hears "Saved" only after the change is on the TV's flash.
+- **No echo.** The page is one fixed file with a strict Content-Security-Policy; answers are a few fixed
+  words, and the list is JSON the page shows as text only.
+
+**Do not turn it on on shared or public Wi-Fi**, and do not forward its port on your router: health
+details are private.
 
 ## Build and install
 
@@ -80,7 +131,8 @@ builds with your own key if you hand them out; the launcher pins its Show answer
 
 `./gradlew testReleaseUnitTest` runs the tests on the JVM: the dose window, missed doses, snoozing, the
 appointment reminders, the week dots, taking and undoing a dose with the pack count, text
-cleaning, and the records file.
+cleaning, the records file, what a phone may add or delete, and the phone server's routes, PIN, lockout,
+origin checks and limits.
 
 ## Credits
 

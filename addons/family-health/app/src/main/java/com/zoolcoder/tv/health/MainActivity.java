@@ -29,17 +29,19 @@ public class MainActivity extends Activity {
     private Dates dates;
     private TodayPage today;
     private MemberPage member;
-    private TextView date, hijri, removeExample, overlayOff;
+    private PhonePage phone;
+    private TextView date, hijri, removeExample, addFromPhone, overlayOff;
     private LinearLayout hintBar;
-    private boolean onMember;
+    private boolean onMember, onPhone;
 
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
         store = Store.get(this);
         dates = new Dates(this);
-        today = new TodayPage(this, store, dates, this::openMember);
+        today = new TodayPage(this, store, dates, this::openMember, this::openPhone);
         member = new MemberPage(this, store, dates);
+        phone = new PhonePage(this, new Phone(this));
 
         LinearLayout page = Ui.column(this);
         page.setBackground(Look.backdrop(this));
@@ -50,7 +52,7 @@ public class MainActivity extends Activity {
 
         FrameLayout content = new FrameLayout(this);
         content.setClipChildren(false);
-        for (View v : new View[]{today.view(), member.view()}) {
+        for (View v : new View[]{today.view(), member.view(), phone.view()}) {
             content.addView(v, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT));
         }
@@ -91,6 +93,11 @@ public class MainActivity extends Activity {
         Look.pill(this, removeExample, Look.PILL, Look.TEXT);
         removeExample.setTextSize(14);
         header.addView(removeExample, Ui.start(this, 16));
+        addFromPhone = Ui.button(this, getString(R.string.add_from_phone), v -> openPhone());
+        Look.pill(this, addFromPhone, Look.PILL, Look.TEXT);
+        addFromPhone.setTextSize(14);
+        addFromPhone.setTag(R.id.hint, TodayPage.HINT_PHONE);
+        header.addView(addFromPhone, Ui.start(this, 12));
 
         LinearLayout when = Ui.column(this);
         when.setGravity(android.view.Gravity.END);
@@ -103,6 +110,7 @@ public class MainActivity extends Activity {
     }
 
     private void showToday() {
+        leavePhone();
         onMember = false;
         today.view().setVisibility(View.VISIBLE);
         member.view().setVisibility(View.GONE);
@@ -118,6 +126,25 @@ public class MainActivity extends Activity {
         hints(getCurrentFocus());
     }
 
+    private void openPhone() {
+        onMember = false;
+        onPhone = true;
+        today.view().setVisibility(View.GONE);
+        member.view().setVisibility(View.GONE);
+        phone.view().setVisibility(View.VISIBLE);
+        addFromPhone.setVisibility(View.GONE);
+        phone.start();
+        phone.focus();
+        hints(getCurrentFocus());
+    }
+
+    private void leavePhone() {
+        if (onPhone) phone.stop();
+        onPhone = false;
+        phone.view().setVisibility(View.GONE);
+        addFromPhone.setVisibility(View.VISIBLE);
+    }
+
     private void redraw() {
         Records r = store.records;
         LocalDate day = LocalDate.now();
@@ -129,7 +156,8 @@ public class MainActivity extends Activity {
             showToday();
             return;
         }
-        if (onMember) member.refresh();
+        if (onPhone) phone.refresh();
+        else if (onMember) member.refresh();
         else today.refresh();
         HealthService.sync(this);
         hints(getCurrentFocus());
@@ -162,6 +190,10 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (onPhone) {
+            showToday();
+            return;
+        }
         if (!onMember) {
             super.onBackPressed();
             return;
@@ -178,8 +210,9 @@ public class MainActivity extends Activity {
         if (what == TodayPage.HINT_UNDO) hint(R.string.key_hold_ok, R.string.hint_undo, 0);
         else hint(R.string.key_ok, what == TodayPage.HINT_TAKE ? R.string.hint_take
                 : what == TodayPage.HINT_OPEN ? R.string.hint_open
-                : what == TodayPage.HINT_EXAMPLE ? R.string.hint_example : R.string.hint_select, 0);
-        hint(R.string.key_back, onMember ? R.string.hint_today : R.string.hint_exit, 24);
+                : what == TodayPage.HINT_EXAMPLE ? R.string.hint_example
+                : what == TodayPage.HINT_PHONE ? R.string.hint_phone : R.string.hint_select, 0);
+        hint(R.string.key_back, onMember || onPhone ? R.string.hint_today : R.string.hint_exit, 24);
         if (onMember && store.records.members.size() > 1) hint(R.string.key_sides, R.string.hint_change_member, 24);
     }
 
@@ -194,6 +227,7 @@ public class MainActivity extends Activity {
     protected void onStart() {
         super.onStart();
         store.listen(changed);
+        if (onPhone) phone.start();
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener(focusChanged);
     }
 
@@ -213,6 +247,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onStop() {
+        if (onPhone) phone.stop();
         store.unlisten(changed);
         getWindow().getDecorView().getViewTreeObserver().removeOnGlobalFocusChangeListener(focusChanged);
         super.onStop();

@@ -74,6 +74,29 @@ final class Records {
         return true;
     }
 
+    /** Removes a medicine with its taken doses and waiting reminders. False when there was none. */
+    boolean removeMedicine(String id) {
+        if (!medicines.removeIf(m -> m.id.equals(id))) return false;
+        taken.keySet().removeIf(key -> Plan.medicineOf(key).equals(id));
+        used.keySet().retainAll(taken.keySet());
+        snoozed.keySet().removeIf(key -> Plan.medicineOf(key).equals(id));
+        return true;
+    }
+
+    boolean removeVisit(String id) {
+        if (!visits.removeIf(v -> v.id.equals(id))) return false;
+        told.removeIf(key -> key.startsWith(id + "#"));
+        return true;
+    }
+
+    /** Removes a member with all their medicines and appointments. */
+    boolean removeMember(String id) {
+        if (!members.removeIf(m -> m.id.equals(id))) return false;
+        for (Medicine m : new ArrayList<>(medicines)) if (m.member.equals(id)) removeMedicine(m.id);
+        for (Visit v : new ArrayList<>(visits)) if (v.member.equals(id)) removeVisit(v.id);
+        return true;
+    }
+
     void snooze(String key, long until) {
         snoozed.put(key, until);
     }
@@ -87,6 +110,19 @@ final class Records {
         snoozed.clear();
         told.clear();
         example = false;
+    }
+
+    /** Puts everything back as it is in {@code saved}: a change the TV could not save is not kept. */
+    void restore(Records saved) {
+        clear();
+        members.addAll(saved.members);
+        medicines.addAll(saved.medicines);
+        visits.addAll(saved.visits);
+        taken.putAll(saved.taken);
+        used.putAll(saved.used);
+        snoozed.putAll(saved.snoozed);
+        told.addAll(saved.told);
+        example = saved.example;
     }
 
     /** Forgets doses older than KEEP_DAYS, reminders that are over and appointments that are long past. */

@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Family Health</title>
+<style>
+  :root { color-scheme: dark; --accent: #14b8a6; --bg: #1e0a2c; --surface: rgba(255,255,255,.08);
+          --line: rgba(255,255,255,.14); --dim: #c9bfd4; --low: #f87171; --ok: #4fd18b; --warn: #f2c94c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 40px; background: var(--bg); color: #fff;
+         font: 17px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic", sans-serif; }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1;
+                 background: radial-gradient(75% 45% at 0% 0%, rgba(154,58,142,.40), transparent 70%),
+                             radial-gradient(65% 40% at 100% 100%, rgba(20,184,166,.28), transparent 70%); }
+  main { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 16px; display: flex; align-items: center; gap: 10px; }
+  h1::before { content: ""; width: 4px; height: 24px; border-radius: 2px; background: var(--accent); }
+  h2 { font-size: 17px; margin: 24px 0 4px; }
+  .tabs { display: flex; gap: 8px; margin: 18px 0 8px; }
+  .tabs button { flex: 1; margin: 0; padding: 12px 6px; border: 1px solid var(--line); border-radius: 999px;
+                 background: var(--surface); color: #fff; font: inherit; font-size: 14px; font-weight: 600;
+                 box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+  .tabs button.on { background: #fff; color: var(--bg); box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  label, .label { display: block; margin: 16px 0 6px; color: var(--dim); font-size: 15px; }
+  input, select { width: 100%; min-height: 50px; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+                  background: var(--surface); color: #fff; font: inherit; box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  select option { background: #2a1638; }
+  .pair { display: flex; gap: 12px; }
+  .pair > div { flex: 1; min-width: 0; }
+  .colors { display: flex; gap: 12px; flex-wrap: wrap; }
+  .colors button { width: 44px; height: 44px; margin: 0; padding: 0; border: 3px solid transparent; border-radius: 50%; }
+  .colors button.on { border-color: #fff; }
+  .c0 { background: #3b82f6; } .c1 { background: #ec4899; } .c2 { background: #f59e0b; }
+  .c3 { background: #22c55e; } .c4 { background: #a66bff; } .c5 { background: #ef4444; }
+  .times { display: flex; flex-wrap: wrap; gap: 8px; }
+  .times input { width: calc(50% - 4px); }
+  .small { margin-top: 10px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
+           color: #fff; font: inherit; font-size: 15px; }
+  .go { width: 100%; min-height: 54px; margin-top: 24px; padding: 14px; border: 0; border-radius: 14px; color: #fff;
+        font: inherit; font-weight: 700; background: linear-gradient(#17c2ae, #0e9384);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 10px 28px rgba(20,184,166,.30); }
+  .go:disabled { opacity: .6; }
+  .msg { margin-top: 14px; min-height: 1.4em; font-weight: 600; }
+  .msg.ok { color: var(--ok); } .msg.bad { color: var(--warn); }
+  small { color: var(--dim); }
+  #pinok { color: var(--ok); }
+  .note { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+          color: var(--dim); font-size: 15px; }
+  ul { list-style: none; margin: 12px 0 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 12px; border: 1px solid var(--line);
+       border-radius: 14px; background: var(--surface); box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+  li.head { display: block; margin: 18px 0 8px; padding: 0; border: 0; background: none; box-shadow: none;
+            color: var(--dim); font-size: 14px; font-weight: 600; }
+  li i { flex: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+         font-style: normal; font-weight: 700; }
+  li .what { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  li .what span { display: block; font-size: 14px; color: var(--dim); }
+  li .what span.low { color: var(--low); font-weight: 600; }
+  li .acts { display: flex; flex-direction: column; gap: 6px; flex: none; }
+  li button { margin: 0; padding: 9px 12px; border: 0; border-radius: 10px; font: inherit; font-size: 14px;
+              background: rgba(255,255,255,.12); color: #fff; }
+  li button.del { background: rgba(255,90,100,.16); color: #ff9aa0; }
+  .refresh { width: 100%; min-height: 48px; margin-top: 8px; border: 1px solid var(--line); border-radius: 12px;
+             background: var(--surface); color: #fff; font: inherit; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Family Health &middot; صحة العائلة</h1>
+
+  <label for="pin">PIN shown on the TV &middot; الرمز الظاهر على التلفزيون</label>
+  <input id="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required>
+  <small id="pinok" hidden>Filled in from the TV's code. &middot; كُتب من رمز التلفزيون.</small>
+
+  <div class="tabs">
+    <button type="button" id="t-people" class="on">People &middot; الأشخاص</button>
+    <button type="button" id="t-meds">Medicines &middot; الأدوية</button>
+    <button type="button" id="t-visits">Visits &middot; المواعيد</button>
+  </div>
+  <p class="note" id="example" hidden>The TV shows the invented example family. Adding your first person removes it.
+    &middot; يعرض التلفزيون العائلة المُتخيلة. إضافة أول شخص تحذفها.</p>
+  <div class="msg" id="lmsg" role="status"></div>
+
+  <section id="s-people">
+    <ul id="people"></ul>
+    <h2>Add a person &middot; إضافة شخص</h2>
+    <form id="f-people" autocomplete="off">
+      <label for="p-name">Name &middot; الاسم</label>
+      <input type="text" id="p-name" maxlength="24" required dir="auto" placeholder="Grandma · جدتي">
+      <span class="label">Colour &middot; اللون</span>
+      <div class="colors" id="colors">
+        <button type="button" class="c0 on" data-c="0" aria-label="Blue"></button>
+        <button type="button" class="c1" data-c="1" aria-label="Pink"></button>
+        <button type="button" class="c2" data-c="2" aria-label="Orange"></button>
+        <button type="button" class="c3" data-c="3" aria-label="Green"></button>
+        <button type="button" class="c4" data-c="4" aria-label="Violet"></button>
+        <button type="button" class="c5" data-c="5" aria-label="Red"></button>
+      </div>
+      <button class="go" type="submit">Save person &middot; حفظ</button>
+      <div class="msg" role="status"></div>
+    </form>
+  </section>
+
+  <section id="s-meds" hidden>
+    <ul id="meds"></ul>
+    <h2>Add a medicine &middot; إضافة دواء</h2>
+    <p class="note need">Add a person first. &middot; أضف شخصًا أولًا.</p>
+    <form id="f-meds" autocomplete="off">
+      <label for="m-member">For &middot; لمن</label>
+      <select id="m-member" class="who" required></select>
+      <label for="m-name">Medicine &middot; الدواء</label>
+      <input type="text" id="m-name" maxlength="60" required dir="auto">
+      <div class="pair">
+        <div><label for="m-dose">Dose &middot; الجرعة</label>
+          <input type="text" id="m-dose" maxlength="24" dir="auto" placeholder="500 mg"></div>
+        <div><label for="m-per">Units a dose &middot; حبات</label>
+          <input type="number" id="m-per" min="1" max="20" value="1" inputmode="numeric"></div>
+      </div>
+      <label for="m-how">How to take it &middot; طريقة الأخذ</label>
+      <input type="text" id="m-how" maxlength="40" dir="auto" list="hows" placeholder="After a meal · بعد الأكل">
+      <datalist id="hows">
+        <option value="After a meal"><option value="Before a meal"><option value="With water"><option value="At bedtime">
+        <option value="بعد الأكل"><option value="قبل الأكل"><option value="مع الماء"><option value="قبل النوم">
+      </datalist>
+      <span class="label">Times &middot; الأوقات</span>
+      <div class="times" id="times"><input type="time" value="08:00" required></div>
+      <button type="button" class="small" id="addtime">+ Another time &middot; وقت آخر</button>
+      <div class="pair">
+        <div><label for="m-start">From &middot; من</label><input type="date" id="m-start"></div>
+        <div><label for="m-days">Days (blank: ongoing) &middot; أيام</label>
+          <input type="number" id="m-days" min="1" max="365" inputmode="numeric"></div>
+      </div>
+      <label for="m-left">Units in the pack (blank: don't count) &middot; الكمية في العلبة</label>
+      <input type="number" id="m-left" min="0" max="9999" inputmode="numeric">
+      <button class="go" type="submit">Save medicine &middot; حفظ الدواء</button>
+      <div class="msg" role="status"></div>
+    </form>
+  </section>
+
+  <section id="s-visits" hidden>
+    <ul id="visits"></ul>
+    <h2>Add an appointment &middot; إضافة موعد</h2>
+    <p class="note need">Add a person first. &middot; أضف شخصًا أولًا.</p>
+    <form id="f-visits" autocomplete="off">
+      <label for="v-member">For &middot; لمن</label>
+      <select id="v-member" class="who" required></select>
+      <label for="v-doctor">Doctor &middot; الطبيب</label>
+      <input type="text" id="v-doctor" maxlength="60" required dir="auto">
+      <label for="v-specialty">Specialty &middot; التخصص</label>
+      <input type="text" id="v-specialty" maxlength="40" dir="auto" placeholder="Dentist · طبيب أسنان">
+      <div class="pair">
+        <div><label for="v-day">Day &middot; اليوم</label><input type="date" id="v-day" required></div>
+        <div><label for="v-time">Time &middot; الوقت</label><input type="time" id="v-time" value="10:00" required></div>
+      </div>
+      <label for="v-place">Place &middot; المكان</label>
+      <input type="text" id="v-place" maxlength="60" dir="auto">
+      <label for="v-note">Note &middot; ملاحظة</label>
+      <input type="text" id="v-note" maxlength="60" dir="auto" placeholder="Bring the old X-ray · أحضر الأشعة">
+      <button class="go" type="submit">Save appointment &middot; حفظ الموعد</button>
+      <div class="msg" role="status"></div>
+    </form>
+  </section>
+
+  <button type="button" class="refresh" id="refresh">Refresh &middot; تحديث</button>
+</main>
+<script>
+(function () {
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  var pin = $("pin"), pinok = $("pinok"), lmsg = $("lmsg"), data = null, color = "0";
+  var answers = {
+    200: ["ok", "Saved. · تم الحفظ."],
+    400: ["bad", "Check the fields. · تحقق من الحقول."],
+    403: ["bad", "Wrong PIN. · الرمز غير صحيح."],
+    404: ["bad", "Already gone. · حُذف من قبل."],
+    409: ["bad", "The list is full. · القائمة ممتلئة."],
+    413: ["bad", "Too long. · طويل جدًا."],
+    429: ["bad", "Too many wrong PINs. Try again later. · محاولات خاطئة كثيرة. حاول لاحقًا."],
+    500: ["bad", "The TV could not save it. Try again. · لم يحفظه التلفزيون. حاول مرة أخرى."],
+    503: ["bad", "The TV is busy. Try again. · التلفزيون مشغول. حاول مرة أخرى."]
+  };
+  // Fixed strings only; nothing the TV or a person typed is ever put on the page as HTML.
+  function show(box, status) {
+    var a = answers[status] || ["bad", "The TV did not answer. · لم يرد التلفزيون."];
+    box.className = "msg " + a[0];
+    box.textContent = a[1];
+  }
+  // The PIN lives only as long as this browser tab, so it does not stay on the phone for a later visitor.
+  function remember(value) {
+    try { if (value) sessionStorage.setItem("fh-pin", value); else sessionStorage.removeItem("fh-pin"); } catch (e) {}
+  }
+  function post(path, fields) {
+    fields.pin = pin.value;
+    return fetch(path, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                         body: new URLSearchParams(fields).toString() })
+      .then(function (res) {
+        // A wrong PIN may mean the TV made a new one: forget the old one, so the next scan or typing replaces it.
+        if (res.status === 403) { remember(""); pinok.hidden = true; }
+        else if (res.status === 200) remember(pin.value);
+        return res;
+      });
+  }
+  function pinReady(box) {
+    if (/^\d{6}$/.test(pin.value)) return true;
+    show(box, 403);
+    pin.focus();
+    return false;
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function todayIso() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function dayName(iso) {
+    return new Date(iso + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  try { pin.value = sessionStorage.getItem("fh-pin") || ""; } catch (e) {}
+  // The TV's QR code carries the PIN after the #, which never leaves the phone. Take it, then drop it from the address bar.
+  var fromCode = /^#(\d{6})$/.exec(location.hash);
+  if (fromCode) {
+    pin.value = fromCode[1];
+    remember(pin.value);
+    history.replaceState(null, "", location.pathname);
+  }
+  pinok.hidden = !/^\d{6}$/.test(pin.value);
+  pin.addEventListener("input", function () { pinok.hidden = true; if (/^\d{6}$/.test(pin.value)) load(); });
+  $("m-start").value = todayIso();
+  $("v-day").value = $("v-day").min = todayIso();
+
+  var tabs = ["people", "meds", "visits"];
+  tabs.forEach(function (name) {
+    $("t-" + name).addEventListener("click", function () {
+      tabs.forEach(function (other) {
+        $("t-" + other).classList.toggle("on", other === name);
+        $("s-" + other).hidden = other !== name;
+      });
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("#colors button"), function (b) {
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll("#colors button"), function (o) { o.classList.remove("on"); });
+      b.classList.add("on");
+      color = b.getAttribute("data-c");
+    });
+  });
+  $("addtime").addEventListener("click", function () {
+    var times = $("times");
+    if (times.children.length >= 8) return;
+    var t = el("input");
+    t.type = "time";
+    t.value = "20:00";
+    times.appendChild(t);
+    $("addtime").hidden = times.children.length >= 8;
+  });
+  $("refresh").addEventListener("click", load);
+
+  function send(form, path, fields, after) {
+    var box = form.querySelector(".msg"), go = form.querySelector(".go");
+    if (!pinReady(box)) return;
+    go.disabled = true;
+    post(path, fields)
+      .then(function (r) {
+        show(box, r.status);
+        if (r.status === 200) { after(); load(); }
+      })
+      .catch(function () { show(box, 0); })
+      .then(function () { go.disabled = false; });
+  }
+  function submit(id, handler) {
+    $(id).addEventListener("submit", function (ev) { ev.preventDefault(); handler($(id)); });
+  }
+  submit("f-people", function (form) {
+    send(form, "/person", { name: $("p-name").value.trim(), color: color }, function () { $("p-name").value = ""; });
+  });
+  submit("f-meds", function (form) {
+    var times = [];
+    Array.prototype.forEach.call($("times").children, function (t) { if (t.value) times.push(t.value); });
+    send(form, "/medicine", {
+      member: $("m-member").value, name: $("m-name").value.trim(), dose: $("m-dose").value.trim(),
+      how: $("m-how").value.trim(), times: times.join(","), start: $("m-start").value, days: $("m-days").value,
+      per: $("m-per").value, left: $("m-left").value
+    }, function () { $("m-name").value = $("m-dose").value = $("m-how").value = $("m-days").value = $("m-left").value = ""; });
+  });
+  submit("f-visits", function (form) {
+    send(form, "/visit", {
+      member: $("v-member").value, doctor: $("v-doctor").value.trim(), specialty: $("v-specialty").value.trim(),
+      place: $("v-place").value.trim(), note: $("v-note").value.trim(), day: $("v-day").value, time: $("v-time").value
+    }, function () { $("v-doctor").value = $("v-specialty").value = $("v-place").value = $("v-note").value = ""; });
+  });
+
+  function act(path, fields, question) {
+    if (question && !window.confirm(question)) return;
+    if (!pinReady(lmsg)) return;
+    post(path, fields).then(function (r) { load(r.status); }).catch(function () { show(lmsg, 0); });
+  }
+  function button(label, cls, onClick) {
+    var b = el("button", cls, label);
+    b.type = "button";
+    b.addEventListener("click", onClick);
+    return b;
+  }
+  function badge(member) {
+    var i = el("i", "c" + ((member && member.color) | 0), member ? member.name.charAt(0) : "?");
+    return i;
+  }
+  function memberById(id) {
+    for (var i = 0; i < data.members.length; i++) if (data.members[i].id === id) return data.members[i];
+    return null;
+  }
+  function row(member, title, lines, actions) {
+    var li = el("li"), what = el("div", "what", title), acts = el("div", "acts");
+    lines.forEach(function (line) { if (line) what.appendChild(typeof line === "string" ? el("span", null, line) : line); });
+    actions.forEach(function (a) { acts.appendChild(a); });
+    li.appendChild(badge(member)); li.appendChild(what); li.appendChild(acts);
+    return li;
+  }
+
+  function draw() {
+    $("example").hidden = !data.example;
+    var people = $("people"), meds = $("meds"), visits = $("visits");
+    people.textContent = meds.textContent = visits.textContent = "";
+    var usable = data.members.length > 0 && !data.example;
+    // The example family is the TV's own: it goes as a whole when the first real person is added.
+    function acts(list) { return data.example ? [] : list; }
+    Array.prototype.forEach.call(document.querySelectorAll(".need"), function (n) { n.hidden = usable; });
+    $("f-meds").hidden = $("f-visits").hidden = !usable;
+
+    Array.prototype.forEach.call(document.querySelectorAll("select.who"), function (s) {
+      var keep = s.value;
+      s.textContent = "";
+      data.members.forEach(function (m) { var o = el("option", null, m.name); o.value = m.id; s.appendChild(o); });
+      if (memberById(keep)) s.value = keep;
+    });
+
+    data.members.forEach(function (m) {
+      people.appendChild(row(m, m.name, [], acts([button("Delete · حذف", "del", function () {
+        act("/delete", { kind: "person", id: m.id },
+          "Delete this person with their medicines and appointments? · حذف هذا الشخص مع أدويته ومواعيده؟");
+      })])));
+    });
+    if (!data.members.length) people.appendChild(el("li", "head", "No one yet. · لا أحد بعد."));
+
+    data.members.forEach(function (m) {
+      var mine = data.medicines.filter(function (x) { return x.member === m.id; });
+      if (!mine.length) return;
+      meds.appendChild(el("li", "head", m.name));
+      mine.forEach(function (x) {
+        var pack = null;
+        if (x.left >= 0) {
+          pack = el("span", x.low ? "low" : null, x.left + " left · " + x.daysLeft + " days · متبقٍ " + x.left);
+        }
+        var dates = x.end ? x.start + " – " + x.end : "From · من " + x.start;
+        meds.appendChild(row(m, x.name, [[x.dose, x.how].filter(Boolean).join(" · "), x.times.join("  "), dates, pack], acts([
+          button("Refill · تعبئة", null, function () {
+            var n = window.prompt("Units in the pack now · الكمية الآن", x.left >= 0 ? String(x.left) : "");
+            if (n === null) return;
+            if (!/^\d{1,4}$/.test(n.trim())) { show(lmsg, 400); return; }
+            act("/refill", { id: x.id, left: n.trim() });
+          }),
+          button("Delete · حذف", "del", function () {
+            act("/delete", { kind: "medicine", id: x.id }, "Delete this medicine? · حذف هذا الدواء؟");
+          })
+        ])));
+      });
+    });
+    if (!data.medicines.length) meds.appendChild(el("li", "head", "No medicines yet. · لا أدوية بعد."));
+
+    var day = null;
+    data.visits.forEach(function (v) {
+      if (v.day !== day) { day = v.day; visits.appendChild(el("li", "head", dayName(day))); }
+      var m = memberById(v.member);
+      visits.appendChild(row(m, v.time + "  " + v.doctor, [m ? m.name : "", v.specialty, v.place, v.note], acts([
+        button("Delete · حذف", "del", function () {
+          act("/delete", { kind: "visit", id: v.id }, "Delete this appointment? · حذف هذا الموعد؟");
+        })
+      ])));
+    });
+    if (!data.visits.length) visits.appendChild(el("li", "head", "No coming appointments. · لا مواعيد قادمة."));
+  }
+
+  // after: the answer to a Delete or Refill, shown once the list is fresh, so the reload does not wipe it.
+  function load(after) {
+    if (!pinReady(lmsg)) return;
+    post("/list", {})
+      .then(function (r) {
+        if (r.status !== 200) { show(lmsg, r.status); return null; }
+        if (after) show(lmsg, after); else lmsg.textContent = "";
+        return r.json();
+      })
+      .then(function (d) { if (d) { data = d; draw(); } })
+      .catch(function () { show(lmsg, 0); });
+  }
+  if (/^\d{6}$/.test(pin.value)) load(); else pin.focus();
+})();
+</script>
+</body>
+</html>

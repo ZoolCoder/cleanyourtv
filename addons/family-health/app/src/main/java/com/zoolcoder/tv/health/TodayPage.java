@@ -21,12 +21,14 @@ import java.util.function.Consumer;
  */
 final class TodayPage {
     /** What OK does on the focused view, for the hint bar. */
-    static final int HINT_TAKE = 1, HINT_UNDO = 2, HINT_OPEN = 3, HINT_EXAMPLE = 4;
+    static final int HINT_TAKE = 1, HINT_UNDO = 2, HINT_OPEN = 3, HINT_EXAMPLE = 4, HINT_PHONE = 5;
 
     private final Activity a;
     private final Store store;
     private final Dates dates;
     private final Consumer<Member> open;
+    private final Runnable phone;
+    private View addFromPhone;
     private final LinearLayout root, people, now, later, done;
     private final View empty, columns;
     private String filter;
@@ -34,11 +36,12 @@ final class TodayPage {
     private View firstTaken;
     private List<String> shownPeople = new ArrayList<>();
 
-    TodayPage(Activity a, Store store, Dates dates, Consumer<Member> open) {
+    TodayPage(Activity a, Store store, Dates dates, Consumer<Member> open, Runnable phone) {
         this.a = a;
         this.store = store;
         this.dates = dates;
         this.open = open;
+        this.phone = phone;
         root = Ui.column(a);
         people = Ui.row(a);
         root.addView(people, Ui.spaced(a, 0, 0));
@@ -93,14 +96,21 @@ final class TodayPage {
         body.setMaxWidth(Look.dp(a, 520));
         box.addView(body, Ui.start(a, 0));
         ((LinearLayout.LayoutParams) body.getLayoutParams()).topMargin = Look.dp(a, 8);
+        LinearLayout buttons = Ui.row(a);
+        TextView fromPhone = Ui.button(a, a.getString(R.string.add_from_phone), v -> phone.run());
+        Look.pill(a, fromPhone, Look.ACCENT, Look.TEXT);
+        fromPhone.setTag(R.id.hint, HINT_PHONE);
+        buttons.addView(fromPhone);
+        addFromPhone = fromPhone;
         TextView example = Ui.button(a, a.getString(R.string.show_example), v -> {
             Example.fill(a, store.records);
             store.changed();
         });
-        Look.pill(a, example, Look.ACCENT, Look.TEXT);
+        Look.pill(a, example, Look.PILL, Look.TEXT);
         example.setTag(R.id.hint, HINT_EXAMPLE);
-        box.addView(example, Ui.start(a, 0));
-        ((LinearLayout.LayoutParams) example.getLayoutParams()).topMargin = Look.dp(a, 22);
+        buttons.addView(example, Ui.start(a, 16));
+        box.addView(buttons, Ui.start(a, 0));
+        ((LinearLayout.LayoutParams) buttons.getLayoutParams()).topMargin = Look.dp(a, 22);
         return box;
     }
 
@@ -153,7 +163,7 @@ final class TodayPage {
     /** Where the focus goes when the screen opens: the due dose's Taken button, else the first card, else a tab. */
     void focusFirst() {
         if (store.records.empty()) {
-            ((ViewGroup) empty).getChildAt(((ViewGroup) empty).getChildCount() - 1).requestFocus();
+            addFromPhone.requestFocus();
             return;
         }
         if (firstTaken != null && firstTaken.requestFocus()) return;

@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayDeque;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -208,6 +209,27 @@ final class Banner {
         int side = Look.dp(context, 64);
         frame.setPadding(side, 0, side, Look.dp(context, 36));
         return params;
+    }
+
+    /** Drops the reminders whose medicine or appointment a phone deleted; the next one waiting shows instead. */
+    void forgetGone(Records r) {
+        for (Iterator<Plan.Entry> it = queue.iterator(); it.hasNext(); ) {
+            Plan.Entry e = it.next();
+            if (gone(r, e)) {
+                it.remove();
+                pending.remove(e.key);
+            }
+        }
+        if (current != null && gone(r, current)) {
+            main.removeCallbacks(advance);
+            next();
+        }
+    }
+
+    private static boolean gone(Records r, Plan.Entry e) {
+        if (e.dose()) return r.medicine(e.medicine.id) == null;
+        for (Visit v : r.visits) if (v.id.equals(e.visit.id)) return false;
+        return true;
     }
 
     /** Takes the window down and forgets every waiting reminder; they come back at the next tick if still due. */

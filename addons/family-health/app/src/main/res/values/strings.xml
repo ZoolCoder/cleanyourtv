@@ -30,7 +30,7 @@
     </plurals>
 
     <string name="empty_title">Medicines and doctor visits for the family</string>
-    <string name="empty_body">Reminders show over whatever is playing, and OK marks a dose taken. Try it with an invented family first.</string>
+    <string name="empty_body">Reminders show over whatever is playing, and OK marks a dose taken. Add your family from a phone, or try it first with an invented family.</string>
     <string name="show_example">Show an example</string>
     <string name="remove_example">Remove the example</string>
     <string name="overlay_off">Reminders over other apps are off</string>
@@ -76,4 +76,31 @@
     <string name="example_cardiologist">Cardiologist</string>
     <string name="example_clinic_1">Smile Dental Clinic</string>
     <string name="example_clinic_2">City Heart Centre</string>
+
+    <!-- Add from a phone -->
+    <string name="add_from_phone">Add from a phone</string>
+    <string name="hint_phone">Add people, medicines and appointments from a phone</string>
+    <string name="phone_switch">Phone page</string>
+    <string name="phone_can">From the phone page you can</string>
+    <string name="phone_can_people">add the people in your family</string>
+    <string name="phone_can_medicines">add each medicine: dose, times, days and pack</string>
+    <string name="phone_can_visits">add doctor appointments</string>
+    <string name="phone_home_only">Only phones on your home network reach it, and only with the PIN. Turn it off when everyone is set up.</string>
+    <string name="state_off">Off. Nothing is listening.</string>
+    <string name="state_starting">Starting…</string>
+    <string name="state_running">On. Listening on the home network.</string>
+    <string name="state_port">The port is in use by another app. Change it in config.xml and rebuild.</string>
+    <string name="state_on">On</string>
+    <string name="state_off_short">Off</string>
+    <string name="connect_label">Connect a phone</string>
+    <string name="step_open">Open the camera on your phone</string>
+    <string name="step_scan">Scan this QR code (same Wi-Fi)</string>
+    <string name="pin_label">The PIN, if the page asks for it</string>
+    <string name="pin_hint">Five wrong PINs lock the page out for 5 minutes.</string>
+    <string name="new_pin">New PIN</string>
+    <string name="pin_changed">PIN changed</string>
+    <string name="address_label">Or type this address:</string>
+    <string name="address_off">Turn on the phone page to connect a phone.</string>
+    <string name="address_wait">The QR code shows once the page is listening.</string>
+    <string name="no_address">No home network address found. Connect the TV to Wi-Fi or Ethernet.</string>
 </resources>

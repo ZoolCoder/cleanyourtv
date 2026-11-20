@@ -62,6 +62,21 @@
   .sent li b.on { color: var(--note); }
   .lock { margin-top: 22px; color: var(--dim); font-size: 13px; text-align: center; }
   [hidden] { display: none !important; }
+  /* Liquid Glass: soft coloured light behind translucent panes with a lit rim. */
+  :root { --surface: rgba(255,255,255,.08); --raised: rgba(255,255,255,.12); --line: rgba(255,255,255,.14); }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1;
+                 background: radial-gradient(75% 45% at 0% 0%, rgba(43,182,115,.30), transparent 70%),
+                             radial-gradient(65% 40% at 100% 100%, rgba(94,92,230,.28), transparent 70%); }
+  body.event::before { background: radial-gradient(75% 45% at 0% 0%, rgba(224,64,154,.30), transparent 70%),
+                                   radial-gradient(65% 40% at 100% 100%, rgba(94,92,230,.28), transparent 70%); }
+  .chip, .seg, input[type=text], input[type=date], input[type=time], textarea, .row, .status, .card {
+    border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.16); }
+  input[type=text], input[type=date], input[type=time], textarea { border-width: 2px; }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  .seg button[aria-pressed=true] { box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  body.note .go { color: #06140d; }
+  .go { background: linear-gradient(rgba(255,255,255,.10), rgba(255,255,255,0) 60%), var(--accent);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 10px 28px rgba(0,0,0,.35); }
 </style>
 </head>
 <body>

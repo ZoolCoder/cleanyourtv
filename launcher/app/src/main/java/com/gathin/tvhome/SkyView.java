@@ -72,8 +72,8 @@ public class SkyView extends View {
     /** Today's sunrise and sunset at the configured place, or null without one (fixed reference day). */
     @Nullable
     private int[] sunTimes() {
-        String lat = getContext().getString(R.string.latitude);
-        String lon = getContext().getString(R.string.longitude);
+        String lat = Config.coordinate(getContext().getString(R.string.latitude), 90);
+        String lon = Config.coordinate(getContext().getString(R.string.longitude), 180);
         if (lat.isEmpty() || lon.isEmpty()) return null;
         try {
             return Sun.riseAndSet(LocalDate.now(), Double.parseDouble(lat), Double.parseDouble(lon),

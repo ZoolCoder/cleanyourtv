@@ -135,7 +135,7 @@ final class ClockScene {
         if (cfg.hijriDate || (cfg.prayerTimes && !cfg.latitude.isEmpty() && !cfg.longitude.isEmpty())) {
             lineContext = ctx;
             hijri = cfg.hijriDate;
-            if (cfg.prayerTimes && !cfg.latitude.isEmpty()) {
+            if (cfg.prayerTimes && !cfg.latitude.isEmpty() && !cfg.longitude.isEmpty()) {
                 prayerLatitude = Double.parseDouble(cfg.latitude);
                 prayerLongitude = Double.parseDouble(cfg.longitude);
                 prayerLine.setVisibility(View.VISIBLE);
@@ -164,8 +164,8 @@ final class ClockScene {
             rotationMs = cfg.wallpaperRotationMinutes * 60_000L;
             order = cfg.wallpaperOrder;
             moods = cfg.wallpaperMoods;
-            latitude = moods.isEmpty() ? "" : ctx.getString(R.string.latitude);
-            longitude = moods.isEmpty() ? "" : ctx.getString(R.string.longitude);
+            latitude = moods.isEmpty() ? "" : cfg.latitude;
+            longitude = moods.isEmpty() ? "" : cfg.longitude;
         }
         wallpaperShade = (cfg.clockWallpaperDim * 255 / 100) << 24;
         wallpaperRes = ctx.getResources();

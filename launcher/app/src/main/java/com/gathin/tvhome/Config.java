@@ -586,8 +586,8 @@ final class Config {
         boolean singleRow = res.getBoolean(R.bool.single_row);
         boolean dockBandAll = res.getBoolean(R.bool.dock_band_all);
         boolean weather = res.getBoolean(R.bool.weather);
-        String latitude = res.getString(R.string.latitude).trim();
-        String longitude = res.getString(R.string.longitude).trim();
+        String latitude = coordinate(res.getString(R.string.latitude), 90);
+        String longitude = coordinate(res.getString(R.string.longitude), 180);
         boolean hijri = res.getBoolean(R.bool.hijri_date);
         boolean prayer = res.getBoolean(R.bool.prayer_times);
         boolean ramadanCountdown = res.getBoolean(R.bool.ramadan_countdown);
@@ -939,6 +939,22 @@ final class Config {
     static String festivalName(JSONObject o) {
         String name = string(o, "festival", "");
         return name.isEmpty() ? string(o, "seasonal_skin", "") : name;
+    }
+
+    /**
+     * A latitude or longitude as plain decimal degrees within +-limit, or "" when it is empty or unusable, so the
+     * pills, the screensaver and the weather request only ever see a finite number.
+     */
+    static String coordinate(String value, double limit) {
+        try {
+            double d = Double.parseDouble(value.trim());
+            if (Double.isFinite(d) && Math.abs(d) <= limit) {
+                return java.math.BigDecimal.valueOf(d).stripTrailingZeros().toPlainString();
+            }
+        } catch (NumberFormatException ignored) {
+            // not a number: off
+        }
+        return "";
     }
 
     private static boolean bool(JSONObject o, String key, boolean fallback) {

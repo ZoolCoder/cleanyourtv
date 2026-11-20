@@ -10,8 +10,9 @@ import android.widget.TextView;
 
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -27,6 +28,7 @@ final class Weather {
     private static final String PREFS = "weather";
     private static final long REFRESH_MS = 30 * 60_000L;
     private static final long STALE_MS = 3 * 60 * 60_000L;
+    private static final int MAX_BODY_CHARS = 16 * 1024;
 
     private final TextView pill;
     private final String url;
@@ -69,7 +71,10 @@ final class Weather {
                             .putLong("time", System.currentTimeMillis()).apply();
                     show();
                 }
-                if (running) handler.postDelayed(refresh, current != null ? REFRESH_MS : 5 * 60_000L);
+                if (!running) return;
+                // A stop and start while this fetch ran has queued a refresh already: keep one, not two.
+                handler.removeCallbacks(refresh);
+                handler.postDelayed(refresh, current != null ? REFRESH_MS : 5 * 60_000L);
             });
         }, TAG);
         fetch.start();
@@ -81,11 +86,14 @@ final class Weather {
             connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setConnectTimeout(8_000);
             connection.setReadTimeout(8_000);
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-                StringBuilder body = new StringBuilder();
-                for (String line; (line = reader.readLine()) != null; ) body.append(line);
-                return new JSONObject(body.toString()).getJSONObject("current");
+            connection.setUseCaches(false);
+            int status = connection.getResponseCode();
+            if (status != HttpURLConnection.HTTP_OK) {
+                Log.w(TAG, "fetch failed: HTTP " + status);
+                return null;
+            }
+            try (InputStreamReader reader = new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8)) {
+                return new JSONObject(readCapped(reader, MAX_BODY_CHARS)).getJSONObject("current");
             }
         } catch (Exception e) {
             Log.w(TAG, "fetch failed: " + e);
@@ -93,6 +101,17 @@ final class Weather {
         } finally {
             if (connection != null) connection.disconnect();
         }
+    }
+
+    /** The whole body, or an IOException once it passes max characters: the answer is a few hundred bytes. */
+    static String readCapped(Reader reader, int max) throws IOException {
+        StringBuilder body = new StringBuilder();
+        char[] buffer = new char[1024];
+        for (int n; (n = reader.read(buffer)) != -1; ) {
+            if (body.length() + n > max) throw new IOException("response over " + max + " characters");
+            body.append(buffer, 0, n);
+        }
+        return body.toString();
     }
 
     /** Fills the pill from the stored reading; hidden until the first reading or when it is hours old. */

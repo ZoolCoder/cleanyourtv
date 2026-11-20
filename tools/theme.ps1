@@ -191,7 +191,7 @@ if (Test-Path -LiteralPath $captions -PathType Leaf) {
 }
 # The pictures' authors and licences (wallpaper_credits), the same way.
 $credits = Join-Path $Theme 'wallpapers\credits.txt'
-if (Test-Path $credits -PathType Leaf) {
+if (Test-Path -LiteralPath $credits -PathType Leaf) {
     Invoke-Tv b64push.py $credits (Stage 'wallpapers/credits.txt')
     Invoke-Tv tv.py (Put 'wallpapers/credits.txt') | Out-Null
 } else {

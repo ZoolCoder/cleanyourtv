@@ -46,7 +46,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # runs (site-packages ships its own .md files), Gradle's output, a theme's node_modules, and the folders
 # .gitignore keeps out of a checkout - a person's backups, screenshots, notes, traces and bench results,
 # whose links are their own.
-SKIP = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "work",
+SKIP = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "backups", "work",
         "traces", "bench-results", "adbkey"}
 
 MARKDOWN_LINK = re.compile(r"\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")

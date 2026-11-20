@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The walkers' usual skip list: build output, the CI venv, and the folders .gitignore keeps out of a
 # checkout - a person's backups, screenshots, notes, traces, bench results and ADB key.
-SKIP_DIRS = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "work",
+SKIP_DIRS = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "backups", "work",
              "traces", "bench-results", "adbkey"}
 
 # `powershell` or `pwsh`, then within the same command `-Command` (or `-c`) and a double-quoted argument.

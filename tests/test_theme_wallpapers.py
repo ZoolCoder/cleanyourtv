@@ -88,9 +88,16 @@ def single_picture_name():
 
 
 def captions_name():
-    """WallpaperCaptions.FILE_NAME: the one non-picture file a collection may carry."""
-    found = re.search(r'FILE_NAME\s*=\s*"([^"]+)"', CAPTIONS_JAVA.read_text(encoding="utf-8"))
+    """WallpaperCaptions.FILE_NAME: the captions file a collection may carry beside its pictures."""
+    found = re.search(r' FILE_NAME\s*=\s*"([^"]+)"', CAPTIONS_JAVA.read_text(encoding="utf-8"))
     assert found, "no FILE_NAME in WallpaperCaptions.java"
+    return found.group(1)
+
+
+def credits_name():
+    """WallpaperCaptions.CREDITS_FILE_NAME: the authors and licences (wallpaper_credits)."""
+    found = re.search(r'CREDITS_FILE_NAME\s*=\s*"([^"]+)"', CAPTIONS_JAVA.read_text(encoding="utf-8"))
+    assert found, "no CREDITS_FILE_NAME in WallpaperCaptions.java"
     return found.group(1)
 
 
@@ -212,9 +219,9 @@ def problems(root):
     out = []
     want = single_picture_name()
     shown = shown_suffixes()
-    keep = captions_name()
+    keep = {captions_name(), credits_name()}
     for relative, path in pictures(root):
-        if path.name == keep:
+        if path.name in keep:
             continue
         if "/wallpapers/" not in relative:
             # The launcher opens one name at a theme's root; anything else with a picture's prefix sits

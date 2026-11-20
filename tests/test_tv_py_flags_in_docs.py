@@ -25,7 +25,7 @@ FLAG = re.compile(r"(?<![\w-])--[a-z][a-z-]*")
 # The walkers' usual skip list: build output, the CI venv, and the folders .gitignore keeps out of a
 # checkout - a person's backups, screenshots, notes, traces, bench results and ADB key. A note in `work/`
 # is not a page, so it is not the project handing a reader a flag.
-SKIP = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "work",
+SKIP = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "backups", "work",
         "traces", "bench-results", "adbkey"}
 # Where a shell command starts: everything after it is the TV's, not tv.py's, so `pm install --user 0`
 # inside the quotes is not read as a flag of the client.

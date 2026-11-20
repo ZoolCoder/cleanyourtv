@@ -28,7 +28,7 @@ LINK = re.compile(r"\]\(([^)\s]+)\)")
 CODE = re.compile(r"(`+)(.+?)\1")
 # The walkers' usual skip list: build output, the CI venv, and the folders .gitignore keeps out of a
 # checkout - a person's backups, screenshots, notes, traces, bench results and ADB key.
-SKIP_DIRS = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "work",
+SKIP_DIRS = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "backups", "work",
              "traces", "bench-results", "adbkey"}
 WRITTEN = {"result.json"}  # files a tool writes on a contributor's machine (tools/bench.py), not in a clone
 

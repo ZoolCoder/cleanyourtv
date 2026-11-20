@@ -43,7 +43,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Directories the repository-wide walkers skip: build output, the CI venv, and a person's own backups,
 # screenshots, notes, traces and bench results, plus their ADB key - the folders .gitignore keeps out of
 # a checkout. tests/test_walks_skip_ignored_folders.py holds every walker to that list.
-SKIP_DIRS = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "work",
+SKIP_DIRS = {".git", "venv", "node_modules", "build", ".gradle", "__pycache__", "shots", "backup", "backups", "work",
              "traces", "bench-results", "adbkey"}
 
 SCRIPT_RE = re.compile(r"([A-Za-z0-9_.\\/-]+\.ps1)\b")

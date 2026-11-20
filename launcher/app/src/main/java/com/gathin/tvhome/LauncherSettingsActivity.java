@@ -360,7 +360,7 @@ public final class LauncherSettingsActivity extends Activity {
             select(dockChoices[i], dockOpacity == DOCK_OPACITIES[i]);
         }
         for (int i = 0; i < clockChoices.length; i++) {
-            clockChoices[i].setSelected(CLOCK_FORMATS[i].equals(clockFormat));
+            select(clockChoices[i], CLOCK_FORMATS[i].equals(clockFormat));
         }
         animationsChoice.setText(getString(R.string.animations_state,
                 getString(animations ? R.string.on : R.string.off)));

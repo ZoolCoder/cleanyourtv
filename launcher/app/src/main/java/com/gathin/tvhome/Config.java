@@ -291,6 +291,8 @@ final class Config {
     final boolean languageChoice;
     /** Hints, check marks and a white focus outline in Launcher settings (config.xml, settings_hints). */
     final boolean settingsHints;
+    /** With cinematic_home, the Apple TV layout: glass clock panel, glass shelf card, Favourites heading (config.xml, glass_shelf). */
+    final boolean glassShelf;
     /** Text size in percent of the TV's, 100 to 150, for viewers who sit far or see less well (config.xml, text_scale). */
     final int textScale;
     /** The date and the line between it and the clock in the clock's full white instead of dimmed (config.xml, header_white). */
@@ -323,7 +325,7 @@ final class Config {
                    int openOnStartNetworkWait, boolean openOnStartOnWake, boolean iconOnlyVpn, String clockFormat, boolean backOpensClock, boolean glowSnap,
                    boolean settingsKeyClearTask,
                    boolean weather, String latitude, String longitude, boolean hijriDate, boolean prayerTimes,
-                   boolean ramadanCountdown, boolean prayerAlert, boolean wallpaperCredits, boolean languageChoice, boolean settingsHints, int textScale) {
+                   boolean ramadanCountdown, boolean prayerAlert, boolean wallpaperCredits, boolean languageChoice, boolean settingsHints, int textScale, boolean glassShelf) {
         this.hijriDate = hijriDate;
         this.prayerTimes = prayerTimes;
         this.ramadanCountdown = ramadanCountdown;
@@ -331,6 +333,7 @@ final class Config {
         this.wallpaperCredits = wallpaperCredits;
         this.languageChoice = languageChoice;
         this.settingsHints = settingsHints;
+        this.glassShelf = glassShelf;
         this.textScale = textScale;
         this.weather = weather;
         this.latitude = latitude;
@@ -595,6 +598,7 @@ final class Config {
         boolean wallpaperCredits = res.getBoolean(R.bool.wallpaper_credits);
         boolean languageChoice = res.getBoolean(R.bool.language_choice);
         boolean settingsHints = res.getBoolean(R.bool.settings_hints);
+        boolean glassShelf = res.getBoolean(R.bool.glass_shelf);
         int textScale = res.getInteger(R.integer.text_scale);
         boolean applied = false;
 
@@ -722,6 +726,7 @@ final class Config {
             wallpaperCredits = bool(json, "wallpaper_credits", wallpaperCredits);
             languageChoice = bool(json, "language_choice", languageChoice);
             settingsHints = bool(json, "settings_hints", settingsHints);
+            glassShelf = bool(json, "glass_shelf", glassShelf);
             textScale = integer(json, "text_scale", textScale, 100, 150);
         }
         // A top-bar app is moved there, not copied: it leaves the grid.
@@ -790,7 +795,7 @@ final class Config {
                 dateBelowClock, vpnPill, locale, powerOnHomeAlways, inputsConnectedOnly, inputsCecStateOnly,
                 Math.max(0, Math.min(600, openOnStartNetworkWait)), openOnStartOnWake, iconOnlyVpn, clockFormat, backOpensClock, glowSnap,
                 settingsKeyClearTask, weather, latitude, longitude, hijri, prayer, ramadanCountdown, prayerAlert,
-                wallpaperCredits, languageChoice, settingsHints, Math.max(100, Math.min(150, textScale)));
+                wallpaperCredits, languageChoice, settingsHints, Math.max(100, Math.min(150, textScale)), glassShelf);
     }
 
     /**

@@ -122,37 +122,89 @@
         android:orientation="vertical"
         android:alpha="0">
 
-        <TextView
-            android:id="@+id/heroName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFFFF"
-            android:textSize="48sp"
-            android:fontFamily="@string/font_light"
-            android:letterSpacing="-0.02"
-            android:includeFontPadding="false"
-            android:singleLine="true" />
-
-        <!-- Cinematic shelf only: when the app was last opened, and the dock position dots. -->
-        <TextView
-            android:id="@+id/heroMeta"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:layout_marginTop="12dp"
-            android:singleLine="true"
-            android:textColor="#B3FFFFFF"
-            android:textSize="15sp"
-            android:fontFamily="@string/font_light"
-            android:visibility="gone" />
-
+        <!-- glass_shelf: this becomes a glass card with the app's artwork and an accent bar beside the name;
+             otherwise it has no background and the artwork and the bar stay gone. -->
         <LinearLayout
-            android:id="@+id/heroDots"
+            android:id="@+id/heroCard"
             android:layout_width="wrap_content"
-            android:layout_height="6dp"
-            android:layout_marginStart="4dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/heroIcon"
+                android:layout_width="112dp"
+                android:layout_height="63dp"
+                android:layout_marginEnd="20dp"
+                android:scaleType="centerCrop"
+                android:importantForAccessibility="no"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <View
+                        android:id="@+id/heroBar"
+                        android:layout_width="4dp"
+                        android:layout_height="30dp"
+                        android:layout_marginEnd="14dp"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/heroName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#FFFFFFFF"
+                        android:textSize="48sp"
+                        android:fontFamily="@string/font_light"
+                        android:letterSpacing="-0.02"
+                        android:includeFontPadding="false"
+                        android:singleLine="true" />
+                </LinearLayout>
+
+                <!-- Cinematic shelf only: when the app was last opened, and the dock position dots. -->
+                <TextView
+                    android:id="@+id/heroMeta"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="12dp"
+                    android:singleLine="true"
+                    android:textColor="#B3FFFFFF"
+                    android:textSize="15sp"
+                    android:fontFamily="@string/font_light"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/heroDots"
+                    android:layout_width="wrap_content"
+                    android:layout_height="6dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- glass_shelf: "★ Favourites" over the dock, on the side the language reads from. -->
+        <TextView
+            android:id="@+id/heroHeading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:singleLine="true"
+            android:text="@string/favourites"
+            android:textColor="#E6FFFFFF"
+            android:textSize="17sp"
+            android:fontFamily="@string/font_medium"
             android:visibility="gone" />
     </LinearLayout>
 

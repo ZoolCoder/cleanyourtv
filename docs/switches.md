@@ -80,6 +80,7 @@ rule sit on its wanted list until a screenshot arrives.
 | `language_choice` | <img src="switches/language_choice.jpg" width="320" alt="language_choice on a TV"> |
 | `language_tags` | <img src="switches/language_choice.jpg" width="320" alt="the Language row's list, from language_tags"> |
 | `text_scale` | <img src="switches/text_scale.jpg" width="320" alt="text_scale at 120 on a TV"> |
+| `glass_shelf` | <img src="switches/glass_shelf.jpg" width="320" alt="glass_shelf with rows_below_dock 1 on a TV"> |
 
 `icon_tiles` is a `config.xml` key rather than a theme key, as its type cell in the Keys table says: the
 launcher reads its package list from the built-in array (`AppAdapter.java` reads

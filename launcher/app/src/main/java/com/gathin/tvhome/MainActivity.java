@@ -152,6 +152,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View hero;
     private TextView heroMeta;
     private LinearLayout heroDots;
+    /** glass_shelf (config.xml, with cinematic_home): the shelf as a glass card, with the app's artwork and a bar in its colour. */
+    private boolean glassShelf;
+    private ImageView heroIcon;
+    private View heroBar;
+    private GradientDrawable heroCardFill, heroBarFill;
+    /** glass_shelf moved the round buttons under the info pills: the clock-line alignment must leave them. */
+    private boolean buttonsBelowPills;
     /** Cinematic top shelf (config.xml, cinematic_home): the focused dock app's artwork behind a larger shelf. */
     private boolean cinematic;
     /** config.xml ambient_glow, overridable by a theme. Off: the glow view is gone and no fade or colour animator
@@ -546,6 +553,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         cinematicWhiteFocus = cfg.cinematicWhiteFocus;
         heroArtAlpha = cfg.cinematicArt / 100f;
         if (cinematic) setUpCinematicShelf(cfg.cinematicScrim);
+        glassShelf = cinematic && cfg.glassShelf;
+        if (glassShelf) setUpGlassShelf();
         // dock_title false: the name above the dock (and the cinematic lines under it) never shows; the glow
         // still follows the dock.
         if (!cfg.dockTitle) hero.setVisibility(View.GONE);
@@ -917,6 +926,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             makeIconOnly((TextView) btnSettings);
         }
         if (cfg.iconOnlyInputs) makeIconOnly((TextView) btnInputs);
+        if (glassShelf) setUpGlassHeader();
         iconOnlyVpn = vpnPill && cfg.iconOnlyVpn;
         if (iconOnlyVpn) {
             vpnPlainBackground = btnVpn.getBackground().getConstantState();
@@ -1962,7 +1972,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private void showHero(int position, float dockTopInRoot) {
         String label = adapter.labelAt(position);
         int color = adapter.ambientColorAt(position);
-        float y = dockTopInRoot - 14 * density - 26 * density - hero.getHeight();
+        float y = dockTopInRoot - (glassShelf ? 10 : 40) * density - hero.getHeight();
         boolean changed = !label.contentEquals(heroName.getText());
         if (cinematic && heroArtAlpha > 0f) showHeroArt(position);
 
@@ -2033,6 +2043,103 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (!cinematic) return;
         updateHeroMeta(position);
         updateHeroDots(position);
+        if (glassShelf) fillGlassCard(position);
+    }
+
+    // ---- glass shelf -----------------------------------------------------------------------------
+
+    /**
+     * The shelf as one glass card: lit in the app's colour on the artwork's side and fading to clear towards
+     * the name's end, so the wallpaper shows through. No blur; the card is one gradient with a hairline rim.
+     */
+    private void setUpGlassShelf() {
+        // Sized to fit between the header and the dock with a second row under it: the dots would not.
+        heroName.setTextSize(TypedValue.COMPLEX_UNIT_SP, 38f);
+        heroDotsShown = false;
+        heroDots.setVisibility(View.GONE);
+        ((LinearLayout.LayoutParams) heroMeta.getLayoutParams()).topMargin = Math.round(4 * density);
+        heroIcon = findViewById(R.id.heroIcon);
+        heroBar = findViewById(R.id.heroBar);
+        GradientDrawable iconShape = new GradientDrawable();
+        iconShape.setCornerRadius(12 * density);
+        iconShape.setColor(0x33FFFFFF);
+        heroIcon.setBackground(iconShape);
+        heroIcon.setClipToOutline(true);
+        heroIcon.setVisibility(View.VISIBLE);
+        heroBarFill = new GradientDrawable();
+        heroBarFill.setCornerRadius(2 * density);
+        heroBar.setBackground(heroBarFill);
+        heroBar.setVisibility(View.VISIBLE);
+
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) hero.getLayoutParams();
+        lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        lp.setMarginStart(Math.round(56 * density));
+        lp.setMarginEnd(Math.round(56 * density));
+        hero.setLayoutParams(lp);
+        // The Hebrew layout puts the artwork on the right, where its dock starts.
+        boolean right = getResources().getBoolean(R.bool.rtl_app_grid);
+        View card = findViewById(R.id.heroCard);
+        heroCardFill = new GradientDrawable(right ? GradientDrawable.Orientation.RIGHT_LEFT
+                : GradientDrawable.Orientation.LEFT_RIGHT, new int[]{0x33FFFFFF, 0x14FFFFFF, 0x03FFFFFF});
+        heroCardFill.setCornerRadius(22 * density);
+        heroCardFill.setStroke(Math.round(density), 0x33FFFFFF);
+        card.setBackground(heroCardFill);
+        int pad = Math.round(10 * density), wide = Math.round(32 * density);
+        card.setPadding(right ? wide : pad, pad, right ? pad : wide, pad);
+
+        TextView heading = findViewById(R.id.heroHeading);
+        heading.setGravity(right ? Gravity.RIGHT : Gravity.LEFT);
+        heading.setPadding(Math.round(24 * density), 0, Math.round(24 * density), 0);
+        heading.setVisibility(View.VISIBLE);
+    }
+
+    /** The focused app's artwork in the card, its colour on the bar and on the card's lit side. */
+    private void fillGlassCard(int position) {
+        Drawable art = adapter.artworkAt(position);
+        // A copy: the tile shows the same drawable, and the ImageView would change its bounds and blank the tile.
+        // One that cannot be copied is left out rather than shared.
+        Drawable.ConstantState state = art == null ? null : art.getConstantState();
+        art = state == null ? null : state.newDrawable(getResources());
+        // A banner fills the box; a square icon is shown whole rather than cropped top and bottom.
+        boolean banner = art != null && art.getIntrinsicWidth() > art.getIntrinsicHeight() * 1.3f;
+        heroIcon.setScaleType(banner ? ImageView.ScaleType.CENTER_CROP : ImageView.ScaleType.FIT_CENTER);
+        heroIcon.setImageDrawable(art);
+        int rgb = adapter.ambientColorAt(position) & 0xFFFFFF;
+        heroCardFill.setColors(new int[]{0x59000000 | rgb, 0x14FFFFFF, 0x03FFFFFF});
+        heroBarFill.setColor(0xFF000000 | rgb);
+    }
+
+    /**
+     * The clock and its dates in a glass panel on the top line, level with the weather and prayer pills, and
+     * the round buttons under the pills instead of beside the clock.
+     */
+    private void setUpGlassHeader() {
+        LinearLayout clockRow = (LinearLayout) findViewById(R.id.clock).getParent();
+        clockRow.getLayoutParams().width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        LinearLayout.LayoutParams dates = (LinearLayout.LayoutParams) ((View) findViewById(R.id.date).getParent()).getLayoutParams();
+        dates.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        dates.weight = 0f;
+        GradientDrawable panel = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{0x2EFFFFFF, 0x12FFFFFF});
+        panel.setCornerRadius(30 * density);
+        panel.setStroke(Math.round(density), 0x40FFFFFF);
+        clockRow.setBackground(panel);
+        clockRow.setPadding(Math.round(24 * density), Math.round(6 * density), Math.round(26 * density), Math.round(6 * density));
+        // A smaller clock keeps the panel clear of the shelf card under it.
+        TextView clock = findViewById(R.id.clock);
+        clock.setTextSize(TypedValue.COMPLEX_UNIT_PX, clock.getTextSize() * 0.8f);
+        if (findViewById(R.id.infoPills).getVisibility() != View.VISIBLE) return;
+        findViewById(R.id.greetingRow).setMinimumHeight(0);
+        View buttons = findViewById(R.id.topButtons);
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) buttons.getLayoutParams();
+        lp.removeRule(RelativeLayout.ALIGN_BOTTOM);
+        lp.removeRule(RelativeLayout.ALIGN_TOP);
+        lp.addRule(RelativeLayout.BELOW, R.id.infoPills);
+        lp.topMargin = Math.round(12 * density);
+        lp.bottomMargin = 0;
+        buttons.setLayoutParams(lp);
+        buttonsBelowPills = true;
+        buttons.setTranslationY(0);
     }
 
     // ---- cinematic shelf -------------------------------------------------------------------------
@@ -2595,7 +2702,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         lp.bottomMargin = 0;
         buttons.setLayoutParams(lp);
         // Either side can be laid out first; update after both without requesting another layout mid-pass.
-        Runnable align = () -> buttons.setTranslationY(clockRow.getTop() + clock.getTop()
+        Runnable align = () -> buttons.setTranslationY(buttonsBelowPills ? 0 : clockRow.getTop() + clock.getTop()
                 + (clock.getHeight() - buttons.getHeight()) / 2f);
         clockRow.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> align.run());
         buttons.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> align.run());

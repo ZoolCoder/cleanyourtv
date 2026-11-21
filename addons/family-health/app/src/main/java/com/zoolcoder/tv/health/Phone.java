@@ -9,13 +9,18 @@ import java.security.SecureRandom;
 final class Phone {
     static final String FILE = "family_health_phone";
     private static final String ENABLED = "enabled", PIN = "pin", STATE = "state",
-            WRONG = "wrong", WINDOW_START = "window_start", LOCKED_UNTIL = "locked_until";
+            WRONG = "wrong", WINDOW_START = "window_start", LOCKED_UNTIL = "locked_until",
+            ON_UNTIL = "on_until";
     private static final Object LOCK = new Object();
 
     private final SharedPreferences prefs;
+    /** config.xml phone_minutes: how long the page stays on before it switches itself off. */
+    private final long onMillis;
 
     Phone(Context context) {
         prefs = context.getApplicationContext().getSharedPreferences(FILE, Context.MODE_PRIVATE);
+        int minutes = context.getResources().getInteger(R.integer.phone_minutes);
+        onMillis = Math.max(5, Math.min(minutes, 240)) * 60_000L;
     }
 
     /** Off until the owner switches it on: a server should not start by itself the first time. */
@@ -26,19 +31,43 @@ final class Phone {
     /**
      * Switching on makes a new PIN, so a PIN seen on the network or kept in a phone's scan history works only
      * until the page is switched off, and starts the wrong-PIN count afresh: the owner chose to open it again.
+     * It also starts the clock: the page switches itself off after phone_minutes, in case nobody does.
      */
     void setEnabled(boolean on) {
         synchronized (LOCK) {
             SharedPreferences.Editor edit = prefs.edit().putBoolean(ENABLED, on);
             if (on && !enabled()) {
                 edit.putString(PIN, PinGuard.newPin(new SecureRandom()))
+                        .putLong(ON_UNTIL, System.currentTimeMillis() + onMillis)
                         .remove(WRONG).remove(WINDOW_START).remove(LOCKED_UNTIL);
             }
             edit.commit();
         }
     }
 
-    /** The PIN, made from 6 SecureRandom digits the first time it is asked for. */
+    /** When the page switches itself off, in epoch millis; 0 for a page switched on before the clock existed. */
+    long onUntil() {
+        return prefs.getLong(ON_UNTIL, 0);
+    }
+
+    /** How long the page stays on, in minutes, after the config value is held to 5..240. */
+    int minutes() {
+        return (int) (onMillis / 60_000L);
+    }
+
+    boolean expired(long now) {
+        return expired(enabled(), onUntil(), now, onMillis);
+    }
+
+    /**
+     * On, and past its time. A page with no time recorded counts as past it, and so does one whose end lies
+     * further ahead than a whole period: the clock was set back after it was switched on.
+     */
+    static boolean expired(boolean on, long onUntil, long now, long onMillis) {
+        return on && (now >= onUntil || onUntil - now > onMillis);
+    }
+
+    /** The PIN, made from PIN_DIGITS SecureRandom digits the first time it is asked for. */
     String pin() {
         synchronized (LOCK) {
             String pin = prefs.getString(PIN, null);

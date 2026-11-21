@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Edit before you build.
      port: the TCP port the phone page listens on (1024 to 65535; the default is used otherwise).
-           Family Notes uses 8765 and Family Calendar 8766, so all three can run at once. -->
+           Family Notes uses 8765 and Family Calendar 8766, so all three can run at once.
+     phone_minutes: how long the phone page stays on before it switches itself off (5 to 240). -->
 <resources>
     <integer name="port">8767</integer>
+    <integer name="phone_minutes">30</integer>
 </resources>

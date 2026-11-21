@@ -24,7 +24,7 @@ public class PhoneEndpointTest {
     private final AtomicInteger ids = new AtomicInteger();
     private final AtomicInteger saves = new AtomicInteger();
     private final Records records = new Records();
-    private final PhoneEndpoint endpoint = new PhoneEndpoint(PAGE, () -> "123456", new PinGuard(clock::get),
+    private final PhoneEndpoint endpoint = new PhoneEndpoint(PAGE, () -> "12345678", new PinGuard(clock::get),
             (action, change) -> {
                 Response r = action.apply(records);
                 if (change && r.status == 200) saves.incrementAndGet();
@@ -56,21 +56,21 @@ public class PhoneEndpointTest {
         assertEquals(404, endpoint.handle(request("GET", "/etc/passwd", null, "")).status);
         assertEquals(404, endpoint.handle(request("PUT", "/person", FORM, "")).status);
         assertEquals(404, endpoint.handle(request("HEAD", "/", null, "")).status);
-        assertEquals(404, post("/", "pin=123456").status);
-        assertEquals(404, post("/take", "pin=123456").status);
+        assertEquals(404, post("/", "pin=12345678").status);
+        assertEquals(404, post("/take", "pin=12345678").status);
     }
 
     @Test
     public void addsAFamilyAndListsIt() throws Exception {
-        assertEquals(200, post("/person", "name=Grandma&color=2&pin=123456").status);
+        assertEquals(200, post("/person", "name=Grandma&color=2&pin=12345678").status);
         String gm = records.members.get(0).id;
         assertEquals(200, post("/medicine", "member=" + gm + "&name=Metformin&times=08:00,20:00&left=30"
-                + "&pin=123456").status);
+                + "&pin=12345678").status);
         assertEquals(200, post("/visit", "member=" + gm + "&doctor=Dr.+Amal&day=2026-11-22&time=11:30"
-                + "&pin=123456").status);
+                + "&pin=12345678").status);
         assertEquals(3, saves.get());
 
-        Response r = post("/list", "pin=123456");
+        Response r = post("/list", "pin=12345678");
         assertEquals(200, r.status);
         assertTrue(r.contentType.startsWith("application/json"));
         JSONObject json = new JSONObject(r.body);
@@ -80,9 +80,9 @@ public class PhoneEndpointTest {
         assertEquals("a read is not saved", 3, saves.get());
 
         String pill = records.medicines.get(0).id;
-        assertEquals(200, post("/refill", "id=" + pill + "&left=60&pin=123456").status);
+        assertEquals(200, post("/refill", "id=" + pill + "&left=60&pin=12345678").status);
         assertEquals(60, records.medicines.get(0).left);
-        assertEquals(200, post("/delete", "kind=person&id=" + gm + "&pin=123456").status);
+        assertEquals(200, post("/delete", "kind=person&id=" + gm + "&pin=12345678").status);
         assertTrue(records.members.isEmpty());
         assertTrue(records.medicines.isEmpty());
         assertEquals(5, saves.get());
@@ -90,43 +90,43 @@ public class PhoneEndpointTest {
 
     @Test
     public void aRefusedChangeIsNotSaved() {
-        assertEquals(400, post("/person", "name=&pin=123456").status);
-        assertEquals(400, post("/medicine", "member=000000000001&name=Pill&times=08:00&pin=123456").status);
+        assertEquals(400, post("/person", "name=&pin=12345678").status);
+        assertEquals(400, post("/medicine", "member=000000000001&name=Pill&times=08:00&pin=12345678").status);
         assertEquals(0, saves.get());
     }
 
     @Test
     public void theWrongPinLearnsNothingAboutTheFields() {
-        assertEquals(403, post("/person", "name=&pin=000000").status);
+        assertEquals(403, post("/person", "name=&pin=00000000").status);
         assertEquals(403, post("/list", "").status);
         assertTrue(records.members.isEmpty());
     }
 
     @Test
     public void fiveWrongPinsLockThePageOut() {
-        for (int i = 0; i < 5; i++) assertEquals(403, post("/list", "pin=000000").status);
-        assertEquals(429, post("/list", "pin=123456").status);
-        assertEquals(429, post("/person", "name=Sara&pin=123456").status);
+        for (int i = 0; i < 5; i++) assertEquals(403, post("/list", "pin=00000000").status);
+        assertEquals(429, post("/list", "pin=12345678").status);
+        assertEquals(429, post("/person", "name=Sara&pin=12345678").status);
         assertTrue(records.members.isEmpty());
     }
 
     @Test
     public void onlyFormDataIsAccepted() {
         assertEquals(415, endpoint.handle(request("POST", "/person", "application/json", "{}")).status);
-        assertEquals(415, endpoint.handle(request("POST", "/person", null, "name=Sara&pin=123456")).status);
-        assertEquals(415, endpoint.handle(request("POST", "/person", "text/plain", "name=Sara&pin=123456")).status);
+        assertEquals(415, endpoint.handle(request("POST", "/person", null, "name=Sara&pin=12345678")).status);
+        assertEquals(415, endpoint.handle(request("POST", "/person", "text/plain", "name=Sara&pin=12345678")).status);
         assertTrue(records.members.isEmpty());
     }
 
     @Test
     public void anotherSiteCannotPost() {
-        HttpRequest cross = request("POST", "/person", FORM, "name=Sara&pin=123456");
+        HttpRequest cross = request("POST", "/person", FORM, "name=Sara&pin=12345678");
         cross.headers.put("origin", "http://evil.example");
         assertEquals(403, endpoint.handle(cross).status);
-        HttpRequest fetchSite = request("POST", "/person", FORM, "name=Sara&pin=123456");
+        HttpRequest fetchSite = request("POST", "/person", FORM, "name=Sara&pin=12345678");
         fetchSite.headers.put("sec-fetch-site", "cross-site");
         assertEquals(403, endpoint.handle(fetchSite).status);
-        HttpRequest same = request("POST", "/person", FORM, "name=Sara&pin=123456");
+        HttpRequest same = request("POST", "/person", FORM, "name=Sara&pin=12345678");
         same.headers.put("origin", "http://" + HOST);
         same.headers.put("sec-fetch-site", "same-origin");
         assertEquals(200, endpoint.handle(same).status);

@@ -72,7 +72,7 @@
   <h1>Family Health &middot; صحة العائلة</h1>
 
   <label for="pin">PIN shown on the TV &middot; الرمز الظاهر على التلفزيون</label>
-  <input id="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required>
+  <input id="pin" inputmode="numeric" pattern="[0-9]{8}" maxlength="9" autocomplete="off" required>
   <small id="pinok" hidden>Filled in from the TV's code. &middot; كُتب من رمز التلفزيون.</small>
 
   <div class="tabs">
@@ -209,7 +209,7 @@
       });
   }
   function pinReady(box) {
-    if (/^\d{6}$/.test(pin.value)) return true;
+    if (/^\d{8}$/.test(pin.value)) return true;
     show(box, 403);
     pin.focus();
     return false;
@@ -222,14 +222,20 @@
 
   try { pin.value = sessionStorage.getItem("fh-pin") || ""; } catch (e) {}
   // The TV's QR code carries the PIN after the #, which never leaves the phone. Take it, then drop it from the address bar.
-  var fromCode = /^#(\d{6})$/.exec(location.hash);
+  var fromCode = /^#(\d{8})$/.exec(location.hash);
   if (fromCode) {
     pin.value = fromCode[1];
     remember(pin.value);
     history.replaceState(null, "", location.pathname);
   }
-  pinok.hidden = !/^\d{6}$/.test(pin.value);
-  pin.addEventListener("input", function () { pinok.hidden = true; if (/^\d{6}$/.test(pin.value)) load(); });
+  pinok.hidden = !/^\d{8}$/.test(pin.value);
+  pin.addEventListener("input", function () {
+    // The TV shows the PIN as 1234 5678: a typed space is dropped.
+    var digits = pin.value.replace(/\D/g, "").slice(0, 8);
+    if (digits !== pin.value) pin.value = digits;
+    pinok.hidden = true;
+    if (/^\d{8}$/.test(pin.value)) load();
+  });
   $("m-start").value = todayIso();
   $("v-day").value = $("v-day").min = todayIso();
 
@@ -396,7 +402,7 @@
       .then(function (d) { if (d) { data = d; draw(); } })
       .catch(function () { show(lmsg, 0); });
   }
-  if (/^\d{6}$/.test(pin.value)) load(); else pin.focus();
+  if (/^\d{8}$/.test(pin.value)) load(); else pin.focus();
 })();
 </script>
 </body>

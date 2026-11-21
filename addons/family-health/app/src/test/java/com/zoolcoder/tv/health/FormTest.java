@@ -11,10 +11,10 @@ import java.util.Map;
 public class FormTest {
     @Test
     public void decodesFieldsPlusAndPercent() {
-        Map<String, String> f = Form.parse("name=Mum&text=Dinner+at+8%21&pin=123456");
+        Map<String, String> f = Form.parse("name=Mum&text=Dinner+at+8%21&pin=12345678");
         assertEquals("Mum", f.get("name"));
         assertEquals("Dinner at 8!", f.get("text"));
-        assertEquals("123456", f.get("pin"));
+        assertEquals("12345678", f.get("pin"));
     }
 
     @Test

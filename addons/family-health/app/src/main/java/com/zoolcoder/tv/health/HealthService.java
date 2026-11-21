@@ -32,7 +32,8 @@ import java.util.function.Function;
 /**
  * Once a minute, on the minute, shows the reminders that are due: each dose until it is taken (put off 15
  * minutes at a time), each appointment the evening before and 2 hours before. Runs while there is anything to
- * remind about or the phone page is on, and stops itself otherwise. With the phone page on it also runs the
+ * remind about or the phone page is on, and stops itself otherwise. The phone page switches itself off after
+ * phone_minutes. With the phone page on it also runs the
  * home-network server phones add records through; it never connects out.
  */
 public class HealthService extends Service {
@@ -47,6 +48,11 @@ public class HealthService extends Service {
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Runnable tick = this::tick;
+    /** The phone page's switch-off on time; the minute tick checks again in case the clock moved. */
+    private final Runnable switchOff = () -> {
+        if (switchOffWhenDue()) stopServer();
+        if (!needed()) stopSelf();
+    };
     private Store store;
     private Phone phone;
     private PhoneServer server;
@@ -91,6 +97,7 @@ public class HealthService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        switchOffWhenDue();
         if (!needed()) {
             stopSelf();
             return START_NOT_STICKY;
@@ -104,6 +111,7 @@ public class HealthService extends Service {
 
     private void tick() {
         Records r = store.records;
+        if (switchOffWhenDue()) stopServer();
         if (!needed()) {
             banner.hide();
             stopSelf();
@@ -126,6 +134,13 @@ public class HealthService extends Service {
         main.postDelayed(tick, 60_000L - intoMinute + 1000L);
     }
 
+    /** The phone page's time is up: it switches off, as if the owner had. True when it did. */
+    private boolean switchOffWhenDue() {
+        if (!phone.expired(System.currentTimeMillis())) return false;
+        phone.setEnabled(false);
+        return true;
+    }
+
     private boolean needed() {
         return !store.records.empty() || phone.enabled();
     }
@@ -141,11 +156,14 @@ public class HealthService extends Service {
         PhoneEndpoint endpoint = new PhoneEndpoint(readPage(), phone::pin,
                 new PinGuard(System::currentTimeMillis, phone.lockoutMemory(), this::lockedOut), this::onMain,
                 LocalDateTime::now, HealthService::newId);
-        PhoneServer candidate = new PhoneServer(port, endpoint);
+        PhoneServer candidate = new PhoneServer(port, endpoint,
+                () -> !phone.expired(System.currentTimeMillis()));
         try {
             candidate.start();
             server = candidate;
             phone.setState("running");
+            main.removeCallbacks(switchOff);
+            main.postDelayed(switchOff, Math.max(0, phone.onUntil() - System.currentTimeMillis()) + 500L);
         } catch (IOException e) {
             Log.w(TAG, "cannot listen on port " + port + ": " + e.getMessage());
             phone.setState("port");
@@ -166,6 +184,7 @@ public class HealthService extends Service {
     }
 
     private void stopServer() {
+        main.removeCallbacks(switchOff);
         if (server != null) server.stop();
         server = null;
         phone.setState("");

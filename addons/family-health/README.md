@@ -42,11 +42,13 @@ To try it first, the empty screen has a **Show an example** button that fills in
    - **Visits**: who, the doctor, the specialty, the day (today up to two years ahead), the time, the place
      and a note. Up to 60. The list shows those not yet over.
 4. The TV updates at once. Turn the switch off when everyone is set up: the reminders go on without it.
+   If nobody does, it switches itself off after 30 minutes.
 
 - Text is one line; control characters and direction overrides are removed, and everything is shown as
   plain text on the phone and the TV.
-- The port (default 8767; Family Notes uses 8765 and Family Calendar 8766) is in
-  `app/src/main/res/values/config.xml`. Edit it before you build.
+- The port (default 8767; Family Notes uses 8765 and Family Calendar 8766) and `phone_minutes`, how long
+  the page stays on (default 30, 5 to 240), are in `app/src/main/res/values/config.xml`. Edit them before
+  you build.
 
 ## Reminders
 
@@ -86,14 +88,18 @@ Read this before you turn the phone page on. It works like [Family Calendar](../
 unencrypted, so someone who can watch your network can read it: the PIN stops casual misuse, not someone
 sniffing your Wi-Fi. The phone page is **off** until you turn it on. These are the guards:
 
-- **PIN on every request.** Listing, adding, refilling and deleting all need the PIN: six random digits
+- **PIN on every request.** Listing, adding, refilling and deleting all need the PIN: eight random digits
   (`SecureRandom`), new each time the page is switched on, compared in constant time. After 5 wrong PINs in
   a row, that phone (its address) is refused for 5 minutes (answer 429). 50 wrong PINs within an hour from
   all addresses together make a new PIN and switch the page off, until you switch it on again. **New PIN**
   replaces it by hand. The QR code carries the PIN after the `#`, which the browser never sends; the page takes it,
   drops it from the address bar and keeps it only for that browser tab.
-- **Local addresses only.** Connections from anything but this TV, a 10.x, 172.16-31.x or 192.168.x address
-  or a link-local address are closed at once.
+- **The TV's own subnet only.** Connections from anything but this TV, or a private or link-local address
+  inside the subnet of the home Wi-Fi or Ethernet the connection came in on, are closed at once: a guest
+  network, another VLAN, a VPN, Wi-Fi Direct or the TV's hotspot is refused even though its addresses are
+  private.
+- **Off by itself.** The page switches itself off `phone_minutes` (30) after it was switched on, and the
+  TV shows the time it will. It is also off after the TV restarts.
 - **No other sites.** The `Host` must be an IP address (a name means DNS rebinding), and a browser request
   that says it is cross-site, or whose `Origin` is not the TV, is refused. Only form data is accepted.
 - **Small and short.** Request line and headers up to 8 KB, body up to 2 KB, with time limits and at most

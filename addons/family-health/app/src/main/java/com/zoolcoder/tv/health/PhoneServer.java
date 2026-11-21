@@ -12,9 +12,10 @@ import java.net.SocketTimeoutException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
+import java.util.function.BooleanSupplier;
 
 /**
- * A tiny HTTP/1.1 server on a java.net.ServerSocket. Peers outside the home network are closed at once; at
+ * A tiny HTTP/1.1 server on a java.net.ServerSocket. Peers outside the TV's own subnet are closed at once; at
  * most 8 connections are handled at a time and one per address (more get 503), so one device holding
  * sockets open cannot shut the family out. A connection that sends nothing for a second is closed; the
  * headers must arrive within 2 seconds and the whole request within 5, and every answer closes the connection.
@@ -34,9 +35,13 @@ final class PhoneServer {
     private final Set<InetAddress> busy = ConcurrentHashMap.newKeySet();
     private volatile ServerSocket server;
 
-    PhoneServer(int port, PhoneEndpoint endpoint) {
+    /** False once the page is past its time: connections are then closed until the service stops the server. */
+    private final BooleanSupplier on;
+
+    PhoneServer(int port, PhoneEndpoint endpoint, BooleanSupplier on) {
         this.port = port;
         this.endpoint = endpoint;
+        this.on = on;
     }
 
     /** Binds the port and starts accepting; throws IOException when the port cannot be used. */
@@ -73,7 +78,7 @@ final class PhoneServer {
             try {
                 Socket peer = socket.accept();
                 InetAddress address = peer.getInetAddress();
-                if (!AddressFilter.allowed(address)) {
+                if (!on.getAsBoolean() || !AddressFilter.allowed(address, () -> Net.subnetsOf(peer.getLocalAddress()))) {
                     close(peer);
                 } else if (!busy.add(address)) {
                     refuse(peer);

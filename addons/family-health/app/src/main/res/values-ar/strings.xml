@@ -74,10 +74,10 @@
     <string name="phone_can_people">إضافة أفراد عائلتك</string>
     <string name="phone_can_medicines">إضافة كل دواء: الجرعة والأوقات والأيام والعلبة</string>
     <string name="phone_can_visits">إضافة مواعيد الطبيب</string>
-    <string name="phone_home_only">لا تصل إليها إلا هواتف شبكة المنزل، وبالرمز فقط. أوقفها بعد أن ينتهي الجميع.</string>
+    <string name="phone_home_only">لا تصل إليها إلا هواتف شبكة المنزل نفسها التي عليها التلفزيون، وبالرمز فقط. تتوقف وحدها بعد %1$d دقيقة؛ أوقفها قبل ذلك إن انتهى الجميع.</string>
     <string name="state_off">متوقفة. لا شيء يستمع.</string>
     <string name="state_starting">جارٍ التشغيل…</string>
-    <string name="state_running">تعمل. تستمع على شبكة المنزل.</string>
+    <string name="state_running">تعمل حتى %1$s. تستمع على شبكة المنزل.</string>
     <string name="state_port">المنفذ يستخدمه تطبيق آخر. غيّره في config.xml وأعد البناء.</string>
     <string name="state_on">تعمل</string>
     <string name="state_off_short">متوقفة</string>

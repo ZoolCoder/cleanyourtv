@@ -10,6 +10,9 @@ import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -97,7 +100,7 @@ final class PhonePage {
                 R.string.phone_can_visits}) {
             card.addView(Ui.text(a, "•  " + a.getString(line), 15, Look.TEXT_2), Ui.spaced(a, 6, 0));
         }
-        TextView home = Ui.text(a, a.getString(R.string.phone_home_only), 14, Look.TEXT_3);
+        TextView home = Ui.text(a, a.getString(R.string.phone_home_only, phone.minutes()), 14, Look.TEXT_3);
         card.addView(home, Ui.spaced(a, 10, 0));
         return card;
     }
@@ -172,7 +175,8 @@ final class PhonePage {
     }
 
     void refresh() {
-        boolean on = phone.enabled();
+        // A page past its time shows as off even before the service gets round to switching it off.
+        boolean on = phone.enabled() && !phone.expired(System.currentTimeMillis());
         binding = true;
         power.setChecked(on);
         binding = false;
@@ -181,11 +185,23 @@ final class PhonePage {
         stateShort.setText(on ? R.string.state_on : R.string.state_off_short);
         if (!on) state.setText(R.string.state_off);
         else if ("port".equals(current)) state.setText(R.string.state_port);
-        else if ("running".equals(current)) state.setText(R.string.state_running);
+        else if ("running".equals(current)) state.setText(a.getString(R.string.state_running, offAt()));
         else state.setText(R.string.state_starting);
 
         showAddress(on && "running".equals(current), on, Net.homeAddresses());
-        pin.setText(phone.pin());
+        pin.setText(grouped(phone.pin()));
+    }
+
+    /** The time the page switches itself off, in the TV's clock format. */
+    private String offAt() {
+        LocalTime at = Instant.ofEpochMilli(phone.onUntil()).atZone(ZoneId.systemDefault()).toLocalTime();
+        return new Dates(a).time(at);
+    }
+
+    /** 1234 5678: two groups of four are easier to read off the screen and type. */
+    static String grouped(String pin) {
+        int half = pin.length() / 2;
+        return pin.substring(0, half) + " " + pin.substring(half);
     }
 
     /** While shown, the page follows the server starting or failing, and a PIN replaced after wrong guesses. */

@@ -23,7 +23,7 @@ final class PinGuard {
     static final long LOCKOUT_MS = 5 * 60 * 1000L;
     static final int MAX_WRONG_ALL = 50;
     static final long WINDOW_MS = 60 * 60 * 1000L;
-    static final int PIN_DIGITS = 6;
+    static final int PIN_DIGITS = 8;
     /** Addresses remembered at once; the oldest is forgotten first. The backstop still counts every guess. */
     static final int MAX_PEERS = 64;
 

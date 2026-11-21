@@ -85,10 +85,10 @@
     <string name="phone_can_people">add the people in your family</string>
     <string name="phone_can_medicines">add each medicine: dose, times, days and pack</string>
     <string name="phone_can_visits">add doctor appointments</string>
-    <string name="phone_home_only">Only phones on your home network reach it, and only with the PIN. Turn it off when everyone is set up.</string>
+    <string name="phone_home_only">Only phones on the TV\'s own home network reach it, and only with the PIN. It switches itself off after %1$d minutes; turn it off sooner when everyone is set up.</string>
     <string name="state_off">Off. Nothing is listening.</string>
     <string name="state_starting">Starting…</string>
-    <string name="state_running">On. Listening on the home network.</string>
+    <string name="state_running">On until %1$s. Listening on the home network.</string>
     <string name="state_port">The port is in use by another app. Change it in config.xml and rebuild.</string>
     <string name="state_on">On</string>
     <string name="state_off_short">Off</string>

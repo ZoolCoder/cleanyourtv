@@ -15,48 +15,48 @@ public class PinGuardTest {
 
     @Test
     public void rightPinPasses() {
-        assertEquals(PinGuard.Result.OK, guard.check("123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("12345678", "12345678"));
     }
 
     @Test
     public void wrongOrMissingPinFails() {
-        assertEquals(PinGuard.Result.WRONG, guard.check("123457", "123456"));
-        assertEquals(PinGuard.Result.WRONG, guard.check(null, "123456"));
-        assertEquals(PinGuard.Result.WRONG, guard.check("", "123456"));
-        assertEquals(PinGuard.Result.WRONG, guard.check("1234567", "123456"));
+        assertEquals(PinGuard.Result.WRONG, guard.check("123457", "12345678"));
+        assertEquals(PinGuard.Result.WRONG, guard.check(null, "12345678"));
+        assertEquals(PinGuard.Result.WRONG, guard.check("", "12345678"));
+        assertEquals(PinGuard.Result.WRONG, guard.check("1234567", "12345678"));
     }
 
     @Test
     public void fiveWrongPinsLockEvenTheRightOneForFiveMinutes() {
-        for (int i = 0; i < 5; i++) assertEquals(PinGuard.Result.WRONG, guard.check("000000", "123456"));
-        assertEquals(PinGuard.Result.LOCKED, guard.check("123456", "123456"));
+        for (int i = 0; i < 5; i++) assertEquals(PinGuard.Result.WRONG, guard.check("00000000", "12345678"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("12345678", "12345678"));
         now.addAndGet(PinGuard.LOCKOUT_MS - 1);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("12345678", "12345678"));
         now.addAndGet(1);
-        assertEquals(PinGuard.Result.OK, guard.check("123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("12345678", "12345678"));
     }
 
     @Test
     public void fourWrongThenRightResetsTheCount() {
-        for (int i = 0; i < 4; i++) guard.check("000000", "123456");
-        assertEquals(PinGuard.Result.OK, guard.check("123456", "123456"));
-        for (int i = 0; i < 4; i++) assertEquals(PinGuard.Result.WRONG, guard.check("000000", "123456"));
-        assertEquals(PinGuard.Result.OK, guard.check("123456", "123456"));
+        for (int i = 0; i < 4; i++) guard.check("00000000", "12345678");
+        assertEquals(PinGuard.Result.OK, guard.check("12345678", "12345678"));
+        for (int i = 0; i < 4; i++) assertEquals(PinGuard.Result.WRONG, guard.check("00000000", "12345678"));
+        assertEquals(PinGuard.Result.OK, guard.check("12345678", "12345678"));
     }
 
     @Test
     public void lockoutEndsWithAFreshCount() {
-        for (int i = 0; i < 5; i++) guard.check("000000", "123456");
+        for (int i = 0; i < 5; i++) guard.check("00000000", "12345678");
         now.addAndGet(PinGuard.LOCKOUT_MS);
-        for (int i = 0; i < 4; i++) assertEquals(PinGuard.Result.WRONG, guard.check("000000", "123456"));
-        assertEquals(PinGuard.Result.WRONG, guard.check("000000", "123456"));
-        assertEquals(PinGuard.Result.LOCKED, guard.check("123456", "123456"));
+        for (int i = 0; i < 4; i++) assertEquals(PinGuard.Result.WRONG, guard.check("00000000", "12345678"));
+        assertEquals(PinGuard.Result.WRONG, guard.check("00000000", "12345678"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("12345678", "12345678"));
     }
 
     @Test
-    public void newPinIsSixDigits() {
+    public void newPinIsEightDigits() {
         SecureRandom random = new SecureRandom();
-        for (int i = 0; i < 200; i++) assertTrue(PinGuard.newPin(random).matches("[0-9]{6}"));
+        for (int i = 0; i < 200; i++) assertTrue(PinGuard.newPin(random).matches("[0-9]{8}"));
     }
 
     private static final class Mem implements PinGuard.Memory {
@@ -75,14 +75,14 @@ public class PinGuardTest {
 
     /** Wrong guesses from many addresses, each under its own lockout, so only the backstop counts. */
     private static void spray(PinGuard guard, int guesses) {
-        for (int i = 0; i < guesses; i++) guard.check("10.0.0." + (i / 4), "000000", "123456");
+        for (int i = 0; i < guesses; i++) guard.check("10.0.0." + (i / 4), "00000000", "12345678");
     }
 
     @Test
     public void oneLockedAddressDoesNotLockAnother() {
-        for (int i = 0; i < 5; i++) guard.check("10.0.0.9", "000000", "123456");
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.9", "123456", "123456"));
-        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.2", "123456", "123456"));
+        for (int i = 0; i < 5; i++) guard.check("10.0.0.9", "00000000", "12345678");
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.9", "12345678", "12345678"));
+        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.2", "12345678", "12345678"));
     }
 
     @Test
@@ -91,18 +91,18 @@ public class PinGuardTest {
         PinGuard guard = new PinGuard(now::get, null, trips::incrementAndGet);
         spray(guard, PinGuard.MAX_WRONG_ALL - 1);
         assertEquals(0, trips.get());
-        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "12345678", "12345678"));
         spray(guard, 1);
         assertEquals(1, trips.get());
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "12345678", "12345678"));
         now.addAndGet(PinGuard.LOCKOUT_MS);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "12345678", "12345678"));
         now.addAndGet(PinGuard.WINDOW_MS - PinGuard.LOCKOUT_MS - 1);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "12345678", "12345678"));
         now.addAndGet(1);
-        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "12345678", "12345678"));
         // A wrong PIN afterwards opens a fresh hour instead of locking everyone out again.
-        assertEquals(PinGuard.Result.WRONG, guard.check("10.0.0.201", "000000", "123456"));
+        assertEquals(PinGuard.Result.WRONG, guard.check("10.0.0.201", "00000000", "12345678"));
         assertEquals(1, trips.get());
     }
 
@@ -114,10 +114,10 @@ public class PinGuardTest {
         spray(guard, PinGuard.MAX_WRONG_ALL);
         // Set back by an hour and a minute, the lockout is clamped to end a minute before the old hour began.
         now.addAndGet(-PinGuard.WINDOW_MS - 60_000);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "12345678", "12345678"));
         // Nobody tried in that minute; the next wrong PIN falls inside the old hour again.
         now.set(start + 60_000);
-        assertEquals(PinGuard.Result.WRONG, guard.check("10.0.0.201", "000000", "123456"));
+        assertEquals(PinGuard.Result.WRONG, guard.check("10.0.0.201", "00000000", "12345678"));
         assertEquals(1, trips.get());
     }
 
@@ -131,9 +131,9 @@ public class PinGuardTest {
         assertEquals(1, trips.get());
         // Two minutes were left of the hour: the lockout still lasts its five.
         now.addAndGet(PinGuard.LOCKOUT_MS - 1);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.200", "12345678", "12345678"));
         now.addAndGet(1);
-        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.200", "12345678", "12345678"));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class PinGuardTest {
         int wrong = 0;
         for (int minute = 0; minute < 60; minute++, now.addAndGet(60_000)) {
             for (int i = 0; i < 20; i++) {
-                if (guard.check("10." + minute + ".0." + i, "000000", "123456") == PinGuard.Result.WRONG) wrong++;
+                if (guard.check("10." + minute + ".0." + i, "00000000", "12345678") == PinGuard.Result.WRONG) wrong++;
             }
         }
         assertEquals(PinGuard.MAX_WRONG_ALL, wrong);
@@ -162,18 +162,18 @@ public class PinGuardTest {
 
     @Test
     public void aClockSetBackCannotStretchALockout() {
-        for (int i = 0; i < 5; i++) guard.check("10.0.0.9", "000000", "123456");
+        for (int i = 0; i < 5; i++) guard.check("10.0.0.9", "00000000", "12345678");
         now.addAndGet(-10 * PinGuard.LOCKOUT_MS);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.9", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("10.0.0.9", "12345678", "12345678"));
         now.addAndGet(PinGuard.LOCKOUT_MS);
-        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.9", "123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("10.0.0.9", "12345678", "12345678"));
     }
 
     @Test
     public void forgettingOldAddressesKeepsTheBackstop() {
         AtomicInteger trips = new AtomicInteger();
         PinGuard guard = new PinGuard(now::get, null, trips::incrementAndGet);
-        for (int i = 0; i < PinGuard.MAX_WRONG_ALL; i++) guard.check("10.0." + i + ".1", "000000", "123456");
+        for (int i = 0; i < PinGuard.MAX_WRONG_ALL; i++) guard.check("10.0." + i + ".1", "00000000", "12345678");
         assertEquals(1, trips.get());
     }
 
@@ -182,9 +182,9 @@ public class PinGuardTest {
         Mem mem = new Mem();
         spray(new PinGuard(now::get, mem, null), PinGuard.MAX_WRONG_ALL);
         PinGuard restarted = new PinGuard(now::get, mem, null);
-        assertEquals(PinGuard.Result.LOCKED, restarted.check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, restarted.check("10.0.0.200", "12345678", "12345678"));
         now.addAndGet(PinGuard.WINDOW_MS);
-        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("10.0.0.200", "123456", "123456"));
+        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("10.0.0.200", "12345678", "12345678"));
     }
 
     @Test
@@ -193,7 +193,7 @@ public class PinGuardTest {
         AtomicInteger trips = new AtomicInteger();
         spray(new PinGuard(now::get, mem, null), PinGuard.MAX_WRONG_ALL - 1);
         PinGuard restarted = new PinGuard(now::get, mem, trips::incrementAndGet);
-        restarted.check("10.0.0.200", "000000", "123456");
+        restarted.check("10.0.0.200", "00000000", "12345678");
         assertEquals(1, trips.get());
     }
 
@@ -202,19 +202,19 @@ public class PinGuardTest {
         Mem mem = new Mem();
         mem.saved = new long[] {0, 0, now.get() + 10 * PinGuard.WINDOW_MS};
         PinGuard guard = new PinGuard(now::get, mem, null);
-        assertEquals(PinGuard.Result.LOCKED, guard.check("123456", "123456"));
+        assertEquals(PinGuard.Result.LOCKED, guard.check("12345678", "12345678"));
         now.addAndGet(PinGuard.WINDOW_MS);
-        assertEquals(PinGuard.Result.OK, guard.check("123456", "123456"));
+        assertEquals(PinGuard.Result.OK, guard.check("12345678", "12345678"));
     }
 
     @Test
     public void junkStoredStateIsHarmless() {
         Mem mem = new Mem();
         mem.saved = new long[] {-7, -1, -1};
-        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("123456", "123456"));
+        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("12345678", "12345678"));
         mem.saved = new long[] {999, now.get() + 1, 0};
-        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("123456", "123456"));
+        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("12345678", "12345678"));
         mem.saved = new long[] {1};
-        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("123456", "123456"));
+        assertEquals(PinGuard.Result.OK, new PinGuard(now::get, mem, null).check("12345678", "12345678"));
     }
 }

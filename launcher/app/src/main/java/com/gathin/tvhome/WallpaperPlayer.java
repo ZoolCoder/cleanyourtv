@@ -16,6 +16,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -57,6 +60,10 @@ final class WallpaperPlayer {
     private final Map<String, String> names;
     /** wallpaper_credits: the shown picture's author and licence from wallpapers/credits.txt, under its name. */
     private final Map<String, String> credits;
+    /** True while the grid is scrolled down: the cards then pass where the caption sits, so it hides. */
+    private boolean captionAway;
+    /** The text the caption shows or is fading to: a scroll that cancels a change's fade puts it in place. */
+    private String captionText = "";
     /** wallpaper_moods: the collection's groups by time of day; empty rotates through all of it. */
     private final Map<String, Set<String>> moods;
     /** config.xml latitude and longitude for the sun's times, and today's {sunrise, sunset} once worked out. */
@@ -270,20 +277,49 @@ final class WallpaperPlayer {
         if (caption == null) return;
         String name = WallpaperCaptions.caption(names.get(displayed), credits.get(displayed));
         caption.animate().cancel();
+        captionText = name == null ? "" : name;
         if (name == null) {
+            caption.setText("");
             caption.setAlpha(0f);
             return;
         }
         caption.setContentDescription(name);
         if (!fade || caption.getAlpha() == 0f) {
             caption.setText(name);
-            caption.setAlpha(1f);
+            caption.setAlpha(captionAlpha());
             return;
         }
         caption.animate().alpha(0f).setDuration(250).withEndAction(() -> {
             caption.setText(name);
-            caption.animate().alpha(1f).setDuration(350).start();
+            caption.animate().alpha(captionAlpha()).setDuration(350).start();
         }).start();
+    }
+
+    private float captionAlpha() {
+        return captionAway ? 0f : 1f;
+    }
+
+    /** Fades the caption out once the grid scrolls down and back in at the top, so it never lies over a card. */
+    void captionHidesOnScroll(RecyclerView grid) {
+        if (caption == null) return;
+        grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+                syncCaption(rv);
+            }
+        });
+    }
+
+    /** Shows or hides the caption for where the grid is now; also called after a jump to the top. */
+    void syncCaption(RecyclerView grid) {
+        if (caption == null) return;
+        boolean away = grid.canScrollVertically(-1);
+        if (away == captionAway) return;
+        captionAway = away;
+        if (captionText.isEmpty()) return;
+        caption.animate().cancel();   // drops a change's pending text swap, so set the text here
+        caption.setText(captionText);
+        caption.animate().alpha(captionAlpha()).setDuration(200).start();
     }
 
     /** Names plus sizes: enough to notice a different collection without hashing every image. */

@@ -778,6 +778,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             grid.post(this::refitGlass);
         });
 
+        wallpaperPlayer.captionHidesOnScroll(grid);
+
         // Keep the glass glued to its tile while the grid scrolls.
         grid.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -1102,6 +1104,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (intent == null || !intent.hasCategory(Intent.CATEGORY_HOME)) return;
         if (gameDay != null && !stopped) gameDay.read();
         grid.scrollToPosition(0);
+        // onScrolled does not run when the same rows stay on screen, so check the caption after the jump.
+        grid.post(() -> wallpaperPlayer.syncCaption(grid));
         lastFocused = 0;
         lastFocusedKey = adapter.getItemCount() > 0 ? adapter.keyAt(0) : null;
         if (stopped) {
